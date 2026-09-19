@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.DS_Store
+public/img/products/*.jpg
+public/logo.png
+app/icon.png
