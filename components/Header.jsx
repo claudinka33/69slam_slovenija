@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "./CartContext";
@@ -8,12 +9,31 @@ export default function Header({ lang, t }) {
   const { count, setDrawerOpen } = useCart();
   const pathname = usePathname() || `/${lang}`;
   const rest = pathname.replace(/^\/(sl|hr|en)/, "") || "";
+  const [logoFailed, setLogoFailed] = useState(false);
+  const logoRef = useRef(null);
+
+  useEffect(() => {
+    const img = logoRef.current;
+    if (img && img.complete && img.naturalWidth === 0) setLogoFailed(true);
+  }, []);
 
   return (
     <header className="site">
       <div className="topbar">{t.topbar}</div>
       <div className="wrap hrow">
-        <Link href={`/${lang}`} className="logo">69<span>SLAM</span> <span className="tld">.SI</span></Link>
+        <Link href={`/${lang}`} className="logo" aria-label="69SLAM Slovenija">
+          {logoFailed ? (
+            <>69<span>SLAM</span> <span className="tld">.SI</span></>
+          ) : (
+            <img
+              ref={logoRef}
+              src="/logo.png"
+              alt="69SLAM"
+              onError={() => setLogoFailed(true)}
+              style={{ height: 26, width: "auto", display: "block" }}
+            />
+          )}
+        </Link>
         <nav className="main">
           <Link href={`/${lang}#shop`}>{t.nav_shop}</Link>
           <Link href={`/${lang}#tech`}>{t.nav_why}</Link>
