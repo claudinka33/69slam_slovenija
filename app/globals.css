@@ -345,3 +345,18 @@ footer.site a{color:#9a9a9a;}
   .cuts{grid-template-columns:1fr;}
   .cutimg{width:92px;min-height:104px;}
 }
+
+/* ===== Hero z lifestyle fotografijo ===== */
+.hero2{position:relative;background:#f3f1ee;min-height:min(80vh,780px);display:flex;align-items:center;}
+.hero2 .heroimg{position:absolute;inset:0;}
+.hero2 .heroimg img{object-fit:cover;object-position:right center;}
+.hero2::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.75) 32%,rgba(255,255,255,0) 58%);}
+.hero2 .wrap{position:relative;z-index:2;display:block;max-width:none;margin:0;width:100%;padding-top:48px;padding-bottom:48px;}
+.hero2 .wrap > div{max-width:620px;}
+@media(max-width:900px){
+  .hero2{display:block;min-height:0;background:#fff;}
+  .hero2 .heroimg{position:relative;inset:auto;height:64vw;max-height:460px;}
+  .hero2 .heroimg img{object-position:78% center;}
+  .hero2::after{display:none;}
+  .hero2 .wrap{padding-top:28px;padding-bottom:40px;}
+}
