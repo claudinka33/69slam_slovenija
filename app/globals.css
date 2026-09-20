@@ -419,3 +419,14 @@ footer.site a{color:#9a9a9a;}
   .pgal-strip{grid-template-columns:repeat(3,1fr);gap:6px;}
   .pgal-strip img:first-child{grid-column:auto;grid-row:auto;height:auto;aspect-ratio:3/4;}
 }
+
+/* ===== Tabela velikosti ===== */
+.sizeguide{margin:14px 0 4px;}
+.sizeguide summary{cursor:pointer;font-size:.8rem;font-weight:700;text-decoration:underline;list-style:none;display:inline-block;}
+.sizeguide summary::-webkit-details-marker{display:none;}
+.sizeguide summary::before{content:"📏";text-decoration:none;display:inline-block;margin-right:6px;}
+.sizeguide table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.86rem;}
+.sizeguide th{background:#0a0a0a;color:#fff;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;padding:8px 6px;text-align:center;font-weight:700;}
+.sizeguide td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);}
+.sizeguide tbody tr:nth-child(even){background:#f5f5f7;}
+.sizeguide p{font-size:.76rem;color:var(--gray);line-height:1.5;margin-top:10px;}
