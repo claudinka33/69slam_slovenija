@@ -5,6 +5,7 @@ import { getDict, LANGS, fmt } from "../../../../lib/i18n";
 import AddToCart from "../../../../components/AddToCart";
 import ProductBundle from "../../../../components/ProductBundle";
 import { REVIEWS, REVIEW_SUMMARY } from "../../../../lib/reviews";
+import { GALLERY } from "../../../../lib/media";
 
 export function generateStaticParams() {
   const products = getProducts();
@@ -116,12 +117,24 @@ export default async function ProductPage({ params }) {
         </div>
       </div>
 
+      <section className="pgal">
+        <div className="pr-head">
+          <h2>{lang === "en" ? "Made to be seen" : "Narejene, da se jih vidi"}</h2>
+          <div className="pr-sum">#playloud · @69slam.slovenija</div>
+        </div>
+        <div className="pgal-strip">
+          {GALLERY.map((src, i) => (
+            <img key={i} src={src} alt={`69SLAM ${i + 1}`} loading="lazy" />
+          ))}
+        </div>
+      </section>
+
       <section className="previews" id="ocene">
         <div className="pr-head">
           <h2>{lang === "en" ? "What customers say" : "Kaj pravijo kupci"}</h2>
-          <a href={REVIEW_SUMMARY.url} target="_blank" rel="noopener">
-            <span className="pr-stars">★★★★★</span> <b>{REVIEW_SUMMARY.rating} / 5</b> · {REVIEW_SUMMARY.count} {lang === "en" ? "reviews on Judge.me" : "ocen na Judge.me"} →
-          </a>
+          <div className="pr-sum">
+            <span className="pr-stars">★★★★★</span> <b>{REVIEW_SUMMARY.rating} / 5</b> · {REVIEW_SUMMARY.count} {lang === "en" ? "customer reviews" : "ocen kupcev"}
+          </div>
         </div>
         <div className="pr-grid">
           {REVIEWS.map((r, i) => (
@@ -137,8 +150,8 @@ export default async function ProductPage({ params }) {
           ))}
         </div>
         <p className="pr-note">{lang === "en"
-          ? "A selection of reviews collected via Judge.me for 69slam.si, shown unedited. \"Verified purchase\" means Judge.me confirmed the order. All reviews are available at the link above."
-          : "Izbor ocen, zbranih prek sistema Judge.me za 69slam.si, objavljenih brez sprememb. Oznaka »Preverjen nakup« pomeni, da je Judge.me potrdil naročilo. Vse ocene so na voljo na zgornji povezavi."}</p>
+          ? "A selection of reviews from 69slam.si customers, shown unedited. \"Verified purchase\" means the review is linked to an actual order in our shop."
+          : "Izbor ocen kupcev trgovine 69slam.si, objavljenih brez sprememb. Oznaka »Preverjen nakup« pomeni, da je ocena povezana z dejanskim naročilom v naši trgovini."}</p>
       </section>
     </main>
   );
