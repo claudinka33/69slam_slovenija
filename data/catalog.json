@@ -4,7 +4,8 @@
   "exported_at": "2026-09-08",
   "note": "stock_snapshot = stanje zaloge na dan izvoza; prava zaloga se uvozi naknadno pred zagonom",
   "gift_box_image": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/DARILNA_SKATLA_69SLAM.png?v=1765128603",
-  "description_note": "Vsi izdelki imajo v Shopifyju enak opis — description_sl je zato na nivoju kolekcije; unikatne opise po printih dodava pri pripravi vsebine."
+  "description_note": "Vsi izdelki imajo v Shopifyju enak opis — description_sl je zato na nivoju kolekcije; unikatne opise po printih dodava pri pripravi vsebine.",
+  "stock_refreshed_at": "2026-09-20"
  },
  "shared_description_sl": "Moško spodnje perilo 69slam iz vrhunske mikroﬁbre nudi izjemno udobje, zračnost in hitro sušenje. Mehak, raztegljiv material se popolnoma prilega telesu in omogoča neomejeno gibanje skozi ves dan. Idealna izbira za aktivne moške, ki želijo kombinacijo funkcionalnosti in stila. Sestava: 90% poliester, 10% elastan Uporaba: vsakodnevno nošenje, šport, aktiven življenjski slog",
  "products": [
@@ -15,7 +16,7 @@
    "slug": "around-the-world",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYADD-PO-ZOOM.jpg?v=1697708073",
@@ -38,21 +39,21 @@
      "size": "XS",
      "sku_original": "MBYADD-XS",
      "sku_clean": "MBYADD-XS",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "S",
      "sku_original": "MBYADD-PO-S",
      "sku_clean": "MBYADD-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "XXL",
      "sku_original": "MBYADD-PO  XXL-XXL",
      "sku_clean": "MBYADD-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 3
     }
    ]
@@ -64,7 +65,7 @@
    "slug": "bali",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYBAL-PO-ZOOM.jpg?v=1697708077",
@@ -92,7 +93,7 @@
      "size": "XXL",
      "sku_original": "MBYBAL-PO-XXL",
      "sku_clean": "MBYBAL-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     }
    ]
@@ -104,7 +105,7 @@
    "slug": "cubism-mock",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYCOK-PO-ZOOM.jpg?v=1697708081",
@@ -127,14 +128,14 @@
      "size": "S",
      "sku_original": "MBYCOK-PO-S",
      "sku_clean": "MBYCOK-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     },
     {
      "size": "XXL",
      "sku_original": "MBYCOK-PO  XXL-XXL",
      "sku_clean": "MBYCOK-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     }
    ]
@@ -146,7 +147,7 @@
    "slug": "day-of-the-dead",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYDOF-PO-ZOOM.jpg?v=1697708085",
@@ -169,21 +170,21 @@
      "size": "XS",
      "sku_original": "MBYDOF-PO XS",
      "sku_clean": "MBYDOF-XS",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "S",
      "sku_original": "MBYDOF-PO S",
      "sku_clean": "MBYDOF-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 3
     },
     {
      "size": "XXL",
      "sku_original": "MBYDOF-PO XXL",
      "sku_clean": "MBYDOF-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     }
    ]
@@ -195,7 +196,7 @@
    "slug": "exotic-sea",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYEXS-PO-ZOOM.jpg?v=1697708088",
@@ -223,7 +224,7 @@
      "size": "S",
      "sku_original": "MBYEXS-PO S",
      "sku_clean": "MBYEXS-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     }
    ]
@@ -235,7 +236,7 @@
    "slug": "hippie",
    "collection": "core",
    "status": "DRAFT",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYHPE-PO-ZOOM.jpg?v=1697708102",
@@ -263,7 +264,7 @@
      "size": "XXL",
      "sku_original": "MBYHPE-PO XXL",
      "sku_clean": "MBYHPE-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     }
    ]
@@ -275,7 +276,7 @@
    "slug": "island-of-paradise",
    "collection": "core",
    "status": "DRAFT",
-   "price": 25.0,
+   "price": 25,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYISP-PO-ZOOM.jpg?v=1697708065",
@@ -303,28 +304,28 @@
      "size": "S",
      "sku_original": "MBYISP-PO S",
      "sku_clean": "MBYISP-S",
-     "price": 25.0,
+     "price": 25,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MBYISP-PO M",
      "sku_clean": "MBYISP-M",
-     "price": 25.0,
+     "price": 25,
      "stock_snapshot": 0
     },
     {
      "size": "L",
      "sku_original": "MBYISP-PO L",
      "sku_clean": "MBYISP-L",
-     "price": 25.0,
+     "price": 25,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYISP-PO XL",
      "sku_clean": "MBYISP-XL",
-     "price": 25.0,
+     "price": 25,
      "stock_snapshot": 0
     }
    ]
@@ -336,7 +337,7 @@
    "slug": "japanese-view",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYJPE-PO-ZOOM.jpg?v=1697708106",
@@ -364,21 +365,21 @@
      "size": "XS",
      "sku_original": "MBYJPE-PO XS",
      "sku_clean": "MBYJPE-XS",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "S",
      "sku_original": "MBYJPE-PO S",
      "sku_clean": "MBYJPE-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     },
     {
      "size": "XXL",
      "sku_original": "MBYJPE-PO XXL",
      "sku_clean": "MBYJPE-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     }
    ]
@@ -390,7 +391,7 @@
    "slug": "kraken",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYKRK-PO-ZOOM.jpg?v=1697708119",
@@ -418,21 +419,21 @@
      "size": "XS",
      "sku_original": "MBYKRK-PO XS",
      "sku_clean": "MBYKRK-XS",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "S",
      "sku_original": "MBYKRK-PO S",
      "sku_clean": "MBYKRK-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     },
     {
      "size": "XXL",
      "sku_original": "MBYKRK-PO XXL",
      "sku_clean": "MBYKRK-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     }
    ]
@@ -444,7 +445,7 @@
    "slug": "leonana",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYLEA-PO-ZOOM.jpg?v=1697708061",
@@ -467,14 +468,14 @@
      "size": "S",
      "sku_original": "MBYLEA-PO-S",
      "sku_clean": "MBYLEA-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     },
     {
      "size": "XXL",
      "sku_original": "MBYLEA-XXL",
      "sku_clean": "MBYLEA-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 3
     }
    ]
@@ -486,7 +487,7 @@
    "slug": "lotus-koy",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYLTK-PO-ZOOM.jpg?v=1697708122",
@@ -514,28 +515,28 @@
      "size": "S",
      "sku_original": "MBYLTK-PO S",
      "sku_clean": "MBYLTK-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     },
     {
      "size": "M",
      "sku_original": "MBYLTK-PO M",
      "sku_clean": "MBYLTK-M",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     },
     {
      "size": "L",
      "sku_original": "MBYLTK-PO L",
      "sku_clean": "MBYLTK-L",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYLTK-PO XL",
      "sku_clean": "MBYLTK-XL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     }
    ]
@@ -547,7 +548,7 @@
    "slug": "mex-card",
    "collection": "core",
    "status": "DRAFT",
-   "price": 25.0,
+   "price": 25,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYMAD-PO-ZOOM.jpg?v=1697708069",
@@ -570,28 +571,28 @@
      "size": "S",
      "sku_original": "MBYMAD-PO S",
      "sku_clean": "MBYMAD-S",
-     "price": 25.0,
+     "price": 25,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MBYMAD-PO M",
      "sku_clean": "MBYMAD-M",
-     "price": 25.0,
+     "price": 25,
      "stock_snapshot": 0
     },
     {
      "size": "L",
      "sku_original": "MBYMAD-PO L",
      "sku_clean": "MBYMAD-L",
-     "price": 25.0,
+     "price": 25,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYMAD-PO XL",
      "sku_clean": "MBYMAD-XL",
-     "price": 25.0,
+     "price": 25,
      "stock_snapshot": 0
     }
    ]
@@ -603,7 +604,7 @@
    "slug": "mexican-square",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYMCQ-PO-ZOOM.jpg?v=1697708144",
@@ -626,7 +627,7 @@
      "size": "XXL",
      "sku_original": "MBYMCQ-PO XXL",
      "sku_clean": "MBYMCQ-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     }
    ]
@@ -638,7 +639,7 @@
    "slug": "mayan-dragon",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYMDG-PO-ZOOM.jpg?v=1697708130",
@@ -666,7 +667,7 @@
      "size": "M",
      "sku_original": "MBYMDG-PO M",
      "sku_clean": "MBYMDG-M",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 3
     }
    ]
@@ -678,7 +679,7 @@
    "slug": "mex",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYMEX-PO-ZOOM.jpg?v=1697708138",
@@ -701,21 +702,21 @@
      "size": "XS",
      "sku_original": "MBYMEX-PO XS",
      "sku_clean": "MBYMEX-XS",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "S",
      "sku_original": "MBYMEX-PO-S",
      "sku_clean": "MBYMEX-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     },
     {
      "size": "XXL",
      "sku_original": "MBYMEX-PO-XXL",
      "sku_clean": "MBYMEX-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 4
     }
    ]
@@ -727,7 +728,7 @@
    "slug": "movie-poster",
    "collection": "core",
    "status": "DRAFT",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYMPO-PO-ZOOM.jpg?v=1697708152",
@@ -755,28 +756,28 @@
      "size": "S",
      "sku_original": "MBYMPO-PO S",
      "sku_clean": "MBYMPO-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MBYMPO-PO M",
      "sku_clean": "MBYMPO-M",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     },
     {
      "size": "L",
      "sku_original": "MBYMPO-PO L",
      "sku_clean": "MBYMPO-L",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYMPO-PO L",
      "sku_clean": "MBYMPO-XL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     }
    ]
@@ -788,7 +789,7 @@
    "slug": "mayan-head",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYMYN-PO-ZOOM.jpg?v=1697708133",
@@ -816,28 +817,28 @@
      "size": "S",
      "sku_original": "MBYMYN-PO S",
      "sku_clean": "MBYMYN-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "M",
      "sku_original": "MBYMYN-PO M",
      "sku_clean": "MBYMYN-M",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     },
     {
      "size": "L",
      "sku_original": "MBYMYN-PO L",
      "sku_clean": "MBYMYN-L",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYMYN-PO L",
      "sku_clean": "MBYMYN-XL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     }
    ]
@@ -849,7 +850,7 @@
    "slug": "newspaper",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYNSK-PO-ZOOM.jpg?v=1697708155",
@@ -872,7 +873,7 @@
      "size": "XXL",
      "sku_original": "MBYNSK-PO-XXL",
      "sku_clean": "MBYNSK-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 3
     }
    ]
@@ -884,7 +885,7 @@
    "slug": "pop-art",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYOAT-PO-ZOOM.jpg?v=1697708159",
@@ -912,7 +913,7 @@
      "size": "XXL",
      "sku_original": "MBYOAT-PO XXL",
      "sku_clean": "MBYOAT-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 3
     }
    ]
@@ -924,7 +925,7 @@
    "slug": "kapow",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYPOW-PO-ZOOM.jpg?v=1697708111",
@@ -947,14 +948,14 @@
      "size": "S",
      "sku_original": "MBYPOW-PO S-S",
      "sku_clean": "MBYPOW-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "XXL",
      "sku_original": "MBYPOW-PO XXL-XXL",
      "sku_clean": "MBYPOW-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     }
    ]
@@ -966,7 +967,7 @@
    "slug": "skullmond-white",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYSDW-PO-ZOOM.jpg?v=1697708170",
@@ -989,7 +990,7 @@
      "size": "XXL",
      "sku_original": "MBYSDW-PO  XXL-XXL",
      "sku_clean": "MBYSDW-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 4
     }
    ]
@@ -1001,7 +1002,7 @@
    "slug": "skull-bloom",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYSKO-PO-ZOOM.jpg?v=1697708166",
@@ -1034,7 +1035,7 @@
      "size": "S",
      "sku_original": "MBYSKO-PO S",
      "sku_clean": "MBYSKO-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     }
    ]
@@ -1046,7 +1047,7 @@
    "slug": "tie-dye",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 15.0,
+   "price": 15,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYTDY-PO-02.jpg?v=1697708173",
@@ -1064,7 +1065,7 @@
      "size": "S",
      "sku_original": "MBYTDY-PO  S-S",
      "sku_clean": "MBYTDY-S",
-     "price": 15.0,
+     "price": 15,
      "stock_snapshot": 2
     }
    ]
@@ -1076,7 +1077,7 @@
    "slug": "tiger-skull",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYTKL-PO-ZOOM.jpg?v=1697708177",
@@ -1099,14 +1100,14 @@
      "size": "S",
      "sku_original": "MBYTKL-PO S-S",
      "sku_clean": "MBYTKL-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "XXL",
      "sku_original": "MBYTKL-PO XXL-XXL",
      "sku_clean": "MBYTKL-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     }
    ]
@@ -1118,7 +1119,7 @@
    "slug": "bend-it",
    "collection": "limited",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYBIT-PO-ZOOM.jpg?v=1697708364",
@@ -1146,14 +1147,14 @@
      "size": "XS",
      "sku_original": "MCYBIT-PO XS",
      "sku_clean": "MCYBIT-XS",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     },
     {
      "size": "XXL",
      "sku_original": "MCYBIT-PO XXL",
      "sku_clean": "MCYBIT-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     }
    ]
@@ -1165,7 +1166,7 @@
    "slug": "havana-high",
    "collection": "limited",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYHVH-PO-ZOOM.jpg?v=1697708351",
@@ -1188,21 +1189,21 @@
      "size": "XS",
      "sku_original": "MCYHVH-PO  XS-XS",
      "sku_clean": "MCYHVH-XS",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     },
     {
      "size": "S",
      "sku_original": "MCYHVH-PO  S-S",
      "sku_clean": "MCYHVH-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     },
     {
      "size": "XXL",
      "sku_original": "MCYHVH-PO  XXL-XXL",
      "sku_clean": "MCYHVH-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     }
    ]
@@ -1214,7 +1215,7 @@
    "slug": "melt",
    "collection": "limited",
    "status": "ACTIVE",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYMEL-PO-ZOOM.jpg?v=1697708368",
@@ -1242,21 +1243,21 @@
      "size": "XS",
      "sku_original": "MCYMEL-PO XS",
      "sku_clean": "MCYMEL-XS",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "S",
      "sku_original": "MCYMEL-PO S",
      "sku_clean": "MCYMEL-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 1
     },
     {
      "size": "XXL",
      "sku_original": "MCYMEL-PO XXL",
      "sku_clean": "MCYMEL-XXL",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 2
     }
    ]
@@ -1268,7 +1269,7 @@
    "slug": "sacred-skull",
    "collection": "limited",
    "status": "DRAFT",
-   "price": 18.0,
+   "price": 18,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYSRD-PO-ZOOM.jpg?v=1697708375",
@@ -1296,7 +1297,7 @@
      "size": "S",
      "sku_original": "MCYSRD-PO S",
      "sku_clean": "MCYSRD-S",
-     "price": 18.0,
+     "price": 18,
      "stock_snapshot": 0
     }
    ]
@@ -1308,7 +1309,7 @@
    "slug": "sunflower-grey",
    "collection": "limited",
    "status": "ACTIVE",
-   "price": 18.0,
+   "price": 18,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYSUG-PO-ZOOM.jpg?v=1697708379",
@@ -1331,7 +1332,7 @@
      "size": "XS",
      "sku_original": "MCYSUG-PO-XS",
      "sku_clean": "MCYSUG-XS",
-     "price": 18.0,
+     "price": 18,
      "stock_snapshot": 1
     }
    ]
@@ -1343,7 +1344,7 @@
    "slug": "motel-69",
    "collection": "limited",
    "status": "DRAFT",
-   "price": 18.0,
+   "price": 18,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYTEL-PO-ZOOM.jpg?v=1697708372",
@@ -1371,14 +1372,14 @@
      "size": "XS",
      "sku_original": "MCYTEL-PO-XS",
      "sku_clean": "MCYTEL-XS",
-     "price": 18.0,
+     "price": 18,
      "stock_snapshot": 0
     },
     {
      "size": "XXL",
      "sku_original": "MCYTEL-XXL",
      "sku_clean": "MCYTEL-XXL",
-     "price": 18.0,
+     "price": 18,
      "stock_snapshot": 1
     }
    ]
@@ -1390,7 +1391,7 @@
    "slug": "dystopia",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYDTP-PO-ZOOM.jpg?v=1710586815",
@@ -1418,28 +1419,28 @@
      "size": "S",
      "sku_original": "MBYDTP-PO S",
      "sku_clean": "MBYDTP-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MBYDTP-PO M",
      "sku_clean": "MBYDTP-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 5
     },
     {
      "size": "L",
      "sku_original": "MBYDTP-PO L",
      "sku_clean": "MBYDTP-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     },
     {
      "size": "XL",
      "sku_original": "MBYDTP-PO XL",
      "sku_clean": "MBYDTP-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     }
    ]
@@ -1451,7 +1452,7 @@
    "slug": "kabuki",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYKBK-PO-ZOOM.jpg?v=1724868232",
@@ -1479,28 +1480,28 @@
      "size": "S",
      "sku_original": "MBYKBK-PO S",
      "sku_clean": "MBYKBK-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "M",
      "sku_original": "MBYKBK-PO M",
      "sku_clean": "MBYKBK-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "L",
      "sku_original": "MBYKBK-PO L",
      "sku_clean": "MBYKBK-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "XL",
      "sku_original": "MBYKBK-PO XL",
      "sku_clean": "MBYKBK-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     }
    ]
@@ -1512,7 +1513,7 @@
    "slug": "mexicollage",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYMXG-PO-ZOOM.jpg?v=1724931205",
@@ -1540,28 +1541,28 @@
      "size": "S",
      "sku_original": "MBYMXG-PO S",
      "sku_clean": "MBYMXG-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MBYMXG-PO M",
      "sku_clean": "MBYMXG-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "L",
      "sku_original": "MBYMXG-PO L",
      "sku_clean": "MBYMXG-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYMXG-PO XL",
      "sku_clean": "MBYMXG-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     }
    ]
@@ -1573,7 +1574,7 @@
    "slug": "neko",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYNKO-PO-ZOOM.jpg?v=1724931794",
@@ -1601,21 +1602,21 @@
      "size": "M",
      "sku_original": "MBYNKO-PO M",
      "sku_clean": "MBYNKO-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "L",
      "sku_original": "MBYNKO-PO L",
      "sku_clean": "MBYNKO-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYNKO-PO XL",
      "sku_clean": "MBYNKO-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     }
    ]
@@ -1627,7 +1628,7 @@
    "slug": "tropical-vision",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYTVN-PO-ZOOM_52a9fdff-756a-4b0b-8953-bd3843b67008.jpg?v=1724932615",
@@ -1655,21 +1656,21 @@
      "size": "M",
      "sku_original": "MBYTVN-PO M",
      "sku_clean": "MBYTVN-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     },
     {
      "size": "L",
      "sku_original": "MBYTVN-PO L",
      "sku_clean": "MBYTVN-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYTVN-PO XL",
      "sku_clean": "MBYTVN-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     }
    ]
@@ -1681,7 +1682,7 @@
    "slug": "flamazing",
    "collection": "limited",
    "status": "ACTIVE",
-   "price": 27.0,
+   "price": 27,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYFMZ-PO-ZOOM.jpg?v=1724933303",
@@ -1709,21 +1710,21 @@
      "size": "S",
      "sku_original": "MCYFMZ-PO L",
      "sku_clean": "MCYFMZ-S",
-     "price": 27.0,
+     "price": 27,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MCYFMZ-PO M",
      "sku_clean": "MCYFMZ-M",
-     "price": 27.0,
+     "price": 27,
      "stock_snapshot": 1
     },
     {
      "size": "XXL",
      "sku_original": "MCYFMZ-PO XXL",
      "sku_clean": "MCYFMZ-XXL",
-     "price": 27.0,
+     "price": 27,
      "stock_snapshot": 0
     }
    ]
@@ -1735,7 +1736,7 @@
    "slug": "manga-cartoon",
    "collection": "limited",
    "status": "DRAFT",
-   "price": 27.0,
+   "price": 27,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYMCN-PO-ZOOM_a948d6d8-45f5-4556-a04a-443f4fb8b6b7.jpg?v=1725206738",
@@ -1763,7 +1764,7 @@
      "size": "S",
      "sku_original": "MCYMCN-PO S",
      "sku_clean": "MCYMCN-S",
-     "price": 27.0,
+     "price": 27,
      "stock_snapshot": 0
     }
    ]
@@ -1775,7 +1776,7 @@
    "slug": "celebrity",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYCLB-PO-ZOOM.jpg?v=1741860576",
@@ -1803,21 +1804,21 @@
      "size": "M",
      "sku_original": "MBYCLB-PO M",
      "sku_clean": "MBYCLB-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "L",
      "sku_original": "MBYCLB-PO L",
      "sku_clean": "MBYCLB-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYCLB-PO XL",
      "sku_clean": "MBYCLB-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     }
    ]
@@ -1829,7 +1830,7 @@
    "slug": "jaap-land",
    "collection": "core",
    "status": "DRAFT",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYJLD-PO-ZOOM.jpg?v=1741862614",
@@ -1857,7 +1858,7 @@
      "size": "M",
      "sku_original": "MBYJLD-PO M",
      "sku_clean": "MBYJLD-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     }
    ]
@@ -1869,7 +1870,7 @@
    "slug": "psycodelic",
    "collection": "core",
    "status": "DRAFT",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYPCS-PO-ZOOM.jpg?v=1741862854",
@@ -1897,7 +1898,7 @@
      "size": "M",
      "sku_original": "MBYPCS-PO M",
      "sku_clean": "MBYPCS-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     }
    ]
@@ -1909,7 +1910,7 @@
    "slug": "paradise",
    "collection": "core",
    "status": "DRAFT",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYPDS-PO-ZOOM.jpg?v=1741863042",
@@ -1937,21 +1938,21 @@
      "size": "M",
      "sku_original": "MBYPDS-PO M",
      "sku_clean": "MBYPDS-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "L",
      "sku_original": "MBYPDS-PO L",
      "sku_clean": "MBYPDS-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MBYPDS-PO XL",
      "sku_clean": "MBYPDS-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     }
    ]
@@ -1963,7 +1964,7 @@
    "slug": "papayeah",
    "collection": "core",
    "status": "DRAFT",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYPYH-PO-ZOOM.jpg?v=1741863199",
@@ -1991,7 +1992,7 @@
      "size": "M",
      "sku_original": "MBYPYH-PO M",
      "sku_clean": "MBYPYH-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     }
    ]
@@ -2003,7 +2004,7 @@
    "slug": "street-bunny",
    "collection": "limited",
    "status": "DRAFT",
-   "price": 23.0,
+   "price": 23,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYSBN-PO-ZOOM.jpg?v=1741863511",
@@ -2036,7 +2037,7 @@
      "size": "S",
      "sku_original": "MCYSBN-PO S",
      "sku_clean": "MCYSBN-S",
-     "price": 23.0,
+     "price": 23,
      "stock_snapshot": 0
     }
    ]
@@ -2048,7 +2049,7 @@
    "slug": "sweet-treats",
    "collection": "limited",
    "status": "DRAFT",
-   "price": 27.0,
+   "price": 27,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYSTR-PO-ZOOM_4c5d85bb-0c90-463b-a2d1-6088c580c78b.jpg?v=1741864157",
@@ -2081,28 +2082,28 @@
      "size": "S",
      "sku_original": "MCYSTR-PO L",
      "sku_clean": "MCYSTR-S",
-     "price": 27.0,
+     "price": 27,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MCYSTR-PO M",
      "sku_clean": "MCYSTR-M",
-     "price": 27.0,
+     "price": 27,
      "stock_snapshot": 0
     },
     {
      "size": "L",
      "sku_original": "MCYSTR-PO L",
      "sku_clean": "MCYSTR-L",
-     "price": 27.0,
+     "price": 27,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MCYSTR-PO XL",
      "sku_clean": "MCYSTR-XL",
-     "price": 27.0,
+     "price": 27,
      "stock_snapshot": 0
     }
    ]
@@ -2114,7 +2115,7 @@
    "slug": "devil-girl",
    "collection": "limited",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYDVG-PO-ZOOM_339e7191-30fa-42b6-bae0-0d71b809d980.jpg?v=1765188173",
@@ -2142,28 +2143,28 @@
      "size": "S",
      "sku_original": "MCYDVG-PO S",
      "sku_clean": "MCYDVG-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MCYDVG-PO M",
      "sku_clean": "MCYDVG-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "L",
      "sku_original": "MCYDVG-PO L",
      "sku_clean": "MCYDVG-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MCYDVG-PO XL",
      "sku_clean": "MCYDVG-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     }
    ]
@@ -2175,7 +2176,7 @@
    "slug": "night-life",
    "collection": "limited",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYNLF-PO-ZOOM.jpg?v=1765188422",
@@ -2203,21 +2204,21 @@
      "size": "M",
      "sku_original": "MCYNLF-PO M",
      "sku_clean": "MCYNLF-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "L",
      "sku_original": "MCYNLF-PO L",
      "sku_clean": "MCYNLF-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MCYNLF-PO XL",
      "sku_clean": "MCYNLF-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     }
    ]
@@ -2229,7 +2230,7 @@
    "slug": "crowded-sign",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYCDS-PO-ZOOM.jpg?v=1771521187",
@@ -2257,28 +2258,28 @@
      "size": "S",
      "sku_original": "MBYCDS-PO S-S",
      "sku_clean": "MBYCDS-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MBYCDS-PO M",
      "sku_clean": "MBYCDS-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 4
     },
     {
      "size": "L",
      "sku_original": "MBYCDS-PO L",
      "sku_clean": "MBYCDS-L",
-     "price": 33.0,
-     "stock_snapshot": 3
+     "price": 33,
+     "stock_snapshot": 1
     },
     {
      "size": "XL",
      "sku_original": "MBYCDS-PO XL",
      "sku_clean": "MBYCDS-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     }
    ]
@@ -2290,7 +2291,7 @@
    "slug": "flora-myriad",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYFMR-PO-01.jpg?v=1783441682",
@@ -2318,28 +2319,28 @@
      "size": "S",
      "sku_original": "MBYFMR-PO S",
      "sku_clean": "MBYFMR-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "M",
      "sku_original": "MBYFMR-PO M",
      "sku_clean": "MBYFMR-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 4
     },
     {
      "size": "L",
      "sku_original": "MBYFMR-PO L",
      "sku_clean": "MBYFMR-L",
-     "price": 33.0,
-     "stock_snapshot": 6
+     "price": 33,
+     "stock_snapshot": 5
     },
     {
      "size": "XL",
      "sku_original": "MBYFMR-PO XL",
      "sku_clean": "MBYFMR-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     }
    ]
@@ -2351,7 +2352,7 @@
    "slug": "high-skull",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYHGS-PO-ZOOM.jpg?v=1771521599",
@@ -2379,28 +2380,28 @@
      "size": "S",
      "sku_original": "MBYHGS-PO S",
      "sku_clean": "MBYHGS-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "M",
      "sku_original": "MBYHGS-PO M",
      "sku_clean": "MBYHGS-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 5
     },
     {
      "size": "L",
      "sku_original": "MBYHGS-PO L",
      "sku_clean": "MBYHGS-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     },
     {
      "size": "XL",
      "sku_original": "MBYHGS-PO XL",
      "sku_clean": "MBYHGS-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     }
    ]
@@ -2412,7 +2413,7 @@
    "slug": "kabukimono",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYKBM-PO-ZOOM.jpg?v=1771521718",
@@ -2440,28 +2441,28 @@
      "size": "S",
      "sku_original": "MBYKBM-PO S",
      "sku_clean": "MBYKBM-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "M",
      "sku_original": "MBYKBM-PO M",
      "sku_clean": "MBYKBM-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 6
     },
     {
      "size": "L",
      "sku_original": "MBYKBM-PO L",
      "sku_clean": "MBYKBM-L",
-     "price": 33.0,
-     "stock_snapshot": 3
+     "price": 33,
+     "stock_snapshot": 2
     },
     {
      "size": "XL",
      "sku_original": "MBYKBM-PO XL",
      "sku_clean": "MBYKBM-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     }
    ]
@@ -2473,7 +2474,7 @@
    "slug": "tropical-lah",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYTCL-PO-ZOOM.jpg?v=1783441801",
@@ -2501,28 +2502,28 @@
      "size": "S",
      "sku_original": "MBYTCL-PO S",
      "sku_clean": "MBYTCL-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "M",
      "sku_original": "MBYTCL-PO M",
      "sku_clean": "MBYTCL-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 6
     },
     {
      "size": "L",
      "sku_original": "MBYTCL-PO L",
      "sku_clean": "MBYTCL-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 6
     },
     {
      "size": "XL",
      "sku_original": "MBYTCL-PO XL",
      "sku_clean": "MBYTCL-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     }
    ]
@@ -2534,7 +2535,7 @@
    "slug": "vice",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYVCE-PO-ZOOM.jpg?v=1771521929",
@@ -2562,28 +2563,28 @@
      "size": "S",
      "sku_original": "MBYVCE-PO S",
      "sku_clean": "MBYVCE-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "M",
      "sku_original": "MBYVCE-PO M",
      "sku_clean": "MBYVCE-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     },
     {
      "size": "L",
      "sku_original": "MBYVCE-PO L",
      "sku_clean": "MBYVCE-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     },
     {
      "size": "XL",
      "sku_original": "MBYVCE-PO XL",
      "sku_clean": "MBYVCE-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     }
    ]
@@ -2595,7 +2596,7 @@
    "slug": "wayang-wanara",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYWWR-PO-ZOOM.jpg?v=1771522060",
@@ -2623,28 +2624,28 @@
      "size": "S",
      "sku_original": "MBYWWR-PO  S",
      "sku_clean": "MBYWWR-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MBYWWR-PO  M",
      "sku_clean": "MBYWWR-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 6
     },
     {
      "size": "L",
      "sku_original": "MBYWWR-PO  L",
      "sku_clean": "MBYWWR-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 4
     },
     {
      "size": "XL",
      "sku_original": "MBYWWR-PO  XL",
      "sku_clean": "MBYWWR-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     }
    ]
@@ -2656,7 +2657,7 @@
    "slug": "chinese-dragon",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYCDR-PO-ZOOM.jpg?v=1771522424",
@@ -2684,28 +2685,28 @@
      "size": "S",
      "sku_original": "MBYCDR-PO S",
      "sku_clean": "MBYCDR-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MBYCDR-PO M",
      "sku_clean": "MBYCDR-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 4
     },
     {
      "size": "L",
      "sku_original": "MBYCDR-PO L",
      "sku_clean": "MBYCDR-L",
-     "price": 33.0,
-     "stock_snapshot": 6
+     "price": 33,
+     "stock_snapshot": 5
     },
     {
      "size": "XL",
      "sku_original": "MBYCDR-PO XL",
      "sku_clean": "MBYCDR-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     }
    ]
@@ -2717,7 +2718,7 @@
    "slug": "korek",
    "collection": "core",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYKOR-PO-ZOOM.jpg?v=1771522474",
@@ -2745,28 +2746,28 @@
      "size": "S",
      "sku_original": "MBYKOR-PO S",
      "sku_clean": "MBYKOR-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 1
     },
     {
      "size": "M",
      "sku_original": "MBYKOR-PO M",
      "sku_clean": "MBYKOR-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 6
     },
     {
      "size": "L",
      "sku_original": "MBYKOR-PO L",
      "sku_clean": "MBYKOR-L",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 3
     },
     {
      "size": "XL",
      "sku_original": "MBYKOR-PO XL",
      "sku_clean": "MBYKOR-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     }
    ]
@@ -2778,7 +2779,7 @@
    "slug": "gummy-love",
    "collection": "limited",
    "status": "ACTIVE",
-   "price": 33.0,
+   "price": 33,
    "images": [
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MCYGMY-PO-ZOOM.jpg?v=1771522695",
@@ -2806,36 +2807,1072 @@
      "size": "S",
      "sku_original": "MCYGMY-PO S",
      "sku_clean": "MCYGMY-S",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
     },
     {
      "size": "M",
      "sku_original": "MCYGMY-PO M",
      "sku_clean": "MCYGMY-M",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 4
     },
     {
      "size": "L",
      "sku_original": "MCYGMY-PO L",
      "sku_clean": "MCYGMY-L",
-     "price": 33.0,
-     "stock_snapshot": 1
+     "price": 33,
+     "stock_snapshot": 0
     },
     {
      "size": "XL",
      "sku_original": "MCYGMY-PO XL",
      "sku_clean": "MCYGMY-XL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 2
     },
     {
      "size": "XXL",
      "sku_original": "MCYGMY-PO XXL",
      "sku_clean": "MCYGMY-XXL",
-     "price": 33.0,
+     "price": 33,
      "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781320618307",
+   "code": "MSYADD",
+   "name": "AROUND THE WORLD",
+   "slug": "hip-around-the-world",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYADD-PO-ZOOM.jpg?v=1697708256",
+     "file": "MSYADD-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYADD-PO-1.jpg?v=1697708256",
+     "file": "MSYADD-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYADD-PO-2.jpg?v=1695565436",
+     "file": "MSYADD-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYADD-S",
+     "sku_clean": "MSYADD-S",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYADD-PO M-M",
+     "sku_clean": "MSYADD-M",
+     "price": 25,
+     "stock_snapshot": 3
+    },
+    {
+     "size": "XXL",
+     "sku_original": "MSYADD-PO XXL-XXL",
+     "sku_clean": "MSYADD-XXL",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781326385475",
+   "code": "MSYBAL",
+   "name": "BALI",
+   "slug": "hip-bali",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYBAL-PO-ZOOM.jpg?v=1697708262",
+     "file": "MSYBAL-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYBAL-PO-01.jpg?v=1697708262",
+     "file": "MSYBAL-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYBAL-PO-02.jpg?v=1695565737",
+     "file": "MSYBAL-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYBAL-PO-S",
+     "sku_clean": "MSYBAL-S",
+     "price": 25,
+     "stock_snapshot": 3
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYBAL-PO-M",
+     "sku_clean": "MSYBAL-M",
+     "price": 25,
+     "stock_snapshot": 4
+    },
+    {
+     "size": "XXL",
+     "sku_original": "MSYBAL-PO-XXL",
+     "sku_clean": "MSYBAL-XXL",
+     "price": 25,
+     "stock_snapshot": 2
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781330448707",
+   "code": "MSYBET",
+   "name": "BALI PENDET",
+   "slug": "hip-bali-pendet",
+   "collection": "core",
+   "cut": "hip",
+   "status": "DRAFT",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYBET-PO-ZOOM.jpg?v=1697708265",
+     "file": "MSYBET-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYBET-PO-01.jpg?v=1697708265",
+     "file": "MSYBET-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYBET-PO-03.jpg?v=1695565981",
+     "file": "MSYBET-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "L",
+     "sku_original": "MSYBET-PO  L-L",
+     "sku_clean": "MSYBET-L",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781334085955",
+   "code": "MSYCOK",
+   "name": "CUBISM MOCK",
+   "slug": "hip-cubism-mock",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYCOK-PO-ZOOM.jpg?v=1697708269",
+     "file": "MSYCOK-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYCOK-PO-01.jpg?v=1697708269",
+     "file": "MSYCOK-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYCOK-PO-03.jpg?v=1695566308",
+     "file": "MSYCOK-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYCOK-PO  S-S",
+     "sku_clean": "MSYCOK-S",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYCOK-PO  M-M",
+     "sku_clean": "MSYCOK-M",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "XXL",
+     "sku_original": "MSYCOK-PO  XXL-XXL",
+     "sku_clean": "MSYCOK-XXL",
+     "price": 25,
+     "stock_snapshot": 2
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781338607939",
+   "code": "MSYDOF",
+   "name": "DAY OF THE DEAD",
+   "slug": "hip-day-of-the-dead",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYDOF-PO-ZOOM.jpg?v=1697708273",
+     "file": "MSYDOF-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYDOF-PO-01.jpg?v=1697708273",
+     "file": "MSYDOF-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYDOF-PO-02.jpg?v=1695566530",
+     "file": "MSYDOF-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYDOF-PO S",
+     "sku_clean": "MSYDOF-S",
+     "price": 25,
+     "stock_snapshot": 2
+    },
+    {
+     "size": "L",
+     "sku_original": "MSYDOF-PO L",
+     "sku_clean": "MSYDOF-L",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "XL",
+     "sku_original": "MSYDOF-PO XL",
+     "sku_clean": "MSYDOF-XL",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781342671171",
+   "code": "MSYEXS",
+   "name": "EXOTIC SEA",
+   "slug": "hip-exotic-sea",
+   "collection": "core",
+   "cut": "hip",
+   "status": "DRAFT",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYEXS-PO-ZOOM.jpg?v=1697708278",
+     "file": "MSYEXS-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYEXS-PO-01.jpg?v=1697708278",
+     "file": "MSYEXS-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYEXS-PO-02.jpg?v=1695566787",
+     "file": "MSYEXS-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYEXS-PO-03.jpg?v=1695566787",
+     "file": "MSYEXS-04.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYEXS-PO S",
+     "sku_clean": "MSYEXS-S",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYEXS-PO L",
+     "sku_clean": "MSYEXS-M",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "L",
+     "sku_original": "MSYEXS-PO L",
+     "sku_clean": "MSYEXS-L",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781349519683",
+   "code": "MSYHPE",
+   "name": "HIPPIE",
+   "slug": "hip-hippie",
+   "collection": "core",
+   "cut": "hip",
+   "status": "DRAFT",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYHPE-PO-ZOOM.jpg?v=1697708283",
+     "file": "MSYHPE-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYHPE-PO-01.jpg?v=1697708283",
+     "file": "MSYHPE-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYHPE-PO-02.jpg?v=1695567199",
+     "file": "MSYHPE-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYHPE-PO-03.jpg?v=1695567199",
+     "file": "MSYHPE-04.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYHPE-PO-04.jpg?v=1695567199",
+     "file": "MSYHPE-05.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "M",
+     "sku_original": "MSYHPE-PO M",
+     "sku_clean": "MSYHPE-M",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "XL",
+     "sku_original": "MSYHPE-PO XL",
+     "sku_clean": "MSYHPE-XL",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781353582915",
+   "code": "MSYHWT",
+   "name": "HAWAIIAN TIKI",
+   "slug": "hip-hawaiian-tiki",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYHWT-PO-ZOOM.jpg?v=1697708211",
+     "file": "MSYHWT-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYHWT-PO-01.jpg?v=1697708211",
+     "file": "MSYHWT-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYHWT-PO-02.jpg?v=1695567431",
+     "file": "MSYHWT-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYHWT-PO S",
+     "sku_clean": "MSYHWT-S",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781356794179",
+   "code": "MSYJPE",
+   "name": "JAPANESE VIEW",
+   "slug": "hip-japanese-view",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYJPE-PO-ZOOM.jpg?v=1697708219",
+     "file": "MSYJPE-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYJPE-PO-01.jpg?v=1697708219",
+     "file": "MSYJPE-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYJPE-PO-02.jpg?v=1695567697",
+     "file": "MSYJPE-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYJPE-PO M",
+     "sku_clean": "MSYJPE-S",
+     "price": 25,
+     "stock_snapshot": 2
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYJPE-PO M",
+     "sku_clean": "MSYJPE-M",
+     "price": 25,
+     "stock_snapshot": 2
+    },
+    {
+     "size": "XXL",
+     "sku_original": "MSYJPE-PO XXL",
+     "sku_clean": "MSYJPE-XXL",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781359350083",
+   "code": "MSYKRK",
+   "name": "KRAKEN",
+   "slug": "hip-kraken",
+   "collection": "core",
+   "cut": "hip",
+   "status": "DRAFT",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYKRK-PO-ZOOM.jpg?v=1697708226",
+     "file": "MSYKRK-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYKRK-PO-02.jpg?v=1697708226",
+     "file": "MSYKRK-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYKRK-PO-01.jpg?v=1695567970",
+     "file": "MSYKRK-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYKRK-PO-03.jpg?v=1695567968",
+     "file": "MSYKRK-04.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYKRK-PO L",
+     "sku_clean": "MSYKRK-S",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "L",
+     "sku_original": "MSYKRK-PO L",
+     "sku_clean": "MSYKRK-L",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781360988483",
+   "code": "MSYLTK",
+   "name": "LOTUS KOY",
+   "slug": "hip-lotus-koy",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYLTK-PO-ZOOM.jpg?v=1697708192",
+     "file": "MSYLTK-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYLTK-PO-01.jpg?v=1697708192",
+     "file": "MSYLTK-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYLTK-PO-02.jpg?v=1695568109",
+     "file": "MSYLTK-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYLTK-PO-03.jpg?v=1695568109",
+     "file": "MSYLTK-04.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYLTK-PO M",
+     "sku_clean": "MSYLTK-S",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYLTK-PO M",
+     "sku_clean": "MSYLTK-M",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "XL",
+     "sku_original": "MSYLTK-PO XL",
+     "sku_clean": "MSYLTK-XL",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781900153155",
+   "code": "MSYMAD",
+   "name": "MEX CARD",
+   "slug": "hip-mex-card",
+   "collection": "core",
+   "cut": "hip",
+   "status": "DRAFT",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMAD-PO-ZOOM.jpg?v=1697708207",
+     "file": "MSYMAD-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMAD-PO-01.jpg?v=1697708207",
+     "file": "MSYMAD-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMAD-PO-02.jpg?v=1695622300",
+     "file": "MSYMAD-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMAD-PO-03.jpg?v=1695622300",
+     "file": "MSYMAD-04.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYMAD-PO M",
+     "sku_clean": "MSYMAD-S",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYMAD-PO M",
+     "sku_clean": "MSYMAD-M",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "L",
+     "sku_original": "MSYMAD-PO L",
+     "sku_clean": "MSYMAD-L",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781902872899",
+   "code": "MSYMCQ",
+   "name": "MEXICAN SQUARE",
+   "slug": "hip-mexican-square",
+   "collection": "core",
+   "cut": "hip",
+   "status": "DRAFT",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMCQ-PO-ZOOM.jpg?v=1697708230",
+     "file": "MSYMCQ-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMCQ-PO-01.jpg?v=1697708230",
+     "file": "MSYMCQ-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMCQ-PO-02.jpg?v=1695622590",
+     "file": "MSYMCQ-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMCQ-PO-03.jpg?v=1695622590",
+     "file": "MSYMCQ-04.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "M",
+     "sku_original": "MSYMCQ-PO M",
+     "sku_clean": "MSYMCQ-M",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "L",
+     "sku_original": "MSYMCQ-PO M",
+     "sku_clean": "MSYMCQ-L",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781906248003",
+   "code": "MSYMDG",
+   "name": "MAYAN DRAGON",
+   "slug": "hip-mayan-dragon",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMDG-PO-ZOOM.jpg?v=1697708200",
+     "file": "MSYMDG-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMDG-PO-03.jpg?v=1697708200",
+     "file": "MSYMDG-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMDG-PO-02.jpg?v=1695622741",
+     "file": "MSYMDG-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMDG-PO-01.jpg?v=1695622741",
+     "file": "MSYMDG-04.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMDG-PO-04.jpg?v=1695622741",
+     "file": "MSYMDG-05.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYMDG-PO S",
+     "sku_clean": "MSYMDG-S",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYMDG-PO M",
+     "sku_clean": "MSYMDG-M",
+     "price": 25,
+     "stock_snapshot": 2
+    },
+    {
+     "size": "L",
+     "sku_original": "MSYMDG-PO S",
+     "sku_clean": "MSYMDG-L",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781909950787",
+   "code": "MSYMEX",
+   "name": "MEX",
+   "slug": "hip-mex",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMEX-PO-ZOOM.jpg?v=1697708204",
+     "file": "MSYMEX-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMEX-PO-01.jpg?v=1697708204",
+     "file": "MSYMEX-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMEX-PO-02.jpg?v=1695622935",
+     "file": "MSYMEX-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYMEX-PO-S",
+     "sku_clean": "MSYMEX-S",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYMEX-PO-M",
+     "sku_clean": "MSYMEX-M",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781912179011",
+   "code": "MSYMOF",
+   "name": "MOZAIK FIELD",
+   "slug": "hip-mozaik-field",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMOF-PO-ZOOM.jpg?v=1697708234",
+     "file": "MSYMOF-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMOF-PO-01.jpg?v=1697708234",
+     "file": "MSYMOF-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMOF-PO-02.jpg?v=1695623107",
+     "file": "MSYMOF-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "XXL",
+     "sku_original": "MSYMOF-PO-XXL",
+     "sku_clean": "MSYMOF-XXL",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781914505539",
+   "code": "MSYMPO",
+   "name": "MOVIE POSTER",
+   "slug": "hip-movie-poster",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMPO-PO-ZOOM.jpg?v=1697708215",
+     "file": "MSYMPO-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMPO-PO-02.jpg?v=1697708215",
+     "file": "MSYMPO-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMPO-PO-01.jpg?v=1695623284",
+     "file": "MSYMPO-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYMPO-PO-03.jpg?v=1695623284",
+     "file": "MSYMPO-04.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYMPO-PO S",
+     "sku_clean": "MSYMPO-S",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "XL",
+     "sku_original": "MSYMPO-PO S",
+     "sku_clean": "MSYMPO-XL",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781918437699",
+   "code": "MSYNSK",
+   "name": "NEWSPAPER",
+   "slug": "hip-newspaper",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYNSK-PO-ZOOM.jpg?v=1697708237",
+     "file": "MSYNSK-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYNSK-PO-01.jpg?v=1697708237",
+     "file": "MSYNSK-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYNSK-PO-02.jpg?v=1695623510",
+     "file": "MSYNSK-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYNSK-PO-S",
+     "sku_clean": "MSYNSK-S",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYNSK-PO-M",
+     "sku_clean": "MSYNSK-M",
+     "price": 25,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "XXL",
+     "sku_original": "MSYNSK-PO-XXL",
+     "sku_clean": "MSYNSK-XXL",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781922206019",
+   "code": "MSYOAT",
+   "name": "POP ART",
+   "slug": "hip-pop-art",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYOAT-PO-ZOOM.jpg?v=1697708245",
+     "file": "MSYOAT-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYOAT-PO-01.jpg?v=1697708245",
+     "file": "MSYOAT-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYOAT-PO-02.jpg?v=1695623857",
+     "file": "MSYOAT-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYOAT-PO S",
+     "sku_clean": "MSYOAT-S",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "XL",
+     "sku_original": "MSYOAT-PO S",
+     "sku_clean": "MSYOAT-XL",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781926924611",
+   "code": "MSYPOW",
+   "name": "KAPOW",
+   "slug": "hip-kapow",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYPOW-PO-ZOOM.jpg?v=1697708223",
+     "file": "MSYPOW-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYPOW-PO-1.jpg?v=1697708223",
+     "file": "MSYPOW-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYPOW-PO-2.jpg?v=1695624006",
+     "file": "MSYPOW-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "M",
+     "sku_original": "MSYPOW-PO-M",
+     "sku_clean": "MSYPOW-M",
+     "price": 25,
+     "stock_snapshot": 1
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781928661315",
+   "code": "MSYSDW",
+   "name": "SKULLMOND WHITE",
+   "slug": "hip-skullmond-white",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 25,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYSDW-PO-ZOOM.jpg?v=1697708252",
+     "file": "MSYSDW-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYSDW-PO-01.jpg?v=1697708252",
+     "file": "MSYSDW-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYSDW-PO-03.jpg?v=1695624143",
+     "file": "MSYSDW-03.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYSDW-PO S-S",
+     "sku_clean": "MSYSDW-S",
+     "price": 25,
+     "stock_snapshot": 1
+    },
+    {
+     "size": "XL",
+     "sku_original": "MSYSDW-PO XL-XL",
+     "sku_clean": "MSYSDW-XL",
+     "price": 25,
+     "stock_snapshot": 0
+    }
+   ]
+  },
+  {
+   "shopify_id": "8781930758467",
+   "code": "MSYSKO",
+   "name": "SKULL BLOOM",
+   "slug": "hip-skull-bloom",
+   "collection": "core",
+   "cut": "hip",
+   "status": "ACTIVE",
+   "price": 23,
+   "images": [
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYSKO-PO-ZOOM.jpg?v=1697708248",
+     "file": "MSYSKO-01.jpg",
+     "role": "main"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYSKO-PO-01.jpg?v=1697708248",
+     "file": "MSYSKO-02.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYSKO-PO-02.jpg?v=1695624300",
+     "file": "MSYSKO-03.jpg",
+     "role": "gallery"
+    },
+    {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MSYSKO-PO-03.jpg?v=1695624300",
+     "file": "MSYSKO-04.jpg",
+     "role": "gallery"
+    }
+   ],
+   "variants": [
+    {
+     "size": "S",
+     "sku_original": "MSYSKO-PO S",
+     "sku_clean": "MSYSKO-S",
+     "price": 23,
+     "stock_snapshot": 1
     }
    ]
   }
