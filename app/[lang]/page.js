@@ -2,6 +2,8 @@ import { getProducts } from "../../lib/catalog";
 import { getDict } from "../../lib/i18n";
 import ProductGrid from "../../components/ProductGrid";
 import BundleBar from "../../components/BundleBar";
+import Image from "next/image";
+import { IMG } from "../../lib/media";
 
 export async function generateMetadata({ params }) {
   const { lang } = await params;
@@ -24,7 +26,8 @@ export default async function Home({ params }) {
 
   return (
     <main>
-      <section className="hero">
+      <section className="hero hero2">
+        <div className="heroimg"><Image src={IMG.hero} alt="69SLAM box mikrofibra" fill priority sizes="100vw" /></div>
         <div className="wrap">
           <div>
             <span className="kicker">{t.kicker}</span>
@@ -38,7 +41,6 @@ export default async function Home({ params }) {
             <a className="cta" href="#shop">{t.cta_shop}</a>
             <a className="cta ghost" href="#tech">{t.cta_why}</a>
           </div>
-          <div className="heroart" style={{ backgroundImage: `url('${hero?.img}')` }} />
         </div>
       </section>
 
