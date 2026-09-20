@@ -402,3 +402,10 @@ footer.site a{color:#9a9a9a;}
 .pr-note{font-size:.74rem;color:var(--gray);margin-top:16px;max-width:900px;line-height:1.5;}
 @media(max-width:1000px){.pr-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.pr-grid{grid-template-columns:1fr;}}
+
+/* ===== Galerija "v akciji" na strani izdelka ===== */
+.pgal{padding-top:clamp(40px,6vw,80px);border-top:1px solid var(--line);margin-top:clamp(32px,5vw,64px);}
+.pgal + .previews{margin-top:clamp(28px,4vw,56px);}
+.pgal-strip{display:flex;gap:12px;overflow-x:auto;padding-bottom:14px;scroll-snap-type:x mandatory;scrollbar-width:thin;}
+.pgal-strip img{flex:none;height:clamp(300px,34vw,460px);width:auto;aspect-ratio:3/4;object-fit:cover;border-radius:12px;background:#f5f5f7;scroll-snap-align:start;}
+.pr-sum{font-size:.9rem;color:#0a0a0a;}
