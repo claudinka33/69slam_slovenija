@@ -78,6 +78,7 @@ export default async function ProductPage({ params }) {
               <>
                 <span className="old">{fmt(p.price)}</span>
                 <span className="rednow">{fmt(p.effPrice)}</span>
+                <span style={{ display: "block", fontSize: ".74rem", fontWeight: 500, color: "var(--gray)", marginTop: 4 }}>{t.omni}: {fmt(p.price)}</span>
               </>
             ) : (
               fmt(p.price)
