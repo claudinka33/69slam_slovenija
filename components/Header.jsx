@@ -37,7 +37,7 @@ export default function Header({ lang, t }) {
         <nav className="main">
           <Link href={`/${lang}#shop`}>{t.nav_shop}</Link>
           <Link href={`/${lang}#tech`}>{t.nav_why}</Link>
-          <Link href={`/${lang}#story`}>{t.nav_story}</Link>
+          <Link href={`/${lang}/zgodba`}>{t.nav_story}</Link>
           <Link href={`/${lang}#faq`}>{t.nav_ship}</Link>
         </nav>
         <div className="hspace" />
