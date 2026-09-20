@@ -6,6 +6,8 @@ export default function sitemap() {
   const now = new Date();
   const urls = LANGS.map((l) => ({ url: `${base}/${l}`, lastModified: now, priority: 1 }));
   for (const l of LANGS) urls.push({ url: `${base}/${l}/zgodba`, lastModified: now, priority: 0.7 });
+  for (const d of ["splosni-pogoji", "dostava-in-placilo", "vracila-in-odstop", "reklamacije", "zasebnost", "piskotki"])
+    urls.push({ url: `${base}/sl/info/${d}`, lastModified: now, priority: 0.3 });
   for (const p of getProducts())
     for (const l of LANGS)
       urls.push({ url: `${base}/${l}/p/${p.slug}`, lastModified: now, priority: 0.8 });
