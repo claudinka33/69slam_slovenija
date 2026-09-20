@@ -91,6 +91,27 @@ export default async function ProductPage({ params }) {
           <div className="feat">
             <span>{t.t2t}</span><span>{t.t1t}</span><span>{t.t3t}</span>
           </div>
+          <details className="sizeguide">
+            <summary>{lang === "en" ? "Which size fits me?" : "Katera velikost je zame?"}</summary>
+            <table>
+              <thead>
+                <tr>
+                  <th>{lang === "en" ? "Size" : "Velikost"}</th>
+                  <th>{lang === "en" ? "Waist (cm)" : "Pas (cm)"}</th>
+                  <th>{lang === "en" ? "Low waist (cm)" : "Nizek pas (cm)"}</th>
+                  <th>{lang === "en" ? "Jeans size" : "Št. hlač"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[["XS", "69–73", "71–76", "28"], ["S", "73–79", "76–81", "30"], ["M", "79–83", "81–86", "32"], ["L", "83–89", "86–91", "34"], ["XL", "89–93", "91–96", "36"], ["XXL", "93–99", "96–101", "38"]].map((r) => (
+                  <tr key={r[0]}><td><b>{r[0]}</b></td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            <p>{lang === "en"
+              ? "Waist: around the narrowest part of your waist. Low waist: around your natural waist, just above the hip bone – where the waistband sits. Official 69SLAM size guide."
+              : "Pas: obseg na najožjem delu pasu. Nizek pas: obseg tik nad kolkom – tam, kjer sedi elastika. Uradna tabela velikosti 69SLAM."}</p>
+          </details>
           <AddToCart code={p.code} t={t} />
           <ProductBundle code={p.code} lang={lang} />
           <p className="pdesc">{desc}</p>
