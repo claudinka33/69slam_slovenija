@@ -11,7 +11,7 @@ export async function generateMetadata({ params }) {
     description: t.sub,
     alternates: {
       canonical: `https://69slam.si/${lang}`,
-      languages: { sl: "https://69slam.si/sl", hr: "https://69slam.si/hr", en: "https://69slam.si/en" },
+      languages: { sl: "https://69slam.si/sl", en: "https://69slam.si/en" },
     },
   };
 }
