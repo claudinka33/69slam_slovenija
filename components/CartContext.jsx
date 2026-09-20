@@ -7,7 +7,7 @@ export const useCart = () => useContext(CartCtx);
 const BUNDLE_N = 3;
 const BUNDLE_OFF = 0.15;
 const FREE_FROM = 50;
-const SHIP = 3.5;
+const SHIP = 5;
 
 export function CartProvider({ children, products }) {
   const [cart, setCart] = useState([]); // {id(code), size, qty} | {bundle:true, items:[{id,size}], qty:1}
