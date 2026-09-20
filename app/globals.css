@@ -347,9 +347,9 @@ footer.site a{color:#9a9a9a;}
 }
 
 /* ===== Hero z lifestyle fotografijo ===== */
-.hero2{position:relative;background:#f3f1ee;min-height:min(80vh,780px);display:flex;align-items:center;}
+.hero2{position:relative;background:#f3f1ee;min-height:min(88vh,900px);display:flex;align-items:center;}
 .hero2 .heroimg{position:absolute;inset:0;}
-.hero2 .heroimg img{object-fit:cover;object-position:right center;}
+.hero2 .heroimg img{object-fit:cover;object-position:right 42%;} /* hero-fix-1 */
 .hero2::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.75) 32%,rgba(255,255,255,0) 58%);}
 .hero2 .wrap{position:relative;z-index:2;display:block;max-width:none;margin:0;width:100%;padding-top:48px;padding-bottom:48px;}
 .hero2 .wrap > div{max-width:620px;}
