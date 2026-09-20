@@ -61,6 +61,14 @@ export default function CheckoutForm({ lang, t }) {
           </label>
         ))}
 
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "16px 0 0", fontSize: ".84rem", textTransform: "none", letterSpacing: 0, fontWeight: 500, color: "#333", lineHeight: 1.5 }}>
+          <input type="checkbox" name="agree" required style={{ width: "auto", marginTop: 3, accentColor: "var(--accent)" }} />
+          <span>
+            {t.ck_agree1} <a href={`/${lang}/info/splosni-pogoji`} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>{t.ck_agree2}</a> {t.ck_agree3}{" "}
+            <a href={`/${lang}/info/zasebnost`} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>{t.ck_agree4}</a> {t.ck_agree5}{" "}
+            (<a href={`/${lang}/info/vracila-in-odstop`} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>info</a>).
+          </span>
+        </label>
         <button className="checkout-btn" style={{ marginTop: 14 }}>{t.ck_submit}</button>
         {msg && <div className="stubnote">{msg}</div>}
       </form>
