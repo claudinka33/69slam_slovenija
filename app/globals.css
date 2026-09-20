@@ -1,16 +1,16 @@
 :root{
-  --navy:#0A1C33;
-  --navy2:#122B4C;
-  --ink:#0E1E36;
-  --bg:#F3F6FA;
+  --navy:#0a0a0a;
+  --navy2:#1a1a1a;
+  --ink:#0a0a0a;
+  --bg:#f5f5f7;
   --card:#FFFFFF;
-  --accent:#1E8FFF;
-  --accent2:#00D4C2;
-  --gray:#5A6B82;
-  --line:#D7DFE9;
-  --red:#E23D3D;
+  --accent:#FF5A1F;
+  --accent2:#FF5A1F;
+  --gray:#6b6b6b;
+  --line:#e0e0e0;
+  --red:#e63946;
   --radius:14px;
-  --shadow:0 12px 32px rgba(10,28,51,.10);
+  --shadow:0 12px 32px rgba(0,0,0,.08);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -243,4 +243,75 @@ footer.site a:hover{color:var(--accent);}
   .grid{grid-template-columns:1fr 1fr;gap:12px;}
   .pname{font-size:.82rem;}
   .cta.ghost{margin-left:0;margin-top:10px;}
+}
+
+/* ===== Preobleka 2026-09: videz po vzoru 69slam.com (belo + crno + oranzna) ===== */
+body{background:#fff;color:#0a0a0a;}
+h1,h1 em,h2,.bundlebar h3,.tcard .big,.price,.spec b,.dhead h3,.bhead h3,.trow.total,.pdet .mprice,.logo{font-style:normal;}
+main .st-hero h1,main .st-hero h1 em,main .st-quote{font-style:normal;}
+h2{font-weight:800;}
+header.site{background:#fff;color:#0a0a0a;border-bottom:1px solid var(--line);}
+.topbar{background:#0a0a0a;color:#fff;text-transform:uppercase;letter-spacing:.1em;font-size:.68rem;}
+.hrow{position:relative;min-height:66px;}
+.logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#0a0a0a;}
+.logo img{filter:invert(1);height:30px !important;}
+.logo span,.logo .tld{color:var(--accent);}
+nav.main{margin-left:0;gap:20px;}
+nav.main a{color:#0a0a0a;font-weight:600;font-size:.76rem;letter-spacing:.1em;}
+nav.main a:hover{color:var(--accent);}
+.langs{border-color:var(--line);border-radius:50px;}
+.langs a{color:#6b6b6b;}
+.langs a.active{background:#0a0a0a;color:#fff;}
+.cartbtn{background:#0a0a0a;color:#fff;border-radius:50px;}
+.hero{background:#f5f5f7;color:#0a0a0a;}
+.hero p.sub{color:#444;}
+.kicker{color:var(--accent);}
+.kicker::before{background:var(--accent);}
+.spec{color:#6b6b6b;}
+.spec b{color:#0a0a0a;}
+.cta{box-shadow:none;border-radius:12px;letter-spacing:.08em;}
+.cta:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(255,90,31,.35);}
+.cta.ghost{border:2px solid #0a0a0a;color:#0a0a0a;}
+.cta.ghost:hover{background:#0a0a0a;border-color:#0a0a0a;color:#fff;box-shadow:none;}
+.heroart{transform:none;border:0;border-radius:16px;box-shadow:none;}
+.usp{color:#0a0a0a;font-weight:600;}
+.chip{border:1px solid var(--line);font-weight:600;letter-spacing:.06em;font-size:.76rem;}
+.pcard{background:transparent;border:0;border-radius:0;}
+.pcard:hover{transform:none;box-shadow:none;}
+.pimg{border-radius:6px;background-color:#f5f5f7;transition:opacity .15s;}
+.pcard:hover .pimg{opacity:.88;}
+.pinfo{padding:12px 2px 6px;}
+.pname{font-weight:600;font-size:.84rem;text-transform:uppercase;letter-spacing:.05em;}
+.pline{font-size:.68rem;font-weight:500;}
+.prow{padding-top:6px;}
+.price{font-size:.95rem;font-weight:700;}
+.badge{border-radius:50px;background:#0a0a0a;}
+.badge.ltd{background:var(--accent);color:#fff;}
+.bundlebar{background:#0a0a0a;border-radius:16px;}
+.bundlebar p{color:#bbb;}
+.tech{background:#0a0a0a;}
+.tcard{background:#141414;border-color:#2a2a2a;border-radius:16px;}
+.tcard p,.taud{color:#bbb;}
+.scols p{color:#333;}
+footer.site{background:#0a0a0a;color:#9a9a9a;}
+footer.site a{color:#9a9a9a;}
+.legal{border-top-color:#222;color:#777;}
+.overlay{background:rgba(0,0,0,.5);}
+.drawer{background:#fff;box-shadow:-16px 0 40px rgba(0,0,0,.2);}
+.checkout-btn{box-shadow:none;border-radius:12px;}
+.checkout-btn:disabled{background:#c9c9c9;}
+.upsell,.bslot.filled,.pay:has(input:checked){background:#fff3ee;}
+.bpick.active{box-shadow:0 0 0 2px rgba(255,90,31,.25);}
+.bcard{border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.35);}
+.bdot.done{color:#fff;}
+.pmain{border:0;border-radius:6px;background:#f5f5f7;}
+.pthumbs img{border:1px solid var(--line);border-radius:6px;}
+.pdesc{color:#333;}
+.feat span{border-radius:50px;}
+.ckform input{border:1px solid var(--line);border-radius:10px;}
+.ckcard{border-radius:16px;}
+.stock{color:#059669;}
+@media(max-width:900px){
+  .logo{position:static;transform:none;}
+  .hrow{min-height:0;}
 }
