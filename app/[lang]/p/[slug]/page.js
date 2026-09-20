@@ -16,7 +16,7 @@ export async function generateMetadata({ params }) {
   const t = getDict(lang);
   return {
     title: `${p.name} — ${t.shop_title} | 69SLAM.si`,
-    description: `69SLAM ${t.line_core} ${p.name}. ${t.sub}`,
+    description: `69SLAM ${p.cut === "hip" ? t.line_hip : t.line_core} ${p.name}. ${t.sub}`,
     alternates: {
       canonical: `https://69slam.si/${lang}/p/${p.slug}`,
       languages: Object.fromEntries(LANGS.map((l) => [l, `https://69slam.si/${l}/p/${p.slug}`])),
@@ -30,13 +30,13 @@ export default async function ProductPage({ params }) {
   const t = getDict(lang);
   const p = getProductBySlug(slug);
   if (!p) notFound();
-  const others = getProducts().filter((x) => x.collection === p.collection);
+  const others = getProducts().filter((x) => x.collection === p.collection && x.cut === p.cut);
   const desc = getSharedDescription();
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: `69SLAM Box mikrofibra — ${p.name}`,
+    name: `69SLAM ${p.cut === "hip" ? "Hip" : "Box"} mikrofibra — ${p.name}`,
     image: p.images.map((im) => im.src),
     description: desc,
     sku: p.code,
@@ -57,7 +57,7 @@ export default async function ProductPage({ params }) {
       <div className="pgrid">
         <div>
           <div className="pmain">
-            <img src={p.img} alt={`69SLAM box mikrofibra ${p.name}`} />
+            <img src={p.img} alt={`69SLAM ${p.cut} mikrofibra ${p.name}`} />
           </div>
           {p.images.length > 1 && (
             <div className="pthumbs">
@@ -70,7 +70,7 @@ export default async function ProductPage({ params }) {
         <div className="pdet">
           <h1>{p.name}</h1>
           <div className="mline">
-            69SLAM · {t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}
+            69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}
             {p.sale ? ` · ${t.sale_line}` : ""}
           </div>
           <div className="mprice">
