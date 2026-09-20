@@ -4,12 +4,13 @@ import Link from "next/link";
 import { fmt } from "../lib/i18n";
 
 const FILTERS = ["all", "core", "limited", "sale"];
-const CUTS = ["all", "box", "hip"];
 
 export default function ProductGrid({ products, lang, t }) {
   const [filter, setFilter] = useState("all");
   const [cut, setCut] = useState("all");
   const hasHip = products.some((p) => p.cut === "hip");
+  const sample = (c) => products.find((p) => p.cut === c && !p.sale && p.img) || products.find((p) => p.cut === c);
+  const count = (c) => products.filter((p) => p.cut === c).length;
 
   const list = products
     .filter((p) => (cut === "all" ? true : p.cut === cut))
@@ -23,20 +24,32 @@ export default function ProductGrid({ products, lang, t }) {
   return (
     <>
       {hasHip && (
-        <div className="filters">
-          {CUTS.map((c) => (
-            <button key={c} className={`chip ${cut === c ? "active" : ""}`} onClick={() => setCut(c)}>
-              {t[`cut_${c}`]}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="flabel">{t.cut_label}</div>
+          <div className="cuts">
+            {["box", "hip"].map((c) => (
+              <button key={c} className={`cutcard ${cut === c ? "active" : ""}`} onClick={() => setCut(cut === c ? "all" : c)}>
+                <span className="cutimg" style={{ backgroundImage: `url('${sample(c)?.img}')` }} />
+                <span className="cuttxt">
+                  <b>{t[`cut_${c}`]}{c === "box" && <em>{t.cut_top}</em>}</b>
+                  <span>{t[`cut_${c}_d`]}</span>
+                  <small>{count(c)} {t.rescount}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
-      <div className="filters" style={hasHip ? { marginTop: 10 } : undefined}>
+      <div className="flabel">{t.filter_label}</div>
+      <div className="filters">
         {FILTERS.map((f) => (
           <button key={f} className={`chip ${filter === f ? "active" : ""}`} onClick={() => setFilter(f)}>
             {t[`filter_${f}`]}
           </button>
         ))}
+        {cut !== "all" && (
+          <button className="chip" onClick={() => setCut("all")}>✕ {t.cut_all}</button>
+        )}
       </div>
       <div className="rescount">{list.length} {t.rescount}</div>
       <div className="grid">
