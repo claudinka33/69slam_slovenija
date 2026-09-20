@@ -360,3 +360,45 @@ footer.site a{color:#9a9a9a;}
   .hero2::after{display:none;}
   .hero2 .wrap{padding-top:28px;padding-bottom:40px;}
 }
+
+/* ===== Stran izdelka: paket, ocene ===== */
+.pstars{display:inline-block;margin:6px 0 2px;font-size:.84rem;color:#0a0a0a;text-decoration:none;letter-spacing:.02em;}
+.pstars,.pr-stars{color:var(--accent);}
+.pstars b{color:#0a0a0a;margin-left:4px;}
+.pbundle{margin:22px 0 8px;border:2px solid #0a0a0a;border-radius:16px;padding:20px;background:#fff;}
+.pb-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border-radius:50px;padding:4px 11px;}
+.pbundle h3{font-size:1.2rem;font-weight:900;text-transform:uppercase;letter-spacing:-.01em;margin:10px 0 4px;font-style:normal;}
+.pbundle p{font-size:.88rem;color:#444;margin-bottom:6px;}
+.pb-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 6px;}
+.pb-slot{aspect-ratio:1/1.05;border-radius:10px;border:2px dashed var(--line);background:#f5f5f7 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#b5b5b5;font-size:1.8rem;font-weight:300;}
+.pb-slot.on{border:2px solid var(--accent);cursor:pointer;}
+.pb-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:thin;}
+.pb-strip button{flex:none;width:72px;height:78px;border-radius:8px;border:2px solid transparent;background:#f5f5f7 center/cover no-repeat;cursor:pointer;padding:0;}
+.pb-strip button:hover{border-color:#0a0a0a;}
+.pb-strip button.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,90,31,.25);}
+.pb-note{font-size:.84rem;color:var(--gray);padding:8px 0 4px;}
+.pb-foot{display:flex;align-items:center;gap:14px;margin-top:10px;flex-wrap:wrap;}
+.pb-price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:150px;}
+.pb-price b{font-size:1.4rem;font-weight:900;}
+.pb-price .old{text-decoration:line-through;color:var(--gray);font-size:.95rem;}
+.pb-price small{color:#059669;font-weight:700;font-size:.78rem;}
+.pb-foot .checkout-btn{flex:1;min-width:200px;margin:0;}
+.othermore{margin-top:10px;}
+.othermore summary{cursor:pointer;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:10px 0;list-style:none;text-decoration:underline;}
+.othermore summary::-webkit-details-marker{display:none;}
+.othermore[open] summary{display:none;}
+.previews{padding:clamp(40px,6vw,80px) 0 clamp(48px,6vw,90px);border-top:1px solid var(--line);margin-top:clamp(32px,5vw,64px);}
+.pr-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
+.pr-head h2{font-size:clamp(1.4rem,3vw,2.2rem);}
+.pr-head a{font-size:.9rem;color:#0a0a0a;text-decoration:none;}
+.pr-head a:hover{text-decoration:underline;}
+.pr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.pr-card{background:#f5f5f7;border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:8px;}
+.pr-title{font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.01em;}
+.pr-card p{font-size:.95rem;line-height:1.6;color:#222;flex:1;}
+.pr-meta{display:flex;flex-direction:column;gap:2px;font-size:.84rem;font-weight:700;}
+.pr-meta em{font-style:normal;font-weight:600;color:#059669;font-size:.74rem;margin-left:8px;}
+.pr-meta small{font-weight:500;color:var(--gray);font-size:.74rem;}
+.pr-note{font-size:.74rem;color:var(--gray);margin-top:16px;max-width:900px;line-height:1.5;}
+@media(max-width:1000px){.pr-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.pr-grid{grid-template-columns:1fr;}}
