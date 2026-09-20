@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getProducts } from "../../../lib/catalog";
 import { LANGS } from "../../../lib/i18n";
+import { IMG } from "../../../lib/media";
 
 const STORY = {
   sl: {
@@ -76,24 +78,45 @@ const STORY = {
 };
 
 const CSS = `
-.st-hero{background:var(--navy);color:#fff;padding:72px 0 64px;}
-.st-hero .kicker{color:var(--accent2);font-weight:800;font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;}
-.st-hero h1{font-size:clamp(2.2rem,6vw,4.2rem);line-height:1.02;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;font-style:italic;margin-top:14px;}
-.st-hero h1 em{color:var(--accent);font-style:italic;display:block;}
-.st-body{background:#fff;}
-.st-body .wrap{max-width:820px;padding-top:56px;padding-bottom:24px;}
-.st-block{margin-bottom:44px;}
-.st-block h2{font-size:clamp(1.35rem,3vw,1.9rem);font-weight:900;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:14px;color:var(--navy);}
-.st-block p{font-size:1.08rem;line-height:1.75;color:var(--ink);margin-bottom:14px;}
-.st-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 52px;}
-.st-strip a{display:block;aspect-ratio:3/4;background-size:cover;background-position:center;border-radius:var(--radius);background-color:var(--bg);}
-.st-quote{font-size:clamp(1.5rem,4vw,2.4rem);font-weight:900;font-style:italic;text-transform:uppercase;line-height:1.1;color:var(--accent);margin:0 0 48px;letter-spacing:-.01em;}
-.st-end{background:var(--navy);color:#fff;padding:64px 0;}
-.st-end .wrap{max-width:820px;}
-.st-end h2{font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:900;text-transform:uppercase;margin-bottom:16px;}
-.st-end p{font-size:1.08rem;line-height:1.75;color:#C9D6E6;margin-bottom:14px;}
-.st-end .cta{margin-top:18px;}
-@media(max-width:640px){.st-strip{grid-template-columns:repeat(2,1fr);}.st-hero{padding:48px 0 44px;}}
+.s2-hero{position:relative;min-height:min(78vh,760px);display:flex;align-items:flex-end;color:#fff;background:#0a0a0a;overflow:hidden;}
+.s2-hero img{object-fit:cover;}
+.s2-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15) 0%,rgba(0,0,0,.72) 100%);}
+.s2-hero .in{position:relative;z-index:2;padding:0 clamp(16px,5vw,80px) clamp(36px,6vw,80px);max-width:1100px;}
+.s2-kick{color:var(--accent);font-weight:800;font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;}
+main .s2-hero h1{font-size:clamp(2.4rem,7vw,5.4rem);line-height:.98;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;font-style:normal;margin-top:14px;}
+main .s2-hero h1 em{display:block;color:var(--accent);font-style:normal;}
+.s2-intro{display:grid;grid-template-columns:1.2fr .8fr;gap:clamp(24px,5vw,80px);padding:clamp(48px,7vw,110px) clamp(16px,5vw,80px);max-width:1400px;margin:0 auto;align-items:center;}
+.s2-h{font-size:clamp(1.5rem,3.2vw,2.5rem);font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.05;margin-bottom:18px;font-style:normal;color:#0a0a0a;}
+.s2-p{font-size:clamp(1.02rem,1.3vw,1.18rem);line-height:1.75;color:#222;margin-bottom:14px;}
+.s2-quote{font-size:clamp(1.8rem,4.2vw,3.4rem);font-weight:900;text-transform:uppercase;line-height:1.02;letter-spacing:-.02em;color:var(--accent);border-left:6px solid var(--accent);padding-left:clamp(16px,2vw,28px);}
+.s2-loud{background:#0a0a0a;color:#fff;text-align:center;padding:clamp(56px,8vw,130px) clamp(16px,5vw,80px);}
+.s2-loud .big{font-size:clamp(3rem,12vw,10rem);font-weight:900;letter-spacing:-.03em;line-height:.9;text-transform:uppercase;}
+.s2-loud .big span{color:var(--accent);}
+.s2-loud p{max-width:760px;margin:22px auto 0;font-size:clamp(1.05rem,1.5vw,1.3rem);line-height:1.7;color:#d0d0d0;}
+.s2-loud p.strong{color:#fff;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-top:26px;}
+.s2-split{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;}
+.s2-split .pic{position:relative;min-height:clamp(320px,46vw,680px);background:#f5f5f7;}
+.s2-split .pic img{object-fit:cover;}
+.s2-split .txt{display:flex;flex-direction:column;justify-content:center;padding:clamp(36px,6vw,100px);}
+.s2-split.rev .pic{order:2;}
+.s2-crew{position:relative;min-height:clamp(360px,52vw,760px);background:#0a0a0a;}
+.s2-crew img{object-fit:cover;}
+.s2-card{position:relative;z-index:2;max-width:760px;margin:-90px auto 0;background:#fff;border-radius:20px;padding:clamp(24px,4vw,48px);box-shadow:0 20px 60px rgba(0,0,0,.12);}
+.s2-cardwrap{padding:0 16px clamp(48px,7vw,100px);}
+.s2-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(8px,1.2vw,18px);padding:0 clamp(16px,5vw,80px) clamp(48px,7vw,100px);}
+.s2-strip a{display:block;aspect-ratio:1/1.12;background-size:cover;background-position:center;border-radius:8px;background-color:#f5f5f7;transition:opacity .15s;}
+.s2-strip a:hover{opacity:.88;}
+.s2-end{background:#0a0a0a;color:#fff;text-align:center;padding:clamp(56px,8vw,120px) clamp(16px,5vw,80px);}
+.s2-end h2{font-size:clamp(1.8rem,4.4vw,3.4rem);font-weight:900;text-transform:uppercase;letter-spacing:-.02em;color:#fff;font-style:normal;margin-bottom:18px;}
+.s2-end p{max-width:720px;margin:0 auto 14px;font-size:clamp(1.02rem,1.3vw,1.18rem);line-height:1.75;color:#d0d0d0;}
+.s2-end .cta{margin-top:22px;}
+@media(max-width:860px){
+  .s2-intro{grid-template-columns:1fr;}
+  .s2-split{grid-template-columns:1fr;}
+  .s2-split.rev .pic{order:0;}
+  .s2-card{margin-top:-50px;}
+  .s2-strip{grid-template-columns:repeat(2,1fr);}
+}
 `;
 
 export function generateStaticParams() {
@@ -111,56 +134,76 @@ export async function generateMetadata({ params }) {
       canonical: `https://69slam.si/${lang}/${slug}`,
       languages: Object.fromEntries(LANGS.map((l) => [l, `https://69slam.si/${l}/${slug}`])),
     },
+    openGraph: { images: [IMG.crew] },
   };
+}
+
+function Block({ b }) {
+  return (
+    <>
+      <h2 className="s2-h">{b.h}</h2>
+      {b.p.map((t, i) => <p className="s2-p" key={i}>{t}</p>)}
+    </>
+  );
 }
 
 export default async function StoryPage({ params }) {
   const { lang } = await params;
   const s = STORY[lang] || STORY.sl;
+  const [q, loud, print, crew, pack] = s.blocks;
   const pics = getProducts().filter((p) => !p.sale && p.img).slice(0, 4);
 
   return (
     <main>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
-      <section className="st-hero">
-        <div className="wrap">
-          <span className="kicker">{s.kicker}</span>
+
+      <section className="s2-hero">
+        <Image src={IMG.rain} alt="Bali" fill priority sizes="100vw" />
+        <div className="in">
+          <span className="s2-kick">{s.kicker}</span>
           <h1>{s.h1a}<em>{s.h1b}</em></h1>
         </div>
       </section>
 
-      <section className="st-body">
-        <div className="wrap">
-          {s.blocks.slice(0, 2).map((b) => (
-            <div className="st-block" key={b.h}>
-              <h2>{b.h}</h2>
-              {b.p.map((t, i) => <p key={i}>{t}</p>)}
-            </div>
-          ))}
-
-          <div className="st-quote">{s.quote}</div>
-
-          <div className="st-strip">
-            {pics.map((p) => (
-              <Link key={p.code} href={`/${lang}/p/${p.slug}`} aria-label={p.name} style={{ backgroundImage: `url('${p.img}')` }} />
-            ))}
-          </div>
-
-          {s.blocks.slice(2).map((b) => (
-            <div className="st-block" key={b.h}>
-              <h2>{b.h}</h2>
-              {b.p.map((t, i) => <p key={i}>{t}</p>)}
-            </div>
-          ))}
-        </div>
+      <section className="s2-intro">
+        <div><Block b={q} /></div>
+        <div className="s2-quote">{s.quote}</div>
       </section>
 
-      <section className="st-end">
-        <div className="wrap">
-          <h2>{s.end_h}</h2>
-          {s.end_p.map((t, i) => <p key={i}>{t}</p>)}
-          <Link className="cta" href={`/${lang}#shop`}>{s.cta}</Link>
-        </div>
+      <section className="s2-loud">
+        <div className="big">Play <span>Loud</span></div>
+        <p>{loud.p[0]}</p>
+        <p className="strong">{loud.p[1]}</p>
+      </section>
+
+      <section className="s2-split">
+        <div className="pic"><Image src={IMG.studio} alt={print.h} fill sizes="(max-width:860px) 100vw, 50vw" /></div>
+        <div className="txt"><Block b={print} /></div>
+      </section>
+
+      <section className="s2-crew">
+        <Image src={IMG.crew} alt={crew.h} fill sizes="100vw" />
+      </section>
+      <div className="s2-cardwrap">
+        <div className="s2-card"><Block b={crew} /></div>
+      </div>
+
+      <section className="s2-split rev">
+        <div className="pic"><Image src={IMG.suitcase} alt={pack.h} fill sizes="(max-width:860px) 100vw, 50vw" /></div>
+        <div className="txt"><Block b={pack} /></div>
+      </section>
+
+      <div style={{ height: "clamp(48px,7vw,100px)" }} />
+      <div className="s2-strip">
+        {pics.map((p) => (
+          <Link key={p.code} href={`/${lang}/p/${p.slug}`} aria-label={p.name} style={{ backgroundImage: `url('${p.img}')` }} />
+        ))}
+      </div>
+
+      <section className="s2-end">
+        <h2>{s.end_h}</h2>
+        {s.end_p.map((t, i) => <p key={i}>{t}</p>)}
+        <Link className="cta" href={`/${lang}#shop`}>{s.cta}</Link>
       </section>
     </main>
   );
