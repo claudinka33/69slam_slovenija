@@ -83,6 +83,9 @@ export default async function Home({ params }) {
             <p>{t.story_p1}</p>
             <p>{t.story_p2}</p>
           </div>
+          <a className="cta" href={`/${lang}/zgodba`} style={{ marginTop: 24 }}>
+            {lang === "en" ? "Read the full story →" : "Preberi celo zgodbo →"}
+          </a>
         </div>
       </section>
     </main>
