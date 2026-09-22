@@ -430,3 +430,33 @@ footer.site a{color:#9a9a9a;}
 .sizeguide td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);}
 .sizeguide tbody tr:nth-child(even){background:#f5f5f7;}
 .sizeguide p{font-size:.76rem;color:var(--gray);line-height:1.5;margin-top:10px;}
+
+
+/* ===== Detajli kvalitete (DetailShots) ===== */
+.detail{margin-top:clamp(32px,5vw,56px);}
+.detail-head{margin-bottom:22px;}
+.detail-head h2{font-size:clamp(1.4rem,3vw,2.2rem);}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+.detail-card{margin:0;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;}
+.detail-card img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;transition:transform .4s ease;}
+.detail-card:hover img{transform:scale(1.04);}
+.detail-card figcaption{padding:18px 20px 22px;}
+.detail-card h3{margin:0 0 6px;font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;}
+.detail-card p{margin:0;font-size:.9rem;line-height:1.55;}
+/* temna varianta (sekcija Zakaj mikrofibra) */
+.detail-dark .detail-head h2{color:#fff;}
+.detail-dark .detail-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);}
+.detail-dark .detail-card h3{color:#fff;}
+.detail-dark .detail-card p{color:#AFC1D8;}
+/* svetla varianta (stran izdelka) */
+.detail-light{padding-top:clamp(40px,6vw,80px);border-top:1px solid var(--line);}
+.detail-light .detail-card{background:var(--card);border:1px solid var(--line);}
+.detail-light .detail-card h3{color:var(--navy);}
+.detail-light .detail-card p{color:var(--gray);}
+.detail-light + .pgal{border-top:0;margin-top:0;}
+/* mobilec: vodoravno drsenje */
+@media(max-width:760px){
+  .detail-grid{display:flex;overflow-x:auto;gap:12px;scroll-snap-type:x mandatory;padding-bottom:10px;scrollbar-width:thin;}
+  .detail-card{flex:0 0 78%;scroll-snap-align:start;}
+  .detail-card figcaption{padding:14px 16px 18px;}
+}

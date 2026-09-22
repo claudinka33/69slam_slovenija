@@ -4,6 +4,7 @@ import ProductGrid from "../../components/ProductGrid";
 import BundleBar from "../../components/BundleBar";
 import Image from "next/image";
 import { IMG } from "../../lib/media";
+import DetailShots from "../../components/DetailShots";
 
 export async function generateMetadata({ params }) {
   const { lang } = await params;
@@ -73,6 +74,7 @@ export default async function Home({ params }) {
             <div className="tcard"><div className="big">DRY</div><h3>{t.t1t}</h3><p>{t.t1p}</p></div>
             <div className="tcard"><div className="big">FRESH</div><h3>{t.t3t}</h3><p>{t.t3p}</p></div>
           </div>
+          <DetailShots lang={lang} tone="dark" />
           <p className="taud">{t.t_aud}</p>
         </div>
       </section>

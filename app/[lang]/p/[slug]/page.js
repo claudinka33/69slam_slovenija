@@ -6,6 +6,7 @@ import AddToCart from "../../../../components/AddToCart";
 import ProductBundle from "../../../../components/ProductBundle";
 import { REVIEWS, REVIEW_SUMMARY } from "../../../../lib/reviews";
 import { GALLERY } from "../../../../lib/media";
+import DetailShots from "../../../../components/DetailShots";
 
 export function generateStaticParams() {
   const products = getProducts();
@@ -137,6 +138,8 @@ export default async function ProductPage({ params }) {
           )}
         </div>
       </div>
+
+      <DetailShots lang={lang} tone="light" />
 
       <section className="pgal">
         <div className="pr-head">
