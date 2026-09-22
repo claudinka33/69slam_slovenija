@@ -9,12 +9,33 @@ const BUNDLE_OFF = 0.15;
 const FREE_FROM = 50;
 const SHIP = 5;
 
-export function CartProvider({ children, products }) {
+export function CartProvider({ children, products: initialProducts }) {
+  const [products, setProducts] = useState(initialProducts);
   const [cart, setCart] = useState([]); // {id(code), size, qty} | {bundle:true, items:[{id,size}], qty:1}
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bundleOpen, setBundleOpen] = useState(false);
   const [bundlePrefill, setBundlePrefill] = useState(null);
   const [toast, setToastMsg] = useState("");
+
+  // živa zaloga iz baze (če je na voljo) prepiše posnetek iz kataloga
+  useEffect(() => {
+    fetch("/api/stock")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d?.ok || !d.stock) return;
+        setProducts((ps) =>
+          ps.map((p) => {
+            const live = d.stock[p.code];
+            if (!live) return p;
+            const stock = { ...p.stock };
+            for (const s of Object.keys(stock)) if (s in live) stock[s] = live[s];
+            const totalStock = Object.values(stock).reduce((a, b) => a + b, 0);
+            return { ...p, stock, totalStock };
+          })
+        );
+      })
+      .catch(() => {});
+  }, []);
 
   // localStorage — obstojnost košarice (varno ovito)
   useEffect(() => {
@@ -109,6 +130,11 @@ export function CartProvider({ children, products }) {
     setDrawerOpen(false);
   }
 
+  function clearCart() {
+    setCart([]);
+    try { localStorage.removeItem("cart69"); } catch {}
+  }
+
   // izračuni
   const count = cart.reduce((a, c) => a + (c.bundle ? BUNDLE_N : c.qty), 0);
   const bundlePrice = (items) =>
@@ -123,7 +149,7 @@ export function CartProvider({ children, products }) {
   return (
     <CartCtx.Provider
       value={{
-        products, cart, byId, addItem, chQty, count, subtotal, shipping,
+        products, cart, byId, addItem, chQty, clearCart, count, subtotal, shipping,
         bundlePrice, singles, usedInCart,
         drawerOpen, setDrawerOpen,
         bundleOpen, setBundleOpen, openBundle, bundlePrefill, addBundle,

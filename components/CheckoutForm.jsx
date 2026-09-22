@@ -6,22 +6,55 @@ import { fmt } from "../lib/i18n";
 const COD_FEE = 1.5;
 
 export default function CheckoutForm({ lang, t }) {
-  const { cart, byId, subtotal, shipping, bundlePrice } = useCart();
+  const { cart, byId, subtotal, shipping, bundlePrice, clearCart } = useCart();
   const [pay, setPay] = useState("card");
   const [msg, setMsg] = useState("");
+  const [sending, setSending] = useState(false);
+  const [success, setSuccess] = useState(null); // številka naročila
   const codFee = pay === "cod" ? COD_FEE : 0;
   const total = subtotal + shipping + codFee;
 
   async function submit(e) {
     e.preventDefault();
+    if (sending) return;
+    setSending(true);
+    setMsg("");
     const data = Object.fromEntries(new FormData(e.target));
-    const res = await fetch("/api/order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customer: data, payment: pay, cart, lang }),
-    });
-    const out = await res.json();
-    setMsg(out.message || t.ck_stub);
+    try {
+      const res = await fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customer: data, payment: pay, cart, lang }),
+      });
+      const out = await res.json();
+      if (out.ok && out.number) {
+        setSuccess(out.number);
+        clearCart();
+      } else {
+        setMsg(out.message || t.ck_stub);
+      }
+    } catch {
+      setMsg(t.ck_stub);
+    }
+    setSending(false);
+  }
+
+  if (success) {
+    return (
+      <div className="ckcard" style={{ maxWidth: 560, marginTop: 24, textAlign: "center", padding: 40 }}>
+        <div style={{ fontSize: "3rem" }}>✅</div>
+        <h3 style={{ margin: "10px 0 6px", fontSize: "1.4rem" }}>
+          {lang === "hr" ? "Narudžba" : lang === "en" ? "Order" : "Naročilo"} #{success}
+        </h3>
+        <p style={{ color: "var(--gray)" }}>
+          {lang === "hr"
+            ? "Hvala na kupnji! Detalje smo zabilježili — potvrda slijedi na e-mail."
+            : lang === "en"
+            ? "Thank you! Your order is recorded — a confirmation will follow by e-mail."
+            : "Hvala za nakup! Naročilo je zabeleženo — potrditev sledi na e-mail."}
+        </p>
+      </div>
+    );
   }
 
   if (cart.length === 0) return <div className="empty">{t.cart_empty}</div>;
@@ -69,7 +102,9 @@ export default function CheckoutForm({ lang, t }) {
             (<a href={`/${lang}/info/vracila-in-odstop`} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>info</a>).
           </span>
         </label>
-        <button className="checkout-btn" style={{ marginTop: 14 }}>{t.ck_submit}</button>
+        <button className="checkout-btn" style={{ marginTop: 14 }} disabled={sending}>
+          {sending ? "…" : t.ck_submit}
+        </button>
         {msg && <div className="stubnote">{msg}</div>}
       </form>
 

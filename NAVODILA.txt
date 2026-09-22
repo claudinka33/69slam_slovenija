@@ -1,0 +1,39 @@
+BAZA + NAROCILA + ADMIN — NAVODILA (10 minut)
+
+=== 1. NALOZI DATOTEKE V GITHUB ===
+1. Odpri repozitorij claudinka33/69slam_slovenija
+2. Add file -> Upload files
+3. Iz tega paketa povleci v okno VSE: mape app, components, lib
+   ter datoteke middleware.js, package.json, package-lock.json
+4. Commit changes
+(Vercel bo naredil nov deploy - pocakaj zeleno kljukico.)
+
+=== 2. USTVARI BAZO (samo klikanje) ===
+1. vercel.com -> tvoj projekt 69slam-slovenija
+2. Zavihek STORAGE -> Create Database -> izberi NEON (Postgres)
+3. Ime pusti predlagano, regija: Frankfurt (eu-central) -> Create
+4. Ko vprasa "Connect to project" -> izberi 69slam-slovenija -> Connect
+   (s tem se DATABASE_URL sam nastavi v projekt)
+
+=== 3. NASTAVI ADMIN GESLO ===
+1. Projekt -> Settings -> Environment Variables
+2. Add: Name = ADMIN_PASSWORD ; Value = tvoje mocno geslo -> Save
+
+=== 4. REDEPLOY ===
+Deployments -> pri zadnjem deployu klikni ... -> Redeploy
+(da nova nastavitev in baza prideta v aplikacijo)
+
+=== 5. NAPOLNI BAZO ===
+1. Odpri  https://TVOJA-STRAN.vercel.app/admin
+2. Prijavi se s svojim ADMIN_PASSWORD geslom
+3. Klikni gumb "Uvozi katalog v bazo"  (uvozi 56 izdelkov + zalogo)
+
+=== 6. PREIZKUS ===
+1. V trgovini daj nekaj v kosarico in oddaj testno narocilo
+2. V /admin -> Narocila se pojavi narocilo st. #1001
+3. V /admin -> Zaloga vidis, da se je zaloga odstela
+4. Testno narocilo lahko das na status "Preklicano" - zaloga se vrne
+
+KAJ ZDAJ DELUJE: prava narocila v bazi, samodejno odstevanje zaloge,
+ziva zaloga na strani, admin z narocili in zalogo (+/- popravki).
+NASLEDNJI KORAK: Stripe placila + predracun UPN + e-maili (Resend).
