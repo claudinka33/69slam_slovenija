@@ -28,7 +28,7 @@ export default async function Home({ params }) {
   return (
     <main>
       <section className="hero hero2">
-        <div className="heroimg"><Image src={IMG.hero} alt="69SLAM box mikrofibra" fill priority sizes="100vw" /></div>
+        <div className="heroimg"><Image src="/img/hero.jpg" alt="69SLAM box mikrofibra – spodnjice od blizu" fill priority sizes="100vw" /></div>
         <div className="wrap">
           <div>
             <span className="kicker">{t.kicker}</span>
