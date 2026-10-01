@@ -16,10 +16,10 @@ const sortSizes = (list) => {
   const rank = (x) => { const i = STD.indexOf(x); if (i > -1) return i; const n = parseInt(x, 10); return Number.isFinite(n) ? 100 + n : 1000; };
   return [...list].sort((a, b) => rank(a) - rank(b) || String(a).localeCompare(String(b)));
 };
-const GROUP_LABEL = { boksarice: "Boksarice", kopalke: "Kopalke", oblacila: "Oblačila", obutev: "Obutev", dodatki: "Dodatki", perilo: "Spodnje perilo" };
+const GROUP_LABEL = { boksarice: "Boksarice", kopalke: "Kopalke", oblacila: "Oblačila", obutev: "Obutev", dodatki: "Dodatki", perilo: "Spodnje perilo", embalaza: "Embalaža in POS" };
 const GENDER_LABEL = { moski: "Moški", zenske: "Ženske", otroci: "Otroci" };
 const groupKey = (p) => (p.gender === "moski" ? p.group : p.gender);
-const GROUP_ORDER = ["boksarice", "kopalke", "oblacila", "obutev", "dodatki", "zenske", "otroci"];
+const GROUP_ORDER = ["boksarice", "kopalke", "oblacila", "obutev", "dodatki", "zenske", "otroci", "embalaza"];
 const groupName = (k) => GROUP_LABEL[k] || GENDER_LABEL[k] || k;
 const REASONS = { prejem: "Prejem blaga", inventura: "Inventura", rocno: "Ročno" };
 const onum = (o) => (o.source === "shopify" ? `S#${o.number}` : `#${o.number}`);
@@ -425,6 +425,7 @@ function Stock({ stock, reload }) {
     { id: "ost", lbl: "Ostalo moško", fn: (p) => p.gender === "moski" && !["boksarice", "kopalke"].includes(p.group) },
     { id: "zen", lbl: "Ženske −50 %", fn: (p) => p.gender === "zenske" },
     { id: "otr", lbl: "Otroci −50 %", fn: (p) => p.gender === "otroci" },
+    { id: "off", lbl: "Ni na spletu (brez slik)", fn: (p) => !p.active },
   ];
   const list = useMemo(() => {
     const fn = FILTERS.find((x) => x.id === f).fn;
@@ -490,7 +491,7 @@ function Stock({ stock, reload }) {
                     <Thumb src={p.img} sm />
                     <div>
                       <div className="strong">{p.name}</div>
-                      <div className="muted">{p.code}{p.type ? ` · ${p.type}` : ""}{p.collection === "limited" ? " · limited" : ""}{!p.active ? " · neaktiven" : ""}</div>
+                      <div className="muted">{p.code}{p.type ? ` · ${p.type}` : ""}{p.collection === "limited" ? " · limited" : ""}{!p.active ? " · ni na spletu" : ""}</div>
                     </div>
                   </div>
                 </td>
