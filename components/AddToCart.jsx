@@ -19,7 +19,7 @@ export default function AddToCart({ code, t }) {
           const has = s in p.stock;
           const avail = has ? (p.stock[s] || 0) - usedInCart(p.code, s) : 0;
           if (!has || (p.stock[s] || 0) === 0)
-            return <div className="size out" key={s}>{s}</div>;
+            return null; // velikosti, ki jih ni na zalogi, ne prikazujemo
           return (
             <div key={s}
               className={`size ${size === s ? "active" : ""} ${avail <= 0 ? "out" : ""}`}

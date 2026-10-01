@@ -161,6 +161,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
                   ) : (
                     <span className="price">{fmt(p.price)}</span>
                   )}
+                  <span className="psizes">{(p.sizes || []).filter((s) => (p.stock?.[s] || 0) > 0).join(" ")}</span>
                 </div>
               </div>
             </Link>

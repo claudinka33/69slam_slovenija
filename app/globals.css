@@ -518,3 +518,6 @@ nav.main a.nav-out{color:var(--red);font-weight:800;}
   .ppage .pthumbs img{width:64px;height:64px;}
   .pgal-nav{width:34px;height:34px;font-size:22px;}
 }
+
+/* velikosti na zalogi na kartici */
+.psizes{font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--gray);text-align:right;margin-left:10px;}
