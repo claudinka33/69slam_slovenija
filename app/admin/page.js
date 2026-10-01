@@ -630,8 +630,11 @@ function Customers({ reloadOrders }) {
   const [f, setF] = useState("kupci");
   const [imp, setImp] = useState(null); // { running, label, msg, ok }
 
+  const [loadErr, setLoadErr] = useState("");
   const load = useCallback(async () => {
-    const d = await getJSON("/api/admin/customers");
+    const r = await fetch("/api/admin/customers").catch(() => null);
+    const d = r ? await r.json().catch(() => null) : null;
+    setLoadErr(!r || !r.ok || !d?.ok ? (d?.message || (d?.nodb ? "Baza ni povezana." : `Strank ni bilo mogoče naložiti (napaka ${r?.status || "povezave"}).`)) : "");
     setList(d?.customers || []);
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -775,6 +778,7 @@ function Customers({ reloadOrders }) {
         </div>
       </div>
       {imp && !imp.running && <div className={`adm-note ${imp.ok ? "ok" : "err"}`}>{imp.msg}</div>}
+      {loadErr && <div className="adm-note err">⚠️ {loadErr}</div>}
       <div className="adm-bar">
         <div className="adm-chips">
           {[["kupci", "Kupci"], ["ret", "↺ Vračajoče"], ["sub", "Prijavljeni na novice"], ["vse", "Vsi kontakti"]].map(([k, l]) => (
@@ -788,7 +792,7 @@ function Customers({ reloadOrders }) {
           <thead><tr><th>Stranka</th><th className="r">Naročila</th><th className="r">Skupaj</th><th>Zadnji nakup</th><th>Mailing</th></tr></thead>
           <tbody>
             {list === null ? <tr><td colSpan={5} className="adm-empty">Nalagam …</td></tr> :
-             !shown.length ? <tr><td colSpan={5} className="adm-empty">{list.length ? "Ni zadetkov." : "Še ni strank — pojavijo se ob prvem naročilu ali po uvozu iz Shopifyja."}</td></tr> :
+             !shown.length ? <tr><td colSpan={5} className="adm-empty">{list.length ? "Ni zadetkov." : "Še ni strank. Nova trgovina še nima naročil — naloži Shopify izvoz strank in naročil z gumboma zgoraj (1 in 2)."}</td></tr> :
              shown.map((c) => (
               <tr key={c.email}>
                 <td>
