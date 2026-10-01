@@ -568,8 +568,9 @@ function ArticlePanel({ sp, onClose, onStock, onSaved }) {
     setD(x);
     if (x?.ok) {
       const e = x.edit || {};
-      setF({ name: e.name ?? "", type: e.type_sl ?? "", description: e.description ?? "",
-        price: e.price_cents != null ? (e.price_cents / 100).toFixed(2).replace(".", ",") : "",
+      const pr = x.product;
+      setF({ name: e.name ?? pr.name ?? "", type: e.type_sl ?? pr.type ?? "", description: e.description ?? pr.defaultDescription ?? "",
+        price: (e.price_cents != null ? e.price_cents / 100 : pr.price).toFixed(2).replace(".", ","),
         published: e.published ?? null });
       setImgs(x.images || []);
     }
@@ -654,10 +655,10 @@ function ArticlePanel({ sp, onClose, onStock, onSaved }) {
               {P.cost_cents != null && <div className="muted" style={{ marginTop: 6 }}>Nabavna brez DDV: {eur(P.cost_cents)}</div>}</div>
             <div className="adm-field"><label>Opis</label>
               <textarea className="adm-ta" rows={6} value={f.description} onChange={set("description")} placeholder={P.defaultDescription} />
-              <div className="muted" style={{ marginTop: 6 }}>Prazno = privzeti opis (siv tekst zgoraj).</div></div>
+              <div className="muted" style={{ marginTop: 6 }}>Ta opis se pokaže na strani artikla. Če ga izbrišeš, se uporabi privzeti opis.</div></div>
             <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
               <button className="adm-btn pri" onClick={save} disabled={busy}>{busy ? "Shranjujem …" : "💾 Shrani"}</button>
-              <span className="muted" style={{ alignSelf: "center" }}>Prazna polja = ostane kot zdaj.</span>
+              <span className="muted" style={{ alignSelf: "center" }}>Sprememba je na spletu v nekaj sekundah.</span>
             </div>
 
             <div className="adm-sec">Slike <span className="muted" style={{ fontWeight: 500, textTransform: "none" }}>· prva je glavna</span></div>
