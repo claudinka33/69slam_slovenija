@@ -37,3 +37,21 @@ for (const asset of ASSETS) {
     console.warn(`[prepare-assets] PRESKOCENO ${asset.out}: ${err.message}`);
   }
 }
+
+// Slike artiklov iz baze (Vercel Blob, naložene iz OneDriva) → data/db-images.json
+// Fail-soft: brez baze ostane prazna datoteka in trgovina deluje kot prej.
+try {
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  let map = {};
+  if (url) {
+    const { neon } = await import("@neondatabase/serverless");
+    const sql = neon(url);
+    const rows = await sql`SELECT code, url FROM product_images ORDER BY code, pos`;
+    for (const r of rows) (map[r.code] = map[r.code] || []).push(r.url);
+  }
+  await writeFile("data/db-images.json", JSON.stringify(map));
+  console.log(`[prepare-assets] OK  data/db-images.json (${Object.keys(map).length} artiklov)`);
+} catch (err) {
+  await writeFile("data/db-images.json", "{}").catch(() => {});
+  console.warn(`[prepare-assets] slike iz baze PRESKOCENO: ${err.message}`);
+}

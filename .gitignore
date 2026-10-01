@@ -7,3 +7,4 @@ out/
 public/img/products/*.jpg
 public/logo.png
 app/icon.png
+data/db-images.json
