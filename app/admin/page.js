@@ -1421,7 +1421,88 @@ function ReceiptForm({ form, setForm, variants, costs, suppliers, onSaved }) {
 }
 
 /* =========================== CENIK & RVC =========================== */
+/* ---------- Čisti RVC od prodaje ---------- */
+const GRP_RVC = { boksarice: "Moške boksarice", kopalke: "Moške kopalke", oblacila: "Moška oblačila", obutev: "Obutev", dodatki: "Dodatki", zenske: "Ženske", otroci: "Otroci", embalaza: "Embalaža", drugo: "Drugo", neznano: "Neznano (stari SKU)" };
+const MON = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"];
+function SalesRvc() {
+  const iso = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const now = new Date();
+  const PER = [
+    { id: "m", lbl: "Ta mesec", f: () => [iso(new Date(now.getFullYear(), now.getMonth(), 1)), iso(now)] },
+    { id: "pm", lbl: "Prejšnji mesec", f: () => [iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)), iso(new Date(now.getFullYear(), now.getMonth(), 0))] },
+    { id: "y", lbl: "Letos", f: () => [`${now.getFullYear()}-01-01`, iso(now)] },
+    { id: "ly", lbl: "Lani", f: () => [`${now.getFullYear() - 1}-01-01`, `${now.getFullYear() - 1}-12-31`] },
+    { id: "12", lbl: "Zadnjih 12 mesecev", f: () => [iso(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate() + 1)), iso(now)] },
+    { id: "all", lbl: "Vse", f: () => ["2000-01-01", iso(now)] },
+  ];
+  const [per, setPer] = useState("y");
+  const [range, setRange] = useState(PER[2].f());
+  const [d, setD] = useState(null);
+  useEffect(() => {
+    let live = true; setD(null);
+    getJSON(`/api/admin/rvc?from=${range[0]}&to=${range[1]}`).then((x) => live && setD(x || { ok: false }));
+    return () => { live = false; };
+  }, [range]);
+  const pick = (p) => { setPer(p.id); setRange(p.f()); };
+  const t = d?.total;
+  const pct = (x) => (x.net - (x.missNet || 0) > 0 ? `${Math.round((x.rvc / (x.net - (x.missNet || 0))) * 100)} %` : "—");
+  const ymL = (ym) => { const [y, m] = ym.split("-"); return `${MON[+m - 1]} ${y}`; };
+  async function exportXlsx() {
+    if (!d?.ok) return;
+    const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
+    const row = (x) => ({ "Kosov": x.qty, "Prodaja z DDV": x.gross / 100, "Prodaja brez DDV": x.net / 100, "Nabavna": x.cost / 100, "Čisti RVC": x.rvc / 100 });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(d.months.map((m) => ({ Mesec: ymL(m.ym), "Naročila": m.orders, ...row(m) }))), "Po mesecih");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(d.groups.map((g) => ({ Skupina: GRP_RVC[g.g] || g.g, ...row(g) }))), "Po skupinah");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(d.articles.map((a) => ({ "Šifra": a.code, Artikel: a.name, ...row(a) }))), "Artikli");
+    XLSX.writeFile(wb, `rvc-prodaja-${range[0]}-${range[1]}.xlsx`);
+  }
+  return (
+    <>
+      <div className="adm-bar">
+        <div className="adm-chips">{PER.map((p) => <button key={p.id} className={per === p.id ? "on" : ""} onClick={() => pick(p)}>{p.lbl}</button>)}</div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <input type="date" className="adm-inv-in" style={{ width: 150 }} value={range[0]} onChange={(e) => { setPer("c"); setRange([e.target.value, range[1]]); }} />
+          <span className="muted">–</span>
+          <input type="date" className="adm-inv-in" style={{ width: 150 }} value={range[1]} onChange={(e) => { setPer("c"); setRange([range[0], e.target.value]); }} />
+          <button className="adm-btn" onClick={exportXlsx} disabled={!d?.ok}>⬇ Excel</button>
+        </div>
+      </div>
+      {d && !d.ok && <div className="adm-note err">{d.message || "Napaka pri nalaganju."}</div>}
+      <div className="adm-stats">
+        <div className="adm-card adm-stat"><div className="k">Prodaja brez DDV</div><div className="v">{t ? eur(t.net) : "…"}</div><div className="d">{t ? `${t.orders} naročil · ${t.qty} kosov · z DDV ${eur(t.gross)}` : " "}</div></div>
+        <div className="adm-card adm-stat"><div className="k">Nabavna vrednost prodanega</div><div className="v">{t ? eur(t.cost) : "…"}</div><div className="d">brez DDV</div></div>
+        <div className="adm-card adm-stat"><div className="k">Čisti RVC</div><div className="v" style={{ color: "var(--a-green)" }}>{t ? eur(t.rvc) : "…"}</div><div className="d">prodaja brez DDV − nabavna</div></div>
+        <div className="adm-card adm-stat"><div className="k">Marža</div><div className="v">{t ? pct(t) : "…"}</div><div className="d">{t ? (t.missQty ? `${t.missQty} kosov brez nabavne cene ni šteto` : "vsi prodani kosi imajo nabavno") : " "}</div></div>
+      </div>
+      <div className="adm-note" style={{ marginBottom: 12 }}>Upoštevane so dejanske prodajne cene (s popusti in kodami), brez poštnine{t ? ` (poštnina v obdobju: ${eur(t.shipping)})` : ""}. Preklicana naročila niso šteta. Pri starih naročilih iz Shopifyja je uporabljena današnja nabavna cena.</div>
+      <div className="adm-grid2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 16, marginBottom: 16 }}>
+        <div className="adm-card adm-scroll">
+          <table className="adm-tbl">
+            <thead><tr><th>Mesec</th><th className="r">Naročila</th><th className="r">Prodaja brez DDV</th><th className="r">Čisti RVC</th><th className="r">Marža</th></tr></thead>
+            <tbody>{!d ? <tr><td colSpan={5} className="adm-empty">Nalagam …</td></tr> : !d.months?.length ? <tr><td colSpan={5} className="adm-empty">V obdobju ni prodaje.</td></tr> :
+              d.months.map((m) => <tr key={m.ym}><td className="strong">{ymL(m.ym)}</td><td className="r num">{m.orders}</td><td className="r num">{eur(m.net)}</td><td className="r num strong" style={{ color: "var(--a-green)" }}>{eur(m.rvc)}</td><td className="r num">{pct(m)}</td></tr>)}</tbody>
+          </table>
+        </div>
+        <div className="adm-card adm-scroll">
+          <table className="adm-tbl">
+            <thead><tr><th>Skupina</th><th className="r">Kosov</th><th className="r">Prodaja brez DDV</th><th className="r">Čisti RVC</th><th className="r">Marža</th></tr></thead>
+            <tbody>{(d?.groups || []).map((g) => <tr key={g.g}><td className="strong">{GRP_RVC[g.g] || g.g}</td><td className="r num">{g.qty}</td><td className="r num">{eur(g.net)}</td><td className="r num strong" style={{ color: "var(--a-green)" }}>{eur(g.rvc)}</td><td className="r num">{pct(g)}</td></tr>)}</tbody>
+          </table>
+        </div>
+      </div>
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>Artikel (top 50 po RVC)</th><th className="r">Kosov</th><th className="r">Prodaja brez DDV</th><th className="r">Nabavna</th><th className="r">Čisti RVC</th><th className="r">Marža</th></tr></thead>
+          <tbody>{(d?.articles || []).map((a) => <tr key={a.code}><td><div className="strong">{a.name}</div><div className="muted">{a.code}</div></td><td className="r num">{a.qty}</td><td className="r num">{eur(a.net)}</td><td className="r num muted">{a.missQty ? "—" : eur(a.cost)}</td><td className="r num strong" style={{ color: "var(--a-green)" }}>{a.missQty === a.qty ? "—" : eur(a.rvc)}</td><td className="r num">{a.missQty === a.qty ? "—" : pct(a)}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 function PriceList() {
+  const [tab, setTab] = useState("zaloga");
   const [list, setList] = useState(null);
   const [f, setF] = useState("all");
   const [q, setQ] = useState("");
@@ -1491,6 +1572,11 @@ function PriceList() {
         <label className="adm-btn" style={{ cursor: "pointer" }}>⬆ Uvozi nabavne cene
           <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={(e) => { importXlsx(e.target.files?.[0]); e.target.value = ""; }} /></label>
       </div>
+      <div className="adm-chips" style={{ marginBottom: 14 }}>
+        <button className={tab === "zaloga" ? "on" : ""} onClick={() => setTab("zaloga")}>Cenik & RVC na zalogi</button>
+        <button className={tab === "prodaja" ? "on" : ""} onClick={() => setTab("prodaja")}>Čisti RVC od prodaje</button>
+      </div>
+      {tab === "prodaja" ? <SalesRvc /> : <>
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
       <div className="adm-stats" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
         <div className="adm-card adm-stat"><div className="k">Vrednost zaloge (nabavna, brez DDV)</div><div className="v">{eur(sum.cost)}</div><div className="d">{sum.miss ? `${sum.miss} artiklov na zalogi brez nabavne cene` : "vsi artikli imajo nabavno ceno"}</div></div>
@@ -1528,6 +1614,7 @@ function PriceList() {
           </tbody>
         </table>
       </div>
+      </>}
     </>
   );
 }
