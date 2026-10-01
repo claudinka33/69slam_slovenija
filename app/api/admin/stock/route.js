@@ -15,6 +15,9 @@ export async function GET() {
   const rows = await sql`SELECT v.sku, v.code, v.size, v.stock, p.name, p.collection, p.price_cents, p.active
     FROM variants v JOIN products p ON p.code = v.code
     ORDER BY p.name, array_position(ARRAY['XS','S','M','L','XL','XXL'], v.size)`;
+  const imgs = await sql`SELECT code, url FROM product_images ORDER BY code, pos`;
+  const dbImg = {};
+  for (const i of imgs) (dbImg[i.code] = dbImg[i.code] || []).push(i.url);
   const meta = catalogMeta();
   const byCode = {};
   for (const r of rows) {
@@ -26,7 +29,8 @@ export async function GET() {
         collection: r.collection,
         active: r.active,
         price_cents: r.price_cents,
-        img: m.img || null,
+        img: m.img || dbImg[r.code]?.[0] || null,
+        images: dbImg[r.code] || [],
         category: m.category || productCategory({ code: r.code, name: r.name, collection: r.collection }),
         gender: m.gender || "moski",
         group: m.group || "boksarice",

@@ -425,7 +425,8 @@ function Stock({ stock, reload }) {
     { id: "ost", lbl: "Ostalo moško", fn: (p) => p.gender === "moski" && !["boksarice", "kopalke"].includes(p.group) },
     { id: "zen", lbl: "Ženske −50 %", fn: (p) => p.gender === "zenske" },
     { id: "otr", lbl: "Otroci −50 %", fn: (p) => p.gender === "otroci" },
-    { id: "off", lbl: "Ni na spletu (brez slik)", fn: (p) => !p.active },
+    { id: "off", lbl: "Ni na spletu", fn: (p) => !p.active },
+    { id: "ready", lbl: "Ni na spletu · ima slike", fn: (p) => !p.active && (p.images || []).length > 0 },
   ];
   const list = useMemo(() => {
     const fn = FILTERS.find((x) => x.id === f).fn;
