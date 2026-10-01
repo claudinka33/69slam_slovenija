@@ -87,5 +87,6 @@ export async function GET(req) {
     months: Object.entries(months).sort().map(([ym, x]) => ({ ym, ...fin(x) })),
     groups: Object.entries(groups).map(([g, x]) => ({ g, ...fin(x) })).sort((a, b) => b.rvc - a.rvc),
     articles: Object.values(arts).map((x) => fin(x)).sort((a, b) => b.rvc - a.rvc).slice(0, 50),
+    missing: Object.values(arts).filter((x) => x.missQty > 0).map((x) => ({ code: x.code, name: x.name, qty: x.missQty, net: Math.round(x.missNet) })).sort((a, b) => b.qty - a.qty).slice(0, 100),
   });
 }
