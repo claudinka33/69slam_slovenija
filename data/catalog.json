@@ -988,6 +988,13 @@
      "sku_clean": "MBYOAT-XXL",
      "price": 23,
      "stock_snapshot": 3
+    },
+    {
+     "size": "S",
+     "sku_original": "MBYOAT-S",
+     "sku_clean": "MBYOAT-S",
+     "price": 23,
+     "stock_snapshot": 0
     }
    ],
    "gender": "moski",
@@ -1253,6 +1260,13 @@
      "sku_clean": "MCYBIT-XXL",
      "price": 23,
      "stock_snapshot": 1
+    },
+    {
+     "size": "S",
+     "sku_original": "MCYBIT-S",
+     "sku_clean": "MCYBIT-S",
+     "price": 23,
+     "stock_snapshot": 0
     }
    ],
    "gender": "moski",
@@ -4182,6 +4196,13 @@
      "sku_clean": "MSYSKO-S",
      "price": 23,
      "stock_snapshot": 1
+    },
+    {
+     "size": "M",
+     "sku_original": "MSYSKO-M",
+     "sku_clean": "MSYSKO-M",
+     "price": 23,
+     "stock_snapshot": 0
     }
    ],
    "gender": "moski",
@@ -7050,6 +7071,13 @@
      "sku_clean": "GPBPBO-XL",
      "price": 15,
      "stock_snapshot": 3
+    },
+    {
+     "size": "L",
+     "sku_original": "GPBPBO-L",
+     "sku_clean": "GPBPBO-L",
+     "price": 15,
+     "stock_snapshot": 0
     }
    ],
    "material": "bambus"
@@ -7096,6 +7124,13 @@
      "sku_clean": "GPBTMS-L",
      "price": 15,
      "stock_snapshot": 3
+    },
+    {
+     "size": "S",
+     "sku_original": "GPBTMS-S",
+     "sku_clean": "GPBTMS-S",
+     "price": 15,
+     "stock_snapshot": 0
     }
    ],
    "material": "bambus"
@@ -9080,6 +9115,13 @@
      "sku_clean": "SSCOCT-XXL",
      "price": 15,
      "stock_snapshot": 1
+    },
+    {
+     "size": "XL",
+     "sku_original": "SSCOCT-XL",
+     "sku_clean": "SSCOCT-XL",
+     "price": 15,
+     "stock_snapshot": 0
     }
    ]
   },
@@ -10317,6 +10359,13 @@
      "size": "L",
      "sku_original": null,
      "sku_clean": "YTBJUB-L",
+     "price": 20,
+     "stock_snapshot": 0
+    },
+    {
+     "size": "XL",
+     "sku_original": "YTBJUB-XL",
+     "sku_clean": "YTBJUB-XL",
      "price": 20,
      "stock_snapshot": 0
     }
@@ -13329,6 +13378,13 @@
      "sku_clean": "GTNCWVBK-M",
      "price": 15,
      "stock_snapshot": 2
+    },
+    {
+     "size": "L",
+     "sku_original": "GTNCWVBK-L",
+     "sku_clean": "GTNCWVBK-L",
+     "price": 15,
+     "stock_snapshot": 0
     }
    ]
   },
@@ -13367,6 +13423,13 @@
      "sku_clean": "GTNCWVWH-M",
      "price": 15,
      "stock_snapshot": 2
+    },
+    {
+     "size": "L",
+     "sku_original": "GTNCWVWH-L",
+     "sku_clean": "GTNCWVWH-L",
+     "price": 15,
+     "stock_snapshot": 0
     }
    ]
   },
@@ -14902,6 +14965,13 @@
      "sku_clean": "SEBMXO-XXL",
      "price": 38,
      "stock_snapshot": 1
+    },
+    {
+     "size": "XL",
+     "sku_original": "SEBMXO-XL",
+     "sku_clean": "SEBMXO-XL",
+     "price": 38,
+     "stock_snapshot": 0
     }
    ]
   },
