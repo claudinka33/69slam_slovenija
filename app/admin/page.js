@@ -73,7 +73,7 @@ export default function Admin() {
   const NAV = [
     { id: "dashboard", ico: "📊", lbl: "Dashboard" },
     { id: "narocila", ico: "📦", lbl: "Naročila", bdg: newCount || null },
-    { id: "zaloga", ico: "👕", lbl: "Zaloga" },
+    { id: "zaloga", ico: "👕", lbl: "Artikli" },
     { id: "prevzemi", ico: "📥", lbl: "Prevzemi" },
     { id: "inventura", ico: "📋", lbl: "Inventura" },
     { id: "cenik", ico: "💶", lbl: "Cenik & RVC" },
@@ -414,6 +414,7 @@ function Stock({ stock, reload }) {
   const [edit, setEdit] = useState(null); // { p, size }
   const [msg, setMsg] = useState(null);
   const [seeding, setSeeding] = useState(false);
+  const [open, setOpen] = useState(null); // koda artikla v urejanju
 
   const isLow = (p) => Object.values(p.sizes).some((v) => v.stock > 0 && v.stock <= 2);
   const FILTERS = [
@@ -454,8 +455,8 @@ function Stock({ stock, reload }) {
     <>
       <div className="adm-top">
         <div>
-          <h1>Zaloga</h1>
-          <div className="sub">{stock ? `${stock.length} printov · ${totals} kosov skupaj` : "Nalagam …"} · klikni številko za popravek</div>
+          <h1>Artikli</h1>
+          <div className="sub">{stock ? `${stock.length} artiklov · ${totals} kosov na zalogi` : "Nalagam …"} · klikni artikel za urejanje, številko za popravek zaloge</div>
         </div>
         <div className="grow" />
         <button className="adm-btn" onClick={seed} disabled={seeding}>{seeding ? "Uvažam …" : "⬇ Uvozi katalog v bazo"}</button>
@@ -488,10 +489,10 @@ function Stock({ stock, reload }) {
              list.map((p) => (
               <tr key={p.code}>
                 <td style={{ minWidth: 220 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setOpen(p.code)} title="Uredi artikel">
                     <Thumb src={p.img} sm />
                     <div>
-                      <div className="strong">{p.name}</div>
+                      <div className="strong adm-link">{p.name} <span className="adm-edit">✎</span></div>
                       <div className="muted">{p.code}{p.type ? ` · ${p.type}` : ""}{p.collection === "limited" ? " · limited" : ""}{!p.active ? " · ni na spletu" : ""}</div>
                     </div>
                   </div>
@@ -538,9 +539,149 @@ function Stock({ stock, reload }) {
           <span><i style={{ background: "#F0F2F5" }} />na zalogi</span>
         </div>
       </div>
+      {open && (() => { const sp = (stock || []).find((x) => x.code === open); return sp ? (
+        <ArticlePanel sp={sp} onClose={() => setOpen(null)} onStock={(size) => setEdit({ p: sp, size })}
+          onSaved={async (t) => { setMsg({ ok: true, t }); await reload(); }} />) : null; })()}
       {edit && <StockModal p={edit.p} size={edit.size} onClose={() => setEdit(null)}
         onSaved={async (t) => { setEdit(null); setMsg({ ok: true, t }); await reload(); }} />}
     </>
+  );
+}
+
+/* ---------- Urejanje artikla (naslov, opis, cena, objava, slike, zaloga) ---------- */
+async function shrinkImage(file) {
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 1400 / bmp.width);
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+  return await new Promise((r) => c.toBlob(r, "image/jpeg", 0.86));
+}
+function ArticlePanel({ sp, onClose, onStock, onSaved }) {
+  const [d, setD] = useState(null);
+  const [f, setF] = useState(null);
+  const [imgs, setImgs] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(null);
+  const load = useCallback(async () => {
+    const x = await getJSON(`/api/admin/article?code=${encodeURIComponent(sp.code)}`);
+    setD(x);
+    if (x?.ok) {
+      const e = x.edit || {};
+      setF({ name: e.name ?? "", type: e.type_sl ?? "", description: e.description ?? "",
+        price: e.price_cents != null ? (e.price_cents / 100).toFixed(2).replace(".", ",") : "",
+        published: e.published ?? null });
+      setImgs(x.images || []);
+    }
+  }, [sp.code]);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { const k = (e) => e.key === "Escape" && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  const P = d?.product;
+  const pub = f?.published ?? P?.published;
+
+  async function save() {
+    setBusy(true); setNote(null);
+    const x = await getJSON("/api/admin/article", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: sp.code, ...f, published: f.published }) });
+    setBusy(false);
+    setNote({ ok: !!x?.ok, t: x?.message || "Napaka pri shranjevanju." });
+    if (x?.ok) { onSaved(`${P.name}: ${x.message}`); load(); }
+  }
+  async function imgAction(body) {
+    setBusy(true);
+    const x = await getJSON("/api/admin/article/images", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: sp.code, ...body }) });
+    setBusy(false);
+    if (x?.ok) { setImgs(x.images); setNote({ ok: true, t: "Slike shranjene — že na spletu." }); onSaved(`${P.name}: slike posodobljene.`); }
+    else setNote({ ok: false, t: x?.message || "Napaka pri slikah." });
+  }
+  const move = (i, dir) => { const a = [...imgs]; const j = i + dir; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; imgAction({ action: "order", urls: a }); };
+  async function upload(files) {
+    setBusy(true); let last = null;
+    for (const file of files) {
+      try {
+        const blob = await shrinkImage(file);
+        const r = await fetch(`/api/admin/article/images?code=${encodeURIComponent(sp.code)}&action=upload`, { method: "POST", headers: { "content-type": "image/jpeg" }, body: blob });
+        last = await r.json();
+        if (!last?.ok) break;
+      } catch { last = { ok: false, message: `Slike ${file.name} ni bilo mogoče prebrati (HEIC iz iPhona najprej shrani kot JPG).` }; break; }
+    }
+    setBusy(false);
+    if (last?.ok) { setImgs(last.images); setNote({ ok: true, t: "Slike naložene — že na spletu." }); onSaved(`${P.name}: slike dodane.`); }
+    else setNote({ ok: false, t: last?.message || "Napaka pri nalaganju." });
+  }
+  const sizes = sortSizes(Object.keys(sp.sizes));
+  const shopUrl = P ? `/sl/p/${P.slug}` : null;
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+
+  return (
+    <div className="adm-ov side" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="adm-panel" style={{ maxWidth: 620 }}>
+        <div className="adm-mh">
+          <div>
+            <h3>{P?.name || sp.name}</h3>
+            <div className="muted" style={{ marginTop: 4 }}>{sp.code}{P ? ` · ${P.source === "metakocka" ? "iz Metakocke" : "iz Shopifyja"}` : ""}</div>
+            {P && <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <span className={`adm-tag ${pub ? "sub" : ""}`}>{pub ? "✓ na spletu" : "ni na spletu"}</span>
+              {pub && shopUrl && <a className="adm-tag" href={shopUrl} target="_blank" rel="noreferrer">Odpri v trgovini ↗</a>}
+            </div>}
+          </div>
+          <button className="x" onClick={onClose}>✕</button>
+        </div>
+        <div className="adm-mb">
+          {note && <div className={`adm-note ${note.ok ? "ok" : "err"}`}>{note.t}</div>}
+          {!d ? <div className="adm-empty">Nalagam …</div> : !d.ok ? <div className="adm-note err">{d.message}</div> : <>
+            <div className="adm-sec">Zaloga po velikostih <span className="muted" style={{ fontWeight: 500, textTransform: "none" }}>· klikni za popravek</span></div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 18 }}>
+              {sizes.map((s) => { const v = sp.sizes[s]; const cls = v.stock === 0 ? "zero" : v.stock <= 2 ? "low" : "";
+                return <button key={s} className={`adm-cell ${cls}`} style={{ minWidth: 0, padding: "0 10px" }} onClick={() => onStock(s)}>
+                  <span style={{ fontWeight: 500, marginRight: 6 }}>{s}</span>{v.stock}</button>; })}
+              <span className="muted" style={{ alignSelf: "center", marginLeft: 6 }}>skupaj {sp.total}</span>
+            </div>
+
+            <div className="adm-sec">Na spletu</div>
+            <div className="adm-chips" style={{ marginBottom: 16 }}>
+              <button className={f.published === null ? "on" : ""} onClick={() => setF((x) => ({ ...x, published: null }))}>Samodejno {f.published === null ? `(${P.published ? "objavljen" : "skrit"})` : ""}</button>
+              <button className={f.published === true ? "on" : ""} onClick={() => setF((x) => ({ ...x, published: true }))}>✓ Objavljen</button>
+              <button className={f.published === false ? "on" : ""} onClick={() => setF((x) => ({ ...x, published: false }))}>Skrit</button>
+            </div>
+
+            <div className="adm-field"><label>Naslov</label>
+              <input value={f.name} onChange={set("name")} placeholder={P.name} /></div>
+            <div className="adm-field"><label>Podnaslov (tip artikla)</label>
+              <input value={f.type} onChange={set("type")} placeholder={P.type || "npr. Moško spodnje perilo · BAMBUS · HIP"} /></div>
+            <div className="adm-field"><label>Redna prodajna cena z DDV (€)</label>
+              <input value={f.price} inputMode="decimal" onChange={(e) => setF((x) => ({ ...x, price: e.target.value.replace(/[^0-9.,]/g, "") }))} placeholder={String(P.price).replace(".", ",")} style={{ maxWidth: 160 }} />
+              {P.cost_cents != null && <div className="muted" style={{ marginTop: 6 }}>Nabavna brez DDV: {eur(P.cost_cents)}</div>}</div>
+            <div className="adm-field"><label>Opis</label>
+              <textarea className="adm-ta" rows={6} value={f.description} onChange={set("description")} placeholder={P.defaultDescription} />
+              <div className="muted" style={{ marginTop: 6 }}>Prazno = privzeti opis (siv tekst zgoraj).</div></div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
+              <button className="adm-btn pri" onClick={save} disabled={busy}>{busy ? "Shranjujem …" : "💾 Shrani"}</button>
+              <span className="muted" style={{ alignSelf: "center" }}>Prazna polja = ostane kot zdaj.</span>
+            </div>
+
+            <div className="adm-sec">Slike <span className="muted" style={{ fontWeight: 500, textTransform: "none" }}>· prva je glavna</span></div>
+            <div className="adm-imgs">
+              {imgs.map((u, i) => (
+                <div key={u} className="adm-img">
+                  <img src={u} alt="" />
+                  {i === 0 && <span className="main">GLAVNA</span>}
+                  <div className="ctl">
+                    <button onClick={() => move(i, -1)} disabled={busy || i === 0} title="Naprej">◀</button>
+                    <button onClick={() => move(i, 1)} disabled={busy || i === imgs.length - 1} title="Nazaj">▶</button>
+                    <button onClick={() => confirm("Odstranim to sliko?") && imgAction({ action: "delete", url: u })} disabled={busy} title="Odstrani">✕</button>
+                  </div>
+                </div>
+              ))}
+              <label className="adm-img add">
+                {busy ? "…" : "+ Dodaj slike"}
+                <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => { const fl = [...(e.target.files || [])]; e.target.value = ""; if (fl.length) upload(fl); }} />
+              </label>
+            </div>
+          </>}
+        </div>
+      </div>
+    </div>
   );
 }
 

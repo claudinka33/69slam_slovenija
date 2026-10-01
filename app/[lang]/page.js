@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getMenProducts, getOutletProducts, getSwimProducts } from "../../lib/catalog";
+import { getMenProducts, getOutletProducts, getSwimProducts, primeCatalog } from "../../lib/catalog";
 import { getDict } from "../../lib/i18n";
 import ProductGrid from "../../components/ProductGrid";
 import BundleBar from "../../components/BundleBar";
@@ -21,6 +21,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function Home({ params }) {
+  await primeCatalog();
   const { lang } = await params;
   const t = getDict(lang);
   const products = getMenProducts({ withEmpty: true });

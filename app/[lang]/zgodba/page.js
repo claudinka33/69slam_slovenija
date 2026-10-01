@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getProducts } from "../../../lib/catalog";
+import { getProducts, primeCatalog } from "../../../lib/catalog";
 import { LANGS } from "../../../lib/i18n";
 import { IMG } from "../../../lib/media";
 
@@ -148,6 +148,7 @@ function Block({ b }) {
 }
 
 export default async function StoryPage({ params }) {
+  await primeCatalog();
   const { lang } = await params;
   const s = STORY[lang] || STORY.sl;
   const [q, loud, print, crew, pack] = s.blocks;

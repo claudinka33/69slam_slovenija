@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProducts, slimProduct } from "../../lib/catalog";
+import { getProducts, slimProduct, primeCatalog } from "../../lib/catalog";
 import { getDict, LANGS } from "../../lib/i18n";
 import { COMPANY } from "../../lib/legal";
 import { CartProvider } from "../../components/CartContext";
@@ -12,6 +12,7 @@ export function generateStaticParams() {
 }
 
 export default async function LangLayout({ children, params }) {
+  await primeCatalog();
   const { lang } = await params;
   if (!LANGS.includes(lang)) notFound();
   const t = getDict(lang);

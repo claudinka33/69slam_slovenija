@@ -1,4 +1,4 @@
-import { getOutletProducts } from "../../../lib/catalog";
+import { getOutletProducts, primeCatalog } from "../../../lib/catalog";
 import { getDict, LANGS } from "../../../lib/i18n";
 import ProductGrid from "../../../components/ProductGrid";
 
@@ -16,6 +16,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function OutletPage({ params }) {
+  await primeCatalog();
   const { lang } = await params;
   const t = getDict(lang);
   const products = getOutletProducts({ withEmpty: true });

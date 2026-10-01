@@ -1,7 +1,8 @@
-import { getProducts } from "../lib/catalog";
+import { getProducts, primeCatalog } from "../lib/catalog";
 import { LANGS } from "../lib/i18n";
 
-export default function sitemap() {
+export default async function sitemap() {
+  await primeCatalog();
   const base = "https://69slam.si";
   const now = new Date();
   const urls = LANGS.map((l) => ({ url: `${base}/${l}`, lastModified: now, priority: 1 }));

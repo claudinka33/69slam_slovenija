@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, dbConfigured, ensureSchema } from "../../../lib/db";
-import { getProducts, skuOf } from "../../../lib/catalog";
+import { getProducts, skuOf, primeCatalog } from "../../../lib/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +35,7 @@ const MSG = {
 };
 
 export async function POST(req) {
+  await primeCatalog();
   const body = await req.json().catch(() => null);
   const lang = body?.lang && MSG[body.lang] ? body.lang : "sl";
   const t = MSG[lang];

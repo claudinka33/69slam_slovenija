@@ -29,7 +29,7 @@ export async function GET() {
         collection: r.collection,
         active: r.active,
         price_cents: r.price_cents,
-        img: m.img || dbImg[r.code]?.[0] || null,
+        img: dbImg[r.code]?.[0] || m.img || null,
         images: dbImg[r.code] || [],
         category: m.category || productCategory({ code: r.code, name: r.name, collection: r.collection }),
         gender: m.gender || "moski",

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProducts, getProductBySlug, getSharedDescription } from "../../../../lib/catalog";
+import { getProducts, getProductBySlug, getSharedDescription, primeCatalog } from "../../../../lib/catalog";
 import { getDict, LANGS, fmt } from "../../../../lib/i18n";
 import AddToCart from "../../../../components/AddToCart";
 import ProductGallery from "../../../../components/ProductGallery";
@@ -15,6 +15,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
+  await primeCatalog();
   const { lang, slug } = await params;
   const p = getProductBySlug(slug);
   if (!p) return {};
@@ -32,6 +33,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductPage({ params }) {
+  await primeCatalog();
   const { lang, slug } = await params;
   const t = getDict(lang);
   const p = getProductBySlug(slug);
@@ -41,7 +43,7 @@ export default async function ProductPage({ params }) {
   const others = getProducts().filter((x) =>
     micro ? x.group === "boksarice" && x.material === "mikrofibra" && x.collection === p.collection && x.cut === p.cut
       : x.group === p.group && x.gender === p.gender && (!boxers || (x.cut === p.cut && x.material === p.material)));
-  const desc = micro ? getSharedDescription()
+  const desc = p.description ? p.description : micro ? getSharedDescription()
     : p.material === "bambus" && (boxers || p.group === "perilo") ? t.desc_bambus
     : t[`desc_${p.group}`] || t.desc_perilo;
   const red = p.sale || p.outlet;
