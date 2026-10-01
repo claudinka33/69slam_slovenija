@@ -627,8 +627,8 @@ function StockModal({ p, size, onClose, onSaved }) {
 function Customers({ reloadOrders }) {
   const [list, setList] = useState(null);
   const [q, setQ] = useState("");
-  const [f, setF] = useState("vse");
-  const [imp, setImp] = useState(null); // { running, done, imported, msg, ok }
+  const [f, setF] = useState("kupci");
+  const [imp, setImp] = useState(null); // { running, label, msg, ok }
 
   const load = useCallback(async () => {
     const d = await getJSON("/api/admin/customers");
@@ -636,57 +636,148 @@ function Customers({ reloadOrders }) {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  async function runImport() {
-    if (!confirm("Uvozim zgodovino naročil in strank iz Shopifyja? Zaloga se NE spremeni, podvojitev ni (lahko ponoviš).")) return;
-    let cursor = null, total = 0, subs = 0, pages = 0;
-    setImp({ running: true, imported: 0 });
-    while (true) {
-      const d = await getJSON("/api/admin/import-shopify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cursor }) });
-      if (!d?.ok) {
-        setImp({ running: false, ok: false, setup: d?.setup, msg: d?.message || "Napaka pri uvozu." });
-        break;
-      }
-      total += d.imported; subs += d.subscribers || 0; pages++;
-      setImp({ running: true, imported: total });
-      if (!d.hasMore || pages > 400) {
-        setImp({ running: false, ok: true, msg: `✓ Uvoz končan: ${total} novih naročil, ${subs} novih naročnikov na novice.` });
-        break;
-      }
-      cursor = d.cursor;
+  // ---- Uvoz Shopify izvoza (CSV) ----
+  async function readSheet(file) {
+    const XLSX = await import("xlsx");
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array", raw: true, codepage: 65001 });
+    return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false });
+  }
+  const nk = (k) => String(k).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const pick = (row, ...names) => {
+    for (const k of Object.keys(row)) if (names.includes(nk(k))) { const v = row[k]; if (v !== "" && v != null) return v; }
+    return "";
+  };
+  const num = (v) => { const n = parseFloat(String(v).replace(/[^0-9,.-]/g, "").replace(",", ".")); return Number.isFinite(n) ? n : 0; };
+  const yes = (v) => /^(yes|true|da|1|subscribed)$/i.test(String(v).trim());
+
+  async function send(kind, rows, size, onProgress) {
+    let done = 0; const tot = { a: 0, b: 0 };
+    for (let i = 0; i < rows.length; i += size) {
+      const d = await getJSON("/api/admin/import-csv", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, rows: rows.slice(i, i + size) }) });
+      if (!d?.ok) throw new Error(d?.message || "Napaka pri uvozu.");
+      tot.a += kind === "customers" ? d.customers : d.imported;
+      tot.b += kind === "customers" ? d.subscribers : d.skipped;
+      done = Math.min(rows.length, i + size);
+      onProgress(done, rows.length);
     }
-    await Promise.all([load(), reloadOrders()]);
+    return tot;
+  }
+
+  async function importCustomers(file) {
+    if (!file) return;
+    try {
+      setImp({ running: true, label: "Berem stranke …" });
+      const raw = await readSheet(file);
+      const rows = raw.map((r) => ({
+        email: pick(r, "email"),
+        name: [pick(r, "first name"), pick(r, "last name")].filter(Boolean).join(" "),
+        phone: String(pick(r, "phone", "default address phone")).replace(/^'/, ""),
+        city: pick(r, "default address city", "city"),
+        orders: num(pick(r, "total orders")),
+        spent: num(pick(r, "total spent")),
+        marketing: yes(pick(r, "accepts email marketing", "accepts marketing")),
+      })).filter((r) => String(r.email).includes("@"));
+      if (!rows.length) throw new Error("V datoteki ni stolpca »Email«. Izberi izvoz STRANK (customers_export.csv).");
+      const t = await send("customers", rows, 500, (d, n) => setImp({ running: true, label: `Stranke ${d}/${n} …` }));
+      setImp({ ok: true, msg: `✓ Uvoženih ${t.a} strank iz Shopifyja (${t.b} novih prijav na novice). Zaloga ni bila spremenjena.` });
+    } catch (e) { setImp({ ok: false, msg: String(e.message || e) }); }
+    await load();
+  }
+
+  async function importOrders(file) {
+    if (!file) return;
+    try {
+      setImp({ running: true, label: "Berem naročila …" });
+      const raw = await readSheet(file);
+      const byName = new Map();
+      for (const r of raw) {
+        const name = String(pick(r, "name")).trim();
+        if (!/^#?\S+/.test(name) || !name) continue;
+        let o = byName.get(name);
+        if (!o) { o = { name, rows: [] }; byName.set(name, o); }
+        o.rows.push(r);
+      }
+      const orders = [];
+      for (const { name, rows } of byName.values()) {
+        const f = rows.find((r) => pick(r, "email")) || rows[0];
+        const id = String(pick(f, "id")).trim();
+        const items = rows.map((r) => {
+          const title = String(pick(r, "lineitem name"));
+          const sizeRaw = title.includes(" - ") ? title.slice(title.lastIndexOf(" - ") + 3) : "";
+          const size = sizeRaw.split("/")[0].trim().toUpperCase();
+          const skuRaw = String(pick(r, "lineitem sku")).trim().toUpperCase();
+          const code = skuRaw.split(/[-\s.]/)[0];
+          return { name: title.includes(" - ") ? title.slice(0, title.lastIndexOf(" - ")) : title,
+            size: size || "-", sku: code ? `${code}-${(size || "").replace(/\s+/g, "")}`.replace(/-$/, "") : "-",
+            qty: num(pick(r, "lineitem quantity")), price: num(pick(r, "lineitem price")) };
+        }).filter((i) => i.qty > 0);
+        const fin = String(pick(f, "financial status")).toLowerCase();
+        orders.push({
+          ext: id ? `gid://shopify/Order/${id}` : `shopify-csv:${name}`,
+          number: String(name).replace(/\D/g, ""),
+          email: pick(f, "email"),
+          name: pick(f, "shipping name", "billing name"),
+          phone: String(pick(f, "shipping phone", "billing phone", "phone")).replace(/^'/, ""),
+          address: [pick(f, "shipping address1", "shipping street", "billing address1"), pick(f, "shipping address2")].filter(Boolean).join(", "),
+          zip: String(pick(f, "shipping zip", "billing zip")).replace(/^'/, ""),
+          city: pick(f, "shipping city", "billing city"),
+          country: pick(f, "shipping country", "billing country") || "SI",
+          created_at: pick(f, "created at", "paid at"),
+          cancelled: !!String(pick(f, "cancelled at")).trim() || fin === "refunded" || fin === "voided",
+          subtotal: num(pick(f, "subtotal")), shipping: num(pick(f, "shipping")), total: num(pick(f, "total")),
+          items,
+        });
+      }
+      if (!orders.length) throw new Error("V datoteki ni naročil. Izberi izvoz NAROČIL (orders_export.csv).");
+      const t = await send("orders", orders, 40, (d, n) => setImp({ running: true, label: `Naročila ${d}/${n} …` }));
+      setImp({ ok: true, msg: `✓ Uvoženih ${t.a} naročil iz Shopifyja${t.b ? ` (${t.b} že uvoženih ali brez e-maila preskočenih)` : ""}. Zaloga ni bila spremenjena.` });
+      await reloadOrders();
+    } catch (e) { setImp({ ok: false, msg: String(e.message || e) }); }
+    await load();
   }
 
   const counts = useMemo(() => ({
     vse: (list || []).length,
+    kupci: (list || []).filter((c) => c.orders >= 1).length,
     ret: (list || []).filter((c) => c.orders >= 2).length,
     sub: (list || []).filter((c) => c.subscribed).length,
   }), [list]);
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
     return (list || []).filter((c) =>
-      (f === "vse" || (f === "ret" && c.orders >= 2) || (f === "sub" && c.subscribed)) &&
+      (f === "vse" || (f === "kupci" && c.orders >= 1) || (f === "ret" && c.orders >= 2) || (f === "sub" && c.subscribed)) &&
       (!t || `${c.name} ${c.email} ${c.city}`.toLowerCase().includes(t)));
   }, [list, q, f]);
 
   return (
     <>
       <div className="adm-top">
-        <div><h1>Stranke</h1><div className="sub">Zbrano iz naročil po e-mailu · ↺ vračajoča = 2 ali več naročil</div></div>
-        <div className="grow" />
-        <button className="adm-btn" onClick={runImport} disabled={imp?.running}>
-          {imp?.running ? `Uvažam … (${imp.imported})` : "⬇ Uvozi iz Shopifyja"}
-        </button>
+        <div><h1>Stranke</h1><div className="sub">Nova trgovina + Shopify · ↺ vračajoča = 2 ali več naročil</div></div>
       </div>
-      {imp && !imp.running && (
-        <div className={`adm-note ${imp.ok ? "ok" : imp.setup ? "" : "err"}`}>
-          {imp.msg}
-          {imp.setup && <> Navodila za nastavitev ti pripravi Claude — reci mu »nastavi Shopify uvoz«.</>}
+      <div className="adm-card adm-step" style={{ marginBottom: 16 }}>
+        <div className="n">⇪</div>
+        <div className="b">
+          <b>Uvoz iz Shopifyja (CSV izvoz)</b>
+          <span>Najprej naloži stranke, nato naročila. Uvoz lahko ponoviš brez podvajanja — <b>zaloga se pri tem nikoli ne spremeni</b>.</span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <label className="adm-btn" style={{ cursor: imp?.running ? "default" : "pointer", opacity: imp?.running ? .5 : 1 }}>
+              1 · Naloži stranke (CSV)
+              <input type="file" accept=".csv,.xlsx,.xls" disabled={imp?.running} style={{ display: "none" }} onChange={(e) => { importCustomers(e.target.files?.[0]); e.target.value = ""; }} />
+            </label>
+            <label className="adm-btn" style={{ cursor: imp?.running ? "default" : "pointer", opacity: imp?.running ? .5 : 1 }}>
+              2 · Naloži naročila (CSV)
+              <input type="file" accept=".csv,.xlsx,.xls" disabled={imp?.running} style={{ display: "none" }} onChange={(e) => { importOrders(e.target.files?.[0]); e.target.value = ""; }} />
+            </label>
+            {imp?.running && <span style={{ alignSelf: "center", fontSize: 13, color: "var(--a-muted)" }}>⏳ {imp.label}</span>}
+          </div>
         </div>
-      )}
+      </div>
+      {imp && !imp.running && <div className={`adm-note ${imp.ok ? "ok" : "err"}`}>{imp.msg}</div>}
       <div className="adm-bar">
         <div className="adm-chips">
-          {[["vse", "Vse"], ["ret", "↺ Vračajoče"], ["sub", "Prijavljeni na novice"]].map(([k, l]) => (
+          {[["kupci", "Kupci"], ["ret", "↺ Vračajoče"], ["sub", "Prijavljeni na novice"], ["vse", "Vsi kontakti"]].map(([k, l]) => (
             <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>{l} <span className="c">{counts[k]}</span></button>
           ))}
         </div>
@@ -707,7 +798,7 @@ function Customers({ reloadOrders }) {
                 </td>
                 <td className="r num strong">{c.orders}</td>
                 <td className="r num strong">{eur(c.total_cents)}</td>
-                <td className="muted">{dShort(c.last_order)}</td>
+                <td className="muted">{c.last_order ? dShort(c.last_order) : c.orders ? "Shopify" : "—"}</td>
                 <td>{c.subscribed ? <span className="adm-tag sub">✓ prijavljen</span> : <span className="muted">—</span>}</td>
               </tr>
             ))}

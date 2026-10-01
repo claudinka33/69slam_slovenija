@@ -27,7 +27,12 @@ export async function GET(req) {
       SELECT DISTINCT lower(email) AS e FROM orders
       WHERE status <> 'preklicano' AND created_at >= now() - make_interval(days => ${days})),
     counts AS (
-      SELECT lower(email) AS e, COUNT(*) AS n FROM orders WHERE status <> 'preklicano' GROUP BY lower(email))
+      SELECT COALESCE(a.e, s.email) AS e,
+        COALESCE(a.wn, 0) + GREATEST(COALESCE(a.sn, 0), COALESCE(s.orders_count, 0)) AS n
+      FROM (SELECT lower(email) AS e, COUNT(*) FILTER (WHERE source <> 'shopify') AS wn,
+              COUNT(*) FILTER (WHERE source = 'shopify') AS sn
+            FROM orders WHERE status <> 'preklicano' GROUP BY lower(email)) a
+      FULL OUTER JOIN shop_customers s ON s.email = a.e)
     SELECT COUNT(*)::int AS buyers, COUNT(*) FILTER (WHERE c.n >= 2)::int AS returning
     FROM buyers b JOIN counts c ON c.e = b.e`;
 
