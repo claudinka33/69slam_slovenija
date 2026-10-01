@@ -20,5 +20,7 @@ export async function POST() {
     WHERE p.code = r.code AND p.pos = r.pos`;
   revalidateTag("catalog");
   revalidatePath("/", "layout");
-  return NextResponse.json({ ok: true, moved: moved.length });
+  const nozoom = await sql`SELECT code FROM product_images GROUP BY code
+    HAVING bool_or(COALESCE(source, '') ILIKE '%ZOOM%') = false ORDER BY code`;
+  return NextResponse.json({ ok: true, moved: moved.length, nozoom: nozoom.map((r) => r.code) });
 }
