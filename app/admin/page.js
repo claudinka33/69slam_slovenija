@@ -74,7 +74,9 @@ export default function Admin() {
     { id: "dashboard", ico: "📊", lbl: "Dashboard" },
     { id: "narocila", ico: "📦", lbl: "Naročila", bdg: newCount || null },
     { id: "zaloga", ico: "👕", lbl: "Zaloga" },
+    { id: "prevzemi", ico: "📥", lbl: "Prevzemi" },
     { id: "inventura", ico: "📋", lbl: "Inventura" },
+    { id: "cenik", ico: "💶", lbl: "Cenik & RVC" },
     { id: "stranke", ico: "👤", lbl: "Stranke" },
     { id: "nastavitve", ico: "⚙️", lbl: "Nastavitve", soon: true },
   ];
@@ -121,6 +123,8 @@ export default function Admin() {
         {view === "narocila" && <Orders orders={orders} onOpen={setOpenOrder} />}
         {view === "zaloga" && <Stock stock={stock} reload={loadStock} />}
         {view === "inventura" && <Inventory stock={stock} reload={loadStock} />}
+        {view === "prevzemi" && <Receipts stock={stock} reloadStock={loadStock} />}
+        {view === "cenik" && <PriceList />}
         {view === "stranke" && <Customers reloadOrders={loadOrders} />}
       </main>
 
@@ -1207,5 +1211,321 @@ function CustomerPanel({ c, onClose }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/* =========================== PREVZEMI =========================== */
+const VAT = 0.22;
+const toNum = (v) => { const n = parseFloat(String(v ?? "").replace(",", ".")); return Number.isFinite(n) ? n : NaN; };
+const eurN = (n) => (Number.isFinite(n) ? n : 0).toLocaleString("sl-SI", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+
+function Receipts({ stock, reloadStock }) {
+  const [data, setData] = useState(null);
+  const [costs, setCosts] = useState({});
+  const [form, setForm] = useState(null);
+  const [open, setOpen] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const load = useCallback(async () => {
+    const [d, c] = await Promise.all([getJSON("/api/admin/receipts"), getJSON("/api/admin/costs")]);
+    setData(d || { receipts: [], suppliers: [] });
+    setCosts(Object.fromEntries((c?.products || []).map((p) => [p.code, p.cost_cents])));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const variants = useMemo(() => {
+    const out = [];
+    for (const p of stock || []) for (const size of sortSizes(Object.keys(p.sizes)))
+      out.push({ sku: p.sizes[size].sku, code: p.code, name: p.name, type: p.type, size, stock: p.sizes[size].stock, img: p.img });
+    return out;
+  }, [stock]);
+
+  return (
+    <>
+      <div className="adm-top">
+        <div><h1>Prevzemi blaga</h1><div className="sub">Vsak prevzem poveča zalogo in posodobi povprečno nabavno ceno (za RVC).</div></div>
+        <div className="grow" />
+        <button className="adm-btn pri" onClick={() => setForm({ doc_date: new Date().toISOString().slice(0, 10), supplier: "", doc_ref: "", note: "", lines: [] })}>+ Nov prevzem</button>
+      </div>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>Številka</th><th>Datum</th><th>Dobavitelj</th><th>Dokument</th><th className="r">Kosov</th><th className="r">Nabavna vrednost</th></tr></thead>
+          <tbody>
+            {data === null ? <tr><td colSpan={6} className="adm-empty">Nalagam …</td></tr> :
+             !data.receipts.length ? <tr><td colSpan={6} className="adm-empty">Še ni prevzemov. Ko dobiš blago, klikni »+ Nov prevzem«.</td></tr> :
+             data.receipts.map((rc) => (
+              <Fragment key={rc.id}>
+                <tr className="click" onClick={() => setOpen(open === rc.id ? null : rc.id)}>
+                  <td className="strong">{rc.number}</td>
+                  <td className="muted">{dShort(rc.doc_date)}</td>
+                  <td>{rc.supplier || "—"}</td>
+                  <td className="muted">{rc.doc_ref || "—"}</td>
+                  <td className="r num">{rc.items.reduce((a, i) => a + i.qty, 0)}</td>
+                  <td className="r num strong">{eur(rc.total_cents)}</td>
+                </tr>
+                {open === rc.id && (
+                  <tr><td colSpan={6} style={{ background: "#FAFBFC" }}>
+                    {rc.items.map((i, k) => (
+                      <div key={k} style={{ display: "flex", gap: 10, padding: "3px 0", fontSize: 13 }}>
+                        <span style={{ flex: 1 }}><b>{i.name}</b> · {i.size} <span className="muted">{i.sku}</span></span>
+                        <span className="num">{i.qty} × {eur(i.cost_cents)}</span>
+                        <b className="num" style={{ minWidth: 80, textAlign: "right" }}>{eur(i.qty * i.cost_cents)}</b>
+                      </div>
+                    ))}
+                    {rc.note && <div className="muted" style={{ marginTop: 6 }}>Opomba: {rc.note}</div>}
+                  </td></tr>
+                )}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {form && <ReceiptForm form={form} setForm={setForm} variants={variants} costs={costs} suppliers={data?.suppliers || []}
+        onSaved={async (t) => { setForm(null); setMsg({ ok: true, t }); await Promise.all([load(), reloadStock()]); }} />}
+    </>
+  );
+}
+
+function ReceiptForm({ form, setForm, variants, costs, suppliers, onSaved }) {
+  const [q, setQ] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const bySku = useMemo(() => Object.fromEntries(variants.map((v) => [v.sku, v])), [variants]);
+  const t = q.trim().toLowerCase();
+  const hits = t.length < 2 ? [] : variants.filter((v) => `${v.name} ${v.sku} ${v.type || ""}`.toLowerCase().includes(t)).slice(0, 30);
+
+  function add(v) {
+    setForm((f) => {
+      if (f.lines.some((l) => l.sku === v.sku)) return { ...f, lines: f.lines.map((l) => (l.sku === v.sku ? { ...l, qty: String((parseInt(l.qty, 10) || 0) + 1) } : l)) };
+      const c = costs[v.code];
+      return { ...f, lines: [...f.lines, { sku: v.sku, qty: "1", cost: c != null ? (c / 100).toFixed(2).replace(".", ",") : "" }] };
+    });
+  }
+  function addAllSizes(code) { variants.filter((v) => v.code === code).forEach(add); }
+  function addNewSize(v) {
+    const size = (window.prompt(`Nova velikost za ${v.name} (npr. M, XL, 42, 6 LET):`) || "").trim().toUpperCase();
+    if (!size) return;
+    const sku = `${v.code}-${size.replace(/\s+/g, "")}`;
+    if (bySku[sku]) { add(bySku[sku]); return; }
+    const c = costs[v.code];
+    setForm((f) => f.lines.some((l) => l.sku === sku) ? f : { ...f, lines: [...f.lines, { sku, code: v.code, size, isNew: true, name: v.name, qty: "1",
+      cost: c != null ? (c / 100).toFixed(2).replace(".", ",") : "" }] });
+  }
+  const setLine = (i, k, v) => setForm((f) => ({ ...f, lines: f.lines.map((l, j) => (j === i ? { ...l, [k]: v } : l)) }));
+  const total = form.lines.reduce((a, l) => a + (parseInt(l.qty, 10) || 0) * (toNum(l.cost) || 0), 0);
+  const pieces = form.lines.reduce((a, l) => a + (parseInt(l.qty, 10) || 0), 0);
+
+  async function importXlsx(file) {
+    if (!file) return;
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(await file.arrayBuffer());
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false });
+    const nk = (k) => String(k).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+    let ok = 0, bad = 0; const lines = [...form.lines];
+    for (const row of rows) {
+      const g = (...n) => { for (const k of Object.keys(row)) if (n.includes(nk(k))) return row[k]; return ""; };
+      const sku = String(g("sku", "sifra", "koda", "code")).trim().toUpperCase();
+      const qty = parseInt(g("kolicina", "kol", "qty", "kos"), 10);
+      const cost = String(g("nabavna cena", "nc", "cena", "cost")).trim();
+      if (!sku) continue;
+      if (!bySku[sku] || !(qty > 0)) { bad++; continue; }
+      lines.push({ sku, qty: String(qty), cost }); ok++;
+    }
+    set("lines", lines);
+    setErr(ok ? "" : "V datoteki ni stolpcev SKU + Količina (+ Nabavna cena) ali se SKU-ji ne ujemajo.");
+    if (bad) setErr(`Dodanih ${ok} vrstic, ${bad} preskočenih (neznan SKU ali količina 0).`);
+  }
+
+  async function save() {
+    setErr("");
+    const miss = form.lines.find((l) => !(parseInt(l.qty, 10) > 0) || !Number.isFinite(toNum(l.cost)));
+    if (!form.lines.length) { setErr("Dodaj vsaj en artikel."); return; }
+    if (miss) { setErr(`Pri ${bySku[miss.sku]?.name || miss.name || miss.sku} (${bySku[miss.sku]?.size || miss.size || ""}) manjka količina ali nabavna cena.`); return; }
+    setBusy(true);
+    const d = await getJSON("/api/admin/receipts", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, lines: form.lines.map((l) => ({ sku: l.sku, code: l.code, size: l.size, qty: parseInt(l.qty, 10), cost: toNum(l.cost) })) }) });
+    setBusy(false);
+    if (!d?.ok) { setErr(d?.message || "Napaka pri shranjevanju."); return; }
+    onSaved(`✓ ${d.message}`);
+  }
+
+  return (
+    <div className="adm-ov side" onClick={(e) => e.target === e.currentTarget && setForm(null)}>
+      <div className="adm-panel" style={{ maxWidth: 760, display: "flex", flexDirection: "column" }}>
+        <div className="adm-mh"><div><h3>Nov prevzem blaga</h3><div style={{ color: "var(--a-muted)", fontSize: 12.5 }}>Nabavne cene vpiši <b>brez DDV</b>, na kos.</div></div>
+          <button className="x" onClick={() => setForm(null)}>✕</button></div>
+        <div className="adm-mb" style={{ flex: 1, overflowY: "auto" }}>
+          <div className="adm-formgrid">
+            <div className="adm-field"><label>Datum prevzema</label><input type="date" value={form.doc_date} onChange={(e) => set("doc_date", e.target.value)} /></div>
+            <div className="adm-field"><label>Dobavitelj</label><input list="adm-suppliers" value={form.supplier} onChange={(e) => set("supplier", e.target.value)} placeholder="npr. 69SLAM Asia Ltd." />
+              <datalist id="adm-suppliers">{suppliers.map((x) => <option key={x} value={x} />)}</datalist></div>
+            <div className="adm-field"><label>Št. dobavnice / računa</label><input value={form.doc_ref} onChange={(e) => set("doc_ref", e.target.value)} /></div>
+            <div className="adm-field"><label>Opomba</label><input value={form.note} onChange={(e) => set("note", e.target.value)} /></div>
+          </div>
+
+          <div className="adm-sec" style={{ marginTop: 4 }}>Dodaj artikle</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <div className="adm-search" style={{ marginLeft: 0, flex: 1 }}><input style={{ width: "100%" }} placeholder="Išči artikel ali SKU (vsaj 2 črki) …" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+            <label className="adm-btn" style={{ cursor: "pointer" }}>⬆ Vrstice iz Excela
+              <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={(e) => { importXlsx(e.target.files?.[0]); e.target.value = ""; }} /></label>
+          </div>
+          {hits.length > 0 && (
+            <div className="adm-hits">
+              {hits.map((v) => (
+                <div key={v.sku} className="adm-hit">
+                  <Thumb src={v.img} sm />
+                  <div style={{ flex: 1, minWidth: 0 }}><b>{v.name}</b> · {v.size}<div className="muted" style={{ fontSize: 12 }}>{v.sku}{v.type ? ` · ${v.type}` : ""} · zaloga {v.stock}</div></div>
+                  <button className="adm-btn" onClick={() => add(v)}>+ {v.size}</button>
+                  <button className="adm-btn" title="Dodaj vse velikosti tega artikla" onClick={() => addAllSizes(v.code)}>+ vse vel.</button>
+                  <button className="adm-btn" title="Velikost, ki je še ni v sistemu" onClick={() => addNewSize(v)}>+ nova vel.</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="adm-sec">Vrstice ({form.lines.length})</div>
+          {!form.lines.length ? <div className="adm-empty" style={{ padding: 18 }}>Poišči artikel zgoraj ali naloži Excel (stolpci: SKU, Količina, Nabavna cena).</div> : (
+            <table className="adm-tbl">
+              <thead><tr><th>Artikel</th><th className="r">Količina</th><th className="r">Nabavna cena/kos</th><th className="r">Skupaj</th><th /></tr></thead>
+              <tbody>
+                {form.lines.map((l, i) => {
+                  const v = bySku[l.sku] || { name: l.name, size: l.size };
+                  return (
+                    <tr key={l.sku}>
+                      <td><b>{v?.name}</b> · {v?.size}{l.isNew && <span className="adm-tag" style={{ marginLeft: 6 }}>nova velikost</span>}<div className="muted">{l.sku}</div></td>
+                      <td className="r"><input className="adm-inv-in" inputMode="numeric" value={l.qty} onChange={(e) => setLine(i, "qty", e.target.value.replace(/\D/g, ""))} /></td>
+                      <td className="r"><input className="adm-inv-in" style={{ width: 90 }} inputMode="decimal" placeholder="0,00" value={l.cost} onChange={(e) => setLine(i, "cost", e.target.value.replace(/[^0-9.,]/g, ""))} /></td>
+                      <td className="r num strong">{eurN((parseInt(l.qty, 10) || 0) * (toNum(l.cost) || 0))}</td>
+                      <td className="r"><button className="adm-btn" onClick={() => set("lines", form.lines.filter((_, j) => j !== i))}>✕</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+          {err && <div className="adm-note err" style={{ marginTop: 12, marginBottom: 0 }}>{err}</div>}
+        </div>
+        <div className="adm-mf" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 13.5 }}>{pieces} kosov · nabavna vrednost <b>{eurN(total)}</b> <span className="muted">(z DDV {eurN(total * (1 + VAT))})</span></span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="adm-btn" onClick={() => setForm(null)}>Prekliči</button>
+            <button className="adm-btn pri" onClick={save} disabled={busy}>{busy ? "Shranjujem …" : "Shrani prevzem"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================== CENIK & RVC =========================== */
+function PriceList() {
+  const [list, setList] = useState(null);
+  const [f, setF] = useState("all");
+  const [q, setQ] = useState("");
+  const [msg, setMsg] = useState(null);
+  const [edit, setEdit] = useState({});
+  const load = useCallback(async () => { const d = await getJSON("/api/admin/costs"); setList(d?.products || []); }, []);
+  useEffect(() => { load(); }, [load]);
+
+  async function saveCosts(items) {
+    const d = await getJSON("/api/admin/costs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items }) });
+    setMsg({ ok: !!d?.ok, t: d?.message || "Napaka pri shranjevanju." });
+    await load();
+  }
+  async function commit(code) {
+    const v = edit[code];
+    if (v === undefined) return;
+    setEdit((e) => { const n = { ...e }; delete n[code]; return n; });
+    const n = toNum(v);
+    if (!Number.isFinite(n)) return;
+    const cur = (list || []).find((p) => p.code === code)?.cost_cents;
+    if (cur != null && Math.round(n * 100) === cur) return;
+    await saveCosts([{ key: code, cost: n }]);
+  }
+  async function exportXlsx() {
+    const XLSX = await import("xlsx");
+    const ws = XLSX.utils.json_to_sheet((list || []).map((p) => ({ "Šifra": p.code, Artikel: p.name, Tip: p.type || "", Zaloga: p.stock,
+      "Prodajna cena z DDV": p.price_cents / 100, "Nabavna cena brez DDV": p.cost_cents != null ? p.cost_cents / 100 : "" })));
+    ws["!cols"] = [{ wch: 12 }, { wch: 26 }, { wch: 34 }, { wch: 8 }, { wch: 18 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Cenik");
+    XLSX.writeFile(wb, `cenik-69slam-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+  async function importXlsx(file) {
+    if (!file) return;
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(await file.arrayBuffer());
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false });
+    const nk = (k) => String(k).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+    const items = [];
+    for (const row of rows) {
+      const g = (...n) => { for (const k of Object.keys(row)) if (n.some((x) => nk(k) === x || nk(k).startsWith(x + " "))) return row[k]; return ""; };
+      const key = String(g("sifra", "sku", "koda", "code", "sifra artikla")).trim();
+      const cost = String(g("nabavna cena", "nc", "nabavna", "cost")).trim();
+      if (key && cost !== "" && Number.isFinite(toNum(cost))) items.push({ key, cost: toNum(cost) });
+    }
+    if (!items.length) { setMsg({ ok: false, t: "V datoteki ni stolpcev »Šifra« (ali SKU) in »Nabavna cena«." }); return; }
+    await saveCosts(items);
+  }
+
+  const FILT = [
+    { id: "all", lbl: "Vse", fn: () => true },
+    { id: "nocost", lbl: "Brez nabavne cene", fn: (p) => p.cost_cents == null },
+    { id: "boks", lbl: "Boksarice", fn: (p) => p.gender === "moski" && p.group === "boksarice" },
+    { id: "kop", lbl: "Kopalke", fn: (p) => p.gender === "moski" && p.group === "kopalke" },
+    { id: "ost", lbl: "Ostalo moško", fn: (p) => p.gender === "moski" && !["boksarice", "kopalke"].includes(p.group) },
+    { id: "out", lbl: "Ženske & otroci", fn: (p) => p.gender !== "moski" },
+  ];
+  const t = q.trim().toLowerCase();
+  const shown = (list || []).filter((p) => FILT.find((x) => x.id === f).fn(p) && (!t || `${p.name} ${p.code} ${p.type || ""}`.toLowerCase().includes(t)));
+  const sum = (list || []).reduce((a, p) => ({ cost: a.cost + (p.cost_cents || 0) * Math.max(0, p.stock), sale: a.sale + p.price_cents * Math.max(0, p.stock), miss: a.miss + (p.cost_cents == null && p.stock > 0 ? 1 : 0) }), { cost: 0, sale: 0, miss: 0 });
+
+  return (
+    <>
+      <div className="adm-top">
+        <div><h1>Cenik & RVC</h1><div className="sub">Nabavne cene so <b>brez DDV</b>. RVC = prodajna cena brez DDV − nabavna cena. Klikni ceno, da jo spremeniš.</div></div>
+        <div className="grow" />
+        <button className="adm-btn" onClick={exportXlsx} disabled={!list?.length}>⬇ Excel</button>
+        <label className="adm-btn" style={{ cursor: "pointer" }}>⬆ Uvozi nabavne cene
+          <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={(e) => { importXlsx(e.target.files?.[0]); e.target.value = ""; }} /></label>
+      </div>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      <div className="adm-stats" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
+        <div className="adm-card adm-stat"><div className="k">Vrednost zaloge (nabavna, brez DDV)</div><div className="v">{eur(sum.cost)}</div><div className="d">{sum.miss ? `${sum.miss} artiklov na zalogi brez nabavne cene` : "vsi artikli imajo nabavno ceno"}</div></div>
+        <div className="adm-card adm-stat"><div className="k">Vrednost zaloge (prodajna, z DDV)</div><div className="v">{eur(sum.sale)}</div><div className="d">po rednih cenah</div></div>
+        <div className="adm-card adm-stat"><div className="k">Možna RVC na zalogi</div><div className="v">{eur(Math.round(sum.sale / (1 + VAT)) - sum.cost)}</div><div className="d">prodajna brez DDV − nabavna</div></div>
+      </div>
+      <div className="adm-bar">
+        <div className="adm-chips">{FILT.map((x) => <button key={x.id} className={f === x.id ? "on" : ""} onClick={() => setF(x.id)}>{x.lbl} <span className="c">{(list || []).filter(x.fn).length}</span></button>)}</div>
+        <div className="adm-search"><input placeholder="Išči: ime ali šifra …" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+      </div>
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>Artikel</th><th className="r">Zaloga</th><th className="r">Prodajna z DDV</th><th className="r">Prodajna brez DDV</th><th className="r">Nabavna brez DDV</th><th className="r">RVC / kos</th><th className="r">Marža</th></tr></thead>
+          <tbody>
+            {list === null ? <tr><td colSpan={7} className="adm-empty">Nalagam …</td></tr> :
+             !shown.length ? <tr><td colSpan={7} className="adm-empty">Ni zadetkov.</td></tr> :
+             shown.map((p) => {
+              const net = p.price_cents / (1 + VAT);
+              const rvc = p.cost_cents != null ? net - p.cost_cents : null;
+              const val = edit[p.code] ?? (p.cost_cents != null ? (p.cost_cents / 100).toFixed(2).replace(".", ",") : "");
+              return (
+                <tr key={p.code}>
+                  <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><Thumb src={p.img} sm /><div><div className="strong">{p.name}</div><div className="muted">{p.code}{p.type ? ` · ${p.type}` : ""}</div></div></div></td>
+                  <td className="r num">{p.stock}</td>
+                  <td className="r num">{eur(p.price_cents)}</td>
+                  <td className="r num muted">{eur(Math.round(net))}</td>
+                  <td className="r"><input className="adm-inv-in" style={{ width: 92, borderColor: p.cost_cents == null ? "#F5C26B" : undefined }} inputMode="decimal" placeholder="—"
+                    value={val} onChange={(e) => setEdit((x) => ({ ...x, [p.code]: e.target.value.replace(/[^0-9.,]/g, "") }))}
+                    onBlur={() => commit(p.code)} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} /></td>
+                  <td className="r num strong" style={{ color: rvc == null ? "#C0C7D2" : rvc < 0 ? "var(--a-red)" : "var(--a-green)" }}>{rvc == null ? "—" : eur(Math.round(rvc))}</td>
+                  <td className="r num">{rvc == null ? "—" : `${Math.round((rvc / net) * 100)} %`}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
 export default async function SwimPage({ params }) {
   const { lang } = await params;
   const t = getDict(lang);
-  const products = getSwimProducts();
+  const products = getSwimProducts({ withEmpty: true });
   return (
     <main>
       <section className="pagehead swimhead">

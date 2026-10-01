@@ -9,7 +9,7 @@ import { GALLERY } from "../../../../lib/media";
 import DetailShots from "../../../../components/DetailShots";
 
 export function generateStaticParams() {
-  const products = getProducts();
+  const products = getProducts({ withEmpty: true });
   return LANGS.flatMap((lang) => products.map((p) => ({ lang, slug: p.slug })));
 }
 

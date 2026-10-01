@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { fmt } from "../lib/i18n";
+import { useCart } from "./CartContext";
 
 const COLL = ["all", "core", "limited", "sale"];
 const MEN_GROUPS = ["boksarice", "kopalke", "oblacila", "obutev", "dodatki"];
@@ -29,7 +30,10 @@ const KIND_LABEL = { BOARDSHORT: "Boardshort", VOLLEY: "Volley", ELASTIC: "Elast
 /**
  * mode: "men" (glavna trgovina) | "swim" (moške kopalke) | "outlet" (ženske + otroci −50 %)
  */
-export default function ProductGrid({ products, lang, t, mode = "men" }) {
+export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
+  const { byId } = useCart();
+  // živa zaloga iz baze: razprodani izginejo, ponovno prevzeti se vrnejo
+  const products = all.map((p) => byId(p.code) || p).filter((p) => p.totalStock > 0);
   const [group, setGroup] = useState(mode === "men" ? "boksarice" : "all");
   const [gender, setGender] = useState("all");
   const [kind, setKind] = useState("all");

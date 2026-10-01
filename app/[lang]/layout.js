@@ -15,7 +15,7 @@ export default async function LangLayout({ children, params }) {
   const { lang } = await params;
   if (!LANGS.includes(lang)) notFound();
   const t = getDict(lang);
-  const products = getProducts().map(slimProduct);
+  const products = getProducts({ withEmpty: true }).map(slimProduct);
 
   return (
     <CartProvider products={products}>

@@ -23,8 +23,8 @@ export async function generateMetadata({ params }) {
 export default async function Home({ params }) {
   const { lang } = await params;
   const t = getDict(lang);
-  const products = getMenProducts();
-  const boxers = products.filter((p) => p.group === "boksarice");
+  const products = getMenProducts({ withEmpty: true });
+  const boxers = products.filter((p) => p.group === "boksarice" && p.totalStock > 0);
   const swim = getSwimProducts().filter((p) => p.img).slice(0, 6);
   const outlet = getOutletProducts();
 

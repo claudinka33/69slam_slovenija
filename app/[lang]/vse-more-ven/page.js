@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
 export default async function OutletPage({ params }) {
   const { lang } = await params;
   const t = getDict(lang);
-  const products = getOutletProducts();
+  const products = getOutletProducts({ withEmpty: true });
   return (
     <main>
       <section className="pagehead outhead">

@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
+import { sortSizes } from "../lib/sizes";
 
 const CartCtx = createContext(null);
 export const useCart = () => useContext(CartCtx);
@@ -11,6 +12,7 @@ const SHIP = 5;
 
 export function CartProvider({ children, products: initialProducts }) {
   const [products, setProducts] = useState(initialProducts);
+  const [liveLoaded, setLiveLoaded] = useState(false);
   const [cart, setCart] = useState([]); // {id(code), size, qty} | {bundle:true, items:[{id,size}], qty:1}
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bundleOpen, setBundleOpen] = useState(false);
@@ -23,14 +25,19 @@ export function CartProvider({ children, products: initialProducts }) {
       .then((r) => r.json())
       .then((d) => {
         if (!d?.ok || !d.stock) return;
+        setLiveLoaded(true);
         setProducts((ps) =>
           ps.map((p) => {
             const live = d.stock[p.code];
             if (!live) return p;
-            const stock = { ...p.stock };
-            for (const s of Object.keys(stock)) if (s in live) stock[s] = live[s];
-            const totalStock = Object.values(stock).reduce((a, b) => a + b, 0);
-            return { ...p, stock, totalStock };
+            const stock = { ...p.stock, ...live }; // tudi nove velikosti iz prevzemov
+            const totalStock = Object.values(stock).reduce((a, b) => a + Math.max(0, b), 0);
+            // odprodaja zadnje velikosti (samo moške boksarice) po živi zalogi
+            const inStock = Object.values(stock).filter((q) => q > 0).length;
+            const sale = !p.outlet && p.group === "boksarice" && inStock === 1;
+            const effPrice = p.outlet ? p.effPrice : sale ? +(p.price * 0.5).toFixed(2) : p.price;
+            return { ...p, stock, sizes: sortSizes(Object.keys(stock)), totalStock, sale, effPrice,
+              bundleable: p.gender === "moski" && p.group === "boksarice" && !sale };
           })
         );
       })
@@ -149,7 +156,7 @@ export function CartProvider({ children, products: initialProducts }) {
   return (
     <CartCtx.Provider
       value={{
-        products, cart, byId, addItem, chQty, clearCart, count, subtotal, shipping,
+        products, liveLoaded, cart, byId, addItem, chQty, clearCart, count, subtotal, shipping,
         bundlePrice, singles, usedInCart,
         drawerOpen, setDrawerOpen,
         bundleOpen, setBundleOpen, openBundle, bundlePrefill, addBundle,

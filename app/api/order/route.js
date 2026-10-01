@@ -52,7 +52,18 @@ export async function POST(req) {
     return NextResponse.json({ ok: false, message: t.nodb }, { status: 503 });
 
   // ---- Preračun na strežniku (cen iz brskalnika NIKOLI ne verjamemo) ----
-  const products = Object.fromEntries(getProducts().map((p) => [p.code, p]));
+  // odprodaja zadnje velikosti se določi po živi zalogi v bazi
+  const products = Object.fromEntries(getProducts({ withEmpty: true }).map((p) => [p.code, p]));
+  if (dbConfigured()) {
+    const codes = [...new Set(body.cart.flatMap((l) => (l.bundle ? (l.items || []).map((x) => x.id) : [l.id])).filter(Boolean))];
+    const live = await db()`SELECT code, COUNT(*) FILTER (WHERE stock > 0)::int AS n FROM variants WHERE code = ANY(${codes}) GROUP BY code`;
+    for (const r of live) {
+      const p = products[r.code];
+      if (!p || p.outlet || p.group !== "boksarice") continue;
+      const sale = r.n === 1;
+      products[r.code] = { ...p, sale, effPrice: sale ? +(p.price * 0.5).toFixed(2) : p.price, bundleable: p.gender === "moski" && !sale };
+    }
+  }
   const items = []; // {sku,name,size,qty,price_cents,bundle_key}
   let bundleIdx = 0;
   for (const line of body.cart) {
@@ -61,7 +72,7 @@ export async function POST(req) {
       const key = `P3-${Date.now()}-${bundleIdx}`;
       const each = line.items.map((x) => {
         const p = products[x.id];
-        if (!p || !p.bundleable || !(x.size in p.stock)) return null; // paket = samo redne moške boksarice
+        if (!p || !p.bundleable || !x.size) return null; // paket = samo redne moške boksarice
         return { sku: skuOf(x.id, x.size), name: p.name, size: x.size, qty: 1,
                  price_cents: Math.round((p.price * (1 - BUNDLE_OFF)) * 100), bundle_key: key };
       });
@@ -70,7 +81,7 @@ export async function POST(req) {
       items.push(...each);
     } else if (line.id && line.size && line.qty > 0 && line.qty <= 20) {
       const p = products[line.id];
-      if (!p || !(line.size in p.stock)) return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
+      if (!p) return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
       const eff = p.effPrice; // odprodaja −50 % / VSE MORE VEN −50 % je že upoštevana
       items.push({ sku: skuOf(line.id, line.size), name: p.name, size: line.size,
                    qty: line.qty, price_cents: Math.round(eff * 100), bundle_key: null });
@@ -112,8 +123,9 @@ export async function POST(req) {
     RETURNING id, number`;
 
   for (const it of items) {
-    await sql`INSERT INTO order_items (order_id, sku, name, size, qty, price_cents, bundle_key)
-      VALUES (${order.id}, ${it.sku}, ${it.name}, ${it.size}, ${it.qty}, ${it.price_cents}, ${it.bundle_key})`;
+    await sql`INSERT INTO order_items (order_id, sku, name, size, qty, price_cents, bundle_key, cost_cents)
+      VALUES (${order.id}, ${it.sku}, ${it.name}, ${it.size}, ${it.qty}, ${it.price_cents}, ${it.bundle_key},
+        (SELECT p.cost_cents FROM variants v JOIN products p ON p.code = v.code WHERE v.sku = ${it.sku}))`;
     await sql`INSERT INTO stock_moves (sku, delta, reason, note)
       VALUES (${it.sku}, ${-it.qty}, 'narocilo', ${"Naročilo #" + order.number})`;
   }
