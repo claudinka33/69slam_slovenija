@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getProducts, getProductBySlug, getSharedDescription } from "../../../../lib/catalog";
 import { getDict, LANGS, fmt } from "../../../../lib/i18n";
 import AddToCart from "../../../../components/AddToCart";
+import ProductGallery from "../../../../components/ProductGallery";
 import ProductBundle from "../../../../components/ProductBundle";
 import { REVIEWS, REVIEW_SUMMARY } from "../../../../lib/reviews";
 import { GALLERY } from "../../../../lib/media";
@@ -68,18 +69,8 @@ export default async function ProductPage({ params }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Link href={backHref} className="pback">{t.back}</Link>
       <div className="pgrid">
-        <div>
-          <div className="pmain">
-            <img src={p.img} alt={micro ? `69SLAM ${p.cut} mikrofibra ${p.name}` : `69SLAM ${p.type} ${p.name}`} />
-          </div>
-          {p.images.length > 1 && (
-            <div className="pthumbs">
-              {p.images.map((im, i) => (
-                <img key={i} src={im.src} alt={`${p.name} ${i + 1}`} loading="lazy" />
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductGallery images={p.images.length ? p.images : (p.img ? [{ src: p.img }] : [])} name={p.name}
+          alt={micro ? `69SLAM ${p.cut} mikrofibra ${p.name}` : `69SLAM ${p.type} ${p.name}`} />
         <div className="pdet">
           <h1>{p.name}</h1>
           {!p.outlet && <a href="#ocene" className="pstars">★★★★★ <b>{REVIEW_SUMMARY.rating}</b> · {REVIEW_SUMMARY.count} {lang === "en" ? "reviews" : "ocen"}</a>}
