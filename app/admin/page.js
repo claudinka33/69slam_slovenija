@@ -1473,9 +1473,9 @@ function SalesRvc() {
         <div className="adm-card adm-stat"><div className="k">Prodaja brez DDV</div><div className="v">{t ? eur(t.net) : "…"}</div><div className="d">{t ? `${t.orders} naročil · ${t.qty} kosov · z DDV ${eur(t.gross)}` : " "}</div></div>
         <div className="adm-card adm-stat"><div className="k">Nabavna vrednost prodanega</div><div className="v">{t ? eur(t.cost) : "…"}</div><div className="d">brez DDV</div></div>
         <div className="adm-card adm-stat"><div className="k">Čisti RVC</div><div className="v" style={{ color: "var(--a-green)" }}>{t ? eur(t.rvc) : "…"}</div><div className="d">prodaja brez DDV − nabavna</div></div>
-        <div className="adm-card adm-stat"><div className="k">Marža</div><div className="v">{t ? pct(t) : "…"}</div><div className="d">{t ? (t.missQty ? `${t.missQty} kosov brez nabavne cene ni šteto` : "vsi prodani kosi imajo nabavno") : " "}</div></div>
+        <div className="adm-card adm-stat"><div className="k">Marža</div><div className="v">{t ? pct(t) : "…"}</div><div className="d">{t ? (t.missQty ? `${t.missQty} kosov brez nabavne cene ni šteto` : t.estQty ? `${t.estQty} kosov z oceno nabavne (povprečje skupine)` : "vsi prodani kosi imajo nabavno") : " "}</div></div>
       </div>
-      <div className="adm-note" style={{ marginBottom: 12 }}>Upoštevane so dejanske prodajne cene (s popusti in kodami), brez poštnine{t ? ` (poštnina v obdobju: ${eur(t.shipping)})` : ""}. Preklicana naročila niso šteta. Pri starih naročilih iz Shopifyja je uporabljena današnja nabavna cena.</div>
+      <div className="adm-note" style={{ marginBottom: 12 }}>Upoštevane so dejanske prodajne cene (s popusti in kodami), brez poštnine{t ? ` (poštnina v obdobju: ${eur(t.shipping)})` : ""}. Preklicana naročila niso šteta. Pri starih naročilih iz Shopifyja je uporabljena današnja nabavna cena (za artikle, ki jih ni več, nabavna iz cenikov Metakocke).</div>
       <div className="adm-grid2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 16, marginBottom: 16 }}>
         <div className="adm-card adm-scroll">
           <table className="adm-tbl">

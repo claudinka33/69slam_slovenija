@@ -1,5 +1,25 @@
 import { NextResponse } from "next/server";
+import fs from "node:fs";
+import path from "node:path";
 import { db, dbConfigured, ensureSchema, catalogMeta } from "../../../../lib/db";
+
+let _mk = null;
+/** Nabavne cene iz cenikov Metakocke (tudi za artikle, ki jih ni več v katalogu). */
+function mkCosts() {
+  if (!_mk) _mk = JSON.parse(fs.readFileSync(path.join(process.cwd(), "data/mk-costs.json"), "utf8"));
+  return _mk;
+}
+/** Nabavna (v centih) iz Metakocke: { cents, est } — est = ocena po povprečju skupine (prve 3 črke). */
+function mkCostOf(sku) {
+  const mk = mkCosts();
+  const s = String(sku || "").trim();
+  const [a, ...rest] = s.split("-");
+  const s0 = a.replace(/\s+/g, "").toUpperCase();
+  const s1 = (rest.join("-").trim().split(/[\s-]+/)[0] || "").toUpperCase();
+  for (const k of [s0 + s1, s0]) if (mk.codes[k] != null) return { cents: Math.round(mk.codes[k] * 100), est: false };
+  const p = mk.prefix[s0.slice(0, 3)];
+  return p != null ? { cents: Math.round(p * 100), est: true } : null;
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,7 +72,7 @@ export async function GET(req) {
   const byOrder = {};
   for (const it of items) (byOrder[it.order_id] = byOrder[it.order_id] || []).push(it);
 
-  const T = { orders: orders.length, qty: 0, gross: 0, net: 0, cost: 0, shipping: 0, missQty: 0, missNet: 0 };
+  const T = { estQty: 0, orders: orders.length, qty: 0, gross: 0, net: 0, cost: 0, shipping: 0, missQty: 0, missNet: 0 };
   const months = {}, arts = {}, groups = {};
   const add = (m, k, o) => { const x = (m[k] = m[k] || { qty: 0, gross: 0, net: 0, cost: 0, missQty: 0, missNet: 0, orders: 0 }); for (const f in o) x[f] += o[f]; return x; };
   for (const o of orders) {
@@ -66,7 +86,10 @@ export async function GET(req) {
       const gross = i.price_cents * i.qty * f;
       const net = gross / (1 + VAT);
       const code = codeOf(i.sku, bySku, codes);
-      const unit = i.cost_cents ?? (code ? cost[code] : null);
+      let unit = i.cost_cents ?? (code ? cost[code] : null);
+      let est = 0;
+      if (unit == null) { const m = mkCostOf(i.sku); if (m) { unit = m.cents; if (m.est) est = i.qty; } }
+      T.estQty += est;
       const c = unit != null ? unit * i.qty : 0;
       const miss = unit == null ? i.qty : 0;
       T.qty += i.qty; T.gross += gross; T.net += net; T.cost += c; T.missQty += miss; if (miss) T.missNet += net;
