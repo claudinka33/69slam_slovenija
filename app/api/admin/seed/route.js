@@ -9,7 +9,7 @@ export async function POST() {
     return NextResponse.json({ ok: false, message: "Baza še ni povezana (DATABASE_URL manjka). Najprej v Vercelu ustvari Neon bazo." }, { status: 503 });
   try {
     const r = await seedFromCatalog();
-    return NextResponse.json({ ok: true, message: `Uvoz končan: ${r.products} izdelkov, ${r.newVariants} novih variant (obstoječa zaloga je ostala nedotaknjena).` });
+    return NextResponse.json({ ok: true, message: `Uvoz končan: ${r.products} izdelkov, ${r.newVariants} novih variant${r.removed ? `, ${r.removed} odstranjenih izdelkov izbrisanih` : ""} (obstoječa zaloga je ostala nedotaknjena).` });
   } catch (e) {
     return NextResponse.json({ ok: false, message: "Napaka pri uvozu: " + String(e?.message || e) }, { status: 500 });
   }
