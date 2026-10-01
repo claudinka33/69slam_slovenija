@@ -2545,9 +2545,14 @@
    "price": 33,
    "images": [
     {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYFMR-PO-ZOOM.jpg?v=1783441681",
+     "file": "MBYFMR-04.jpg",
+     "role": "main"
+    },
+    {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYFMR-PO-01.jpg?v=1783441682",
      "file": "MBYFMR-01.jpg",
-     "role": "main"
+     "role": "gallery"
     },
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYFMR-PO-02.jpg?v=1783441682",
@@ -2558,11 +2563,6 @@
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYFMR-PO-03.jpg?v=1783441681",
      "file": "MBYFMR-03.jpg",
      "role": "gallery"
-    },
-    {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/MBYFMR-PO-ZOOM.jpg?v=1783441681",
-     "file": "MBYFMR-04.jpg",
-     "role": "main"
     }
    ],
    "variants": [
@@ -7432,13 +7432,13 @@
    "type_sl": "Unisex kapa z ravnim šiltom",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/CAPJLO-BK-01.jpg?v=1695722817",
-     "file": "CAPJLO-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/CAPJLO-BK-ZOOM.jpg?v=1695722817",
+     "file": "CAPJLO-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/CAPJLO-BK-ZOOM.jpg?v=1695722817",
-     "file": "CAPJLO-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/CAPJLO-BK-01.jpg?v=1695722817",
+     "file": "CAPJLO-01.jpg",
      "role": "gallery"
     },
     {
@@ -7722,13 +7722,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNAVA-PM-01.jpg?v=1712592532",
-     "file": "SSNAVA-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNAVA-PM-ZOOM.jpg?v=1712592532",
+     "file": "SSNAVA-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNAVA-PM-ZOOM.jpg?v=1712592532",
-     "file": "SSNAVA-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNAVA-PM-01.jpg?v=1712592532",
+     "file": "SSNAVA-01.jpg",
      "role": "gallery"
     },
     {
@@ -7782,13 +7782,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNEXS-PM-02.jpg?v=1712592574",
-     "file": "SSNEXS-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNEXS-PM-ZOOM.jpg?v=1712592574",
+     "file": "SSNEXS-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNEXS-PM-ZOOM.jpg?v=1712592574",
-     "file": "SSNEXS-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNEXS-PM-02.jpg?v=1712592574",
+     "file": "SSNEXS-01.jpg",
      "role": "gallery"
     },
     {
@@ -7849,13 +7849,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-BK-01.jpg?v=1712592542",
-     "file": "SSNPLNBK-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-BK-ZOOM.jpg?v=1712592542",
+     "file": "SSNPLNBK-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-BK-ZOOM.jpg?v=1712592542",
-     "file": "SSNPLNBK-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-BK-01.jpg?v=1712592542",
+     "file": "SSNPLNBK-01.jpg",
      "role": "gallery"
     },
     {
@@ -7923,13 +7923,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-DZ-02.jpg?v=1712592564",
-     "file": "SSNPLNDZ-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-DZ-ZOOM.jpg?v=1712592564",
+     "file": "SSNPLNDZ-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-DZ-ZOOM.jpg?v=1712592564",
-     "file": "SSNPLNDZ-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-DZ-02.jpg?v=1712592564",
+     "file": "SSNPLNDZ-01.jpg",
      "role": "gallery"
     },
     {
@@ -7990,13 +7990,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-NG-02.jpg?v=1712592860",
-     "file": "SSNPLNNG-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-NG-ZOOM.jpg?v=1712592860",
+     "file": "SSNPLNNG-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-NG-ZOOM.jpg?v=1712592860",
-     "file": "SSNPLNNG-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-NG-02.jpg?v=1712592860",
+     "file": "SSNPLNNG-01.jpg",
      "role": "gallery"
     },
     {
@@ -8057,13 +8057,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-RD-02.jpg?v=1712592869",
-     "file": "SSNPLNRD-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-RD-ZOOM.jpg?v=1712592869",
+     "file": "SSNPLNRD-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-RD-ZOOM.jpg?v=1712592869",
-     "file": "SSNPLNRD-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPLN-RD-02.jpg?v=1712592869",
+     "file": "SSNPLNRD-01.jpg",
      "role": "gallery"
     },
     {
@@ -8124,13 +8124,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNTPR-PM-02.jpg?v=1712592895",
-     "file": "SSNTPR-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNTPR-PM-ZOOM.jpg?v=1712592895",
+     "file": "SSNTPR-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNTPR-PM-ZOOM.jpg?v=1712592895",
-     "file": "SSNTPR-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNTPR-PM-02.jpg?v=1712592895",
+     "file": "SSNTPR-01.jpg",
      "role": "gallery"
     },
     {
@@ -8198,13 +8198,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNWGN-PM-02.jpg?v=1712592901",
-     "file": "SSNWGN-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNWGN-PM-ZOOM.jpg?v=1712592901",
+     "file": "SSNWGN-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNWGN-PM-ZOOM.jpg?v=1712592901",
-     "file": "SSNWGN-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNWGN-PM-02.jpg?v=1712592901",
+     "file": "SSNWGN-01.jpg",
      "role": "gallery"
     },
     {
@@ -8258,13 +8258,13 @@
    "type_sl": "Moške kopalne hlače · ELASTIC · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPLN-BK-02.jpg?v=1712592969",
-     "file": "SSBPLNBK-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPLN-BK-ZOOM.jpg?v=1712592969",
+     "file": "SSBPLNBK-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPLN-BK-ZOOM.jpg?v=1712592969",
-     "file": "SSBPLNBK-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPLN-BK-02.jpg?v=1712592969",
+     "file": "SSBPLNBK-01.jpg",
      "role": "gallery"
     },
     {
@@ -8318,13 +8318,13 @@
    "type_sl": "Moške kopalne hlače · ELASTIC · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBWGN-PM-02.jpg?v=1712593015",
-     "file": "SSBWGN-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBWGN-PM-ZOOM.jpg?v=1712593015",
+     "file": "SSBWGN-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBWGN-PM-ZOOM.jpg?v=1712593015",
-     "file": "SSBWGN-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBWGN-PM-02.jpg?v=1712593015",
+     "file": "SSBWGN-01.jpg",
      "role": "gallery"
     },
     {
@@ -8371,13 +8371,13 @@
    "type_sl": "Moške kopalne hlače · VOLLEY SHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMKWE-PM-01.jpg?v=1712593262",
-     "file": "SSMKWE-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMKWE-PM-ZOOM.jpg?v=1712593262",
+     "file": "SSMKWE-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMKWE-PM-ZOOM.jpg?v=1712593262",
-     "file": "SSMKWE-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMKWE-PM-01.jpg?v=1712593262",
+     "file": "SSMKWE-01.jpg",
      "role": "gallery"
     },
     {
@@ -8424,13 +8424,13 @@
    "type_sl": "Moške kopalne hlače · VOLLEY SHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMMEX-PM-01.jpg?v=1712593269",
-     "file": "SSMMEX-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMMEX-PM-ZOOM.jpg?v=1712593269",
+     "file": "SSMMEX-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMMEX-PM-ZOOM.jpg?v=1712593269",
-     "file": "SSMMEX-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMMEX-PM-01.jpg?v=1712593269",
+     "file": "SSMMEX-01.jpg",
      "role": "gallery"
     },
     {
@@ -8463,13 +8463,13 @@
    "type_sl": "Moške kopalne hlače · VOLLEY SHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMMOF-PM-02.jpg?v=1712593273",
-     "file": "SSMMOF-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMMOF-PM-ZOOM.jpg?v=1712593273",
+     "file": "SSMMOF-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMMOF-PM-ZOOM.jpg?v=1712593273",
-     "file": "SSMMOF-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMMOF-PM-02.jpg?v=1712593273",
+     "file": "SSMMOF-01.jpg",
      "role": "gallery"
     },
     {
@@ -8622,13 +8622,13 @@
    "type_sl": "Moške kopalne hlače · LONG LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLLBC-PM-02.jpg?v=1712593068",
-     "file": "SLLLBC-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLLBC-PM-ZOOM.jpg?v=1712593068",
+     "file": "SLLLBC-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLLBC-PM-ZOOM.jpg?v=1712593068",
-     "file": "SLLLBC-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLLBC-PM-02.jpg?v=1712593068",
+     "file": "SLLLBC-01.jpg",
      "role": "gallery"
     },
     {
@@ -8675,13 +8675,13 @@
    "type_sl": "Moške kopalne hlače · LONG LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLMXO-PM-02.jpg?v=1712593076",
-     "file": "SLLMXO-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLMXO-PM-ZOOM.jpg?v=1712593076",
+     "file": "SLLMXO-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLMXO-PM-ZOOM.jpg?v=1712593076",
-     "file": "SLLMXO-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLMXO-PM-02.jpg?v=1712593076",
+     "file": "SLLMXO-01.jpg",
      "role": "gallery"
     },
     {
@@ -8728,13 +8728,13 @@
    "type_sl": "Moške kopalne hlače · LONG LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLSRP-PM-02.jpg?v=1712593095",
-     "file": "SLLSRP-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLSRP-PM-ZOOM.jpg?v=1712593095",
+     "file": "SLLSRP-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLSRP-PM-ZOOM.jpg?v=1712593095",
-     "file": "SLLSRP-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLSRP-PM-02.jpg?v=1712593095",
+     "file": "SLLSRP-01.jpg",
      "role": "gallery"
     },
     {
@@ -8781,13 +8781,13 @@
    "type_sl": "Moške kopalne hlače · LONG LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLTMS-PM-02.jpg?v=1712593103",
-     "file": "SLLTMS-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLTMS-PM-ZOOM.jpg?v=1712593103",
+     "file": "SLLTMS-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLTMS-PM-ZOOM.jpg?v=1712593103",
-     "file": "SLLTMS-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLLTMS-PM-02.jpg?v=1712593103",
+     "file": "SLLTMS-01.jpg",
      "role": "gallery"
     },
     {
@@ -8894,13 +8894,13 @@
    "type_sl": "Moške kopalne hlače · MEDIUM LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLBAL-PM-02.jpg?v=1712593113",
-     "file": "SSLBAL-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLBAL-PM-ZOOM.jpg?v=1712593113",
+     "file": "SSLBAL-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLBAL-PM-ZOOM.jpg?v=1712593113",
-     "file": "SSLBAL-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLBAL-PM-02.jpg?v=1712593113",
+     "file": "SSLBAL-01.jpg",
      "role": "gallery"
     },
     {
@@ -8940,13 +8940,13 @@
    "type_sl": "Moške kopalne hlače · MEDIUM LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLCPS-PM-02.jpg?v=1712593118",
-     "file": "SSLCPS-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLCPS-PM-ZOOM.jpg?v=1712593118",
+     "file": "SSLCPS-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLCPS-PM-ZOOM.jpg?v=1712593118",
-     "file": "SSLCPS-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLCPS-PM-02.jpg?v=1712593118",
+     "file": "SSLCPS-01.jpg",
      "role": "gallery"
     },
     {
@@ -8993,13 +8993,13 @@
    "type_sl": "Moške kopalne hlače · MEDIUM LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLLBC-PM-02.jpg?v=1712593156",
-     "file": "SSLLBC-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLLBC-PM-ZOOM.jpg?v=1712593156",
+     "file": "SSLLBC-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLLBC-PM-ZOOM.jpg?v=1712593156",
-     "file": "SSLLBC-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLLBC-PM-02.jpg?v=1712593156",
+     "file": "SSLLBC-01.jpg",
      "role": "gallery"
     },
     {
@@ -9053,13 +9053,13 @@
    "type_sl": "Moške kopalne hlače · MEDIUM LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLMXO-PM-02.jpg?v=1712593163",
-     "file": "SSLMXO-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLMXO-PM-ZOOM.jpg?v=1712593163",
+     "file": "SSLMXO-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLMXO-PM-ZOOM.jpg?v=1712593163",
-     "file": "SSLMXO-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLMXO-PM-02.jpg?v=1712593163",
+     "file": "SSLMXO-01.jpg",
      "role": "gallery"
     },
     {
@@ -9152,13 +9152,13 @@
    "type_sl": "Moške kopalne hlače · MEDIUM LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLTWV-PM-02.jpg?v=1712593239",
-     "file": "SSLTWV-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLTWV-PM-ZOOM.jpg?v=1712593239",
+     "file": "SSLTWV-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLTWV-PM-ZOOM.jpg?v=1712593239",
-     "file": "SSLTWV-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLTWV-PM-02.jpg?v=1712593239",
+     "file": "SSLTWV-01.jpg",
      "role": "gallery"
     },
     {
@@ -9212,13 +9212,13 @@
    "type_sl": "Moške kopalne hlače · CLASSIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSCMXO-PM-01.jpg?v=1712592933",
-     "file": "SSCMXO-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSCMXO-PM-ZOOM.jpg?v=1712592933",
+     "file": "SSCMXO-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSCMXO-PM-ZOOM.jpg?v=1712592933",
-     "file": "SSCMXO-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSCMXO-PM-01.jpg?v=1712592933",
+     "file": "SSCMXO-01.jpg",
      "role": "gallery"
     },
     {
@@ -9258,13 +9258,13 @@
    "type_sl": "Moške kopalne hlače · CLASSIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSCOCT-PM-01.jpg?v=1712592920",
-     "file": "SSCOCT-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSCOCT-PM-ZOOM.jpg?v=1712592920",
+     "file": "SSCOCT-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSCOCT-PM-ZOOM.jpg?v=1712592920",
-     "file": "SSCOCT-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSCOCT-PM-01.jpg?v=1712592920",
+     "file": "SSCOCT-01.jpg",
      "role": "gallery"
     },
     {
@@ -9509,13 +9509,13 @@
    "type_sl": "Moške kopalne hlače · MEDIUM LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSXFLA-PM-02.jpg?v=1712593136",
-     "file": "SSXFLA-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSXFLA-PM-ZOOM.jpg?v=1712593136",
+     "file": "SSXFLA-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSXFLA-PM-ZOOM.jpg?v=1712593136",
-     "file": "SSXFLA-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSXFLA-PM-02.jpg?v=1712593136",
+     "file": "SSXFLA-01.jpg",
      "role": "gallery"
     },
     {
@@ -9569,13 +9569,13 @@
    "type_sl": "Moške kopalne hlače · MEDIUM LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSXNSK-PM-02.jpg?v=1712593168",
-     "file": "SSXNSK-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSXNSK-PM-ZOOM.jpg?v=1712593168",
+     "file": "SSXNSK-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSXNSK-PM-ZOOM.jpg?v=1712593168",
-     "file": "SSXNSK-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSXNSK-PM-02.jpg?v=1712593168",
+     "file": "SSXNSK-01.jpg",
      "role": "gallery"
     },
     {
@@ -9993,13 +9993,13 @@
    "type_sl": "Nogavice · UNISEX",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKFWL-AT-01.jpg?v=1696420093",
-     "file": "SCKFWL-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKFWL-AT-ZOOM.jpg?v=1696420092",
+     "file": "SCKFWL-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKFWL-AT-ZOOM.jpg?v=1696420092",
-     "file": "SCKFWL-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKFWL-AT-01.jpg?v=1696420093",
+     "file": "SCKFWL-01.jpg",
      "role": "gallery"
     },
     {
@@ -10039,13 +10039,13 @@
    "type_sl": "Nogavice · UNISEX",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKIKI-AT-02.jpg?v=1696420281",
-     "file": "SCKIKI-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKIKI-AT-ZOOM.jpg?v=1696420281",
+     "file": "SCKIKI-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKIKI-AT-ZOOM.jpg?v=1696420281",
-     "file": "SCKIKI-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKIKI-AT-02.jpg?v=1696420281",
+     "file": "SCKIKI-01.jpg",
      "role": "gallery"
     },
     {
@@ -10121,13 +10121,13 @@
    "type_sl": "Nogavice · UNISEX",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKTTR-AT-02.jpg?v=1696420635",
-     "file": "SCKTTR-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKTTR-AT-ZOOM.jpg?v=1696420635",
+     "file": "SCKTTR-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKTTR-AT-ZOOM.jpg?v=1696420635",
-     "file": "SCKTTR-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SCKTTR-AT-02.jpg?v=1696420635",
+     "file": "SCKTTR-01.jpg",
      "role": "gallery"
     },
     {
@@ -13960,13 +13960,13 @@
    "type_sl": "Ženske japonke",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/AGSALS-AT-01.jpg?v=1697814627",
-     "file": "AGSALS-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/AGSALS-AT-ZOOM.jpg?v=1697814627",
+     "file": "AGSALS-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/AGSALS-AT-ZOOM.jpg?v=1697814627",
-     "file": "AGSALS-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/AGSALS-AT-01.jpg?v=1697814627",
+     "file": "AGSALS-01.jpg",
      "role": "gallery"
     },
     {
@@ -14870,13 +14870,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPBK-PM-01-ICON.jpg?v=1712592865",
-     "file": "SSNPBK-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPBK-PM-ZOOM.jpg?v=1712592865",
+     "file": "SSNPBK-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPBK-PM-ZOOM.jpg?v=1712592865",
-     "file": "SSNPBK-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNPBK-PM-01-ICON.jpg?v=1712592865",
+     "file": "SSNPBK-01.jpg",
      "role": "gallery"
     },
     {
@@ -14923,13 +14923,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNSYH-PM-01-ICON.jpg?v=1712592888",
-     "file": "SSNSYH-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNSYH-PM-ZOOM.jpg?v=1712659465",
+     "file": "SSNSYH-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNSYH-PM-ZOOM.jpg?v=1712659465",
-     "file": "SSNSYH-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNSYH-PM-01-ICON.jpg?v=1712592888",
+     "file": "SSNSYH-01.jpg",
      "role": "gallery"
     },
     {
@@ -14969,13 +14969,13 @@
    "type_sl": "Moške kopalne hlače · 4 WAYS STRETCH · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBSYH-PM-01-ICON.jpg?v=1712592480",
-     "file": "SSBSYH-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBSYH-PM-ZOOM.jpg?v=1712592480",
+     "file": "SSBSYH-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBSYH-PM-ZOOM.jpg?v=1712592480",
-     "file": "SSBSYH-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBSYH-PM-01-ICON.jpg?v=1712592480",
+     "file": "SSBSYH-01.jpg",
      "role": "gallery"
     },
     {
@@ -15015,13 +15015,13 @@
    "type_sl": "Moške kopalne hlače · 4 WAYS STRETCH · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPBK-PM-01-ICON.jpg?v=1712592483",
-     "file": "SSBPBK-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPBK-PM-ZOOM.jpg?v=1712592483",
+     "file": "SSBPBK-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPBK-PM-ZOOM.jpg?v=1712592483",
-     "file": "SSBPBK-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPBK-PM-01-ICON.jpg?v=1712592483",
+     "file": "SSBPBK-01.jpg",
      "role": "gallery"
     },
     {
@@ -15061,13 +15061,13 @@
    "type_sl": "Moške kopalne hlače · MEDIUM LENGTH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLGED-PM-02.jpg?v=1712592489",
-     "file": "SSLGED-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLGED-PM-ZOOM.jpg?v=1712660460",
+     "file": "SSLGED-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLGED-PM-ZOOM.jpg?v=1712660460",
-     "file": "SSLGED-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSLGED-PM-02.jpg?v=1712592489",
+     "file": "SSLGED-01.jpg",
      "role": "gallery"
     },
     {
@@ -15160,13 +15160,13 @@
    "type_sl": "Moške kopalne hlače · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBJUB-PM-01.jpg?v=1713268368",
-     "file": "SEBJUB-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBJUB-PM-ZOOM.jpg?v=1713268368",
+     "file": "SEBJUB-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBJUB-PM-ZOOM.jpg?v=1713268368",
-     "file": "SEBJUB-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBJUB-PM-01.jpg?v=1713268368",
+     "file": "SEBJUB-01.jpg",
      "role": "gallery"
     },
     {
@@ -15213,13 +15213,13 @@
    "type_sl": "Moške kopalne hlače · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBMXO-PM-01.jpg?v=1713268379",
-     "file": "SEBMXO-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBMXO-PM-ZOOM.jpg?v=1713268379",
+     "file": "SEBMXO-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBMXO-PM-ZOOM.jpg?v=1713268379",
-     "file": "SEBMXO-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBMXO-PM-01.jpg?v=1713268379",
+     "file": "SEBMXO-01.jpg",
      "role": "gallery"
     },
     {
@@ -15273,13 +15273,13 @@
    "type_sl": "Moške kopalne hlače · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBNSK-PM-01.jpg?v=1713268417",
-     "file": "SEBNSK-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBNSK-PM-ZOOM.jpg?v=1713268417",
+     "file": "SEBNSK-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBNSK-PM-ZOOM.jpg?v=1713268417",
-     "file": "SEBNSK-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBNSK-PM-01.jpg?v=1713268417",
+     "file": "SEBNSK-01.jpg",
      "role": "gallery"
     },
     {
@@ -15326,13 +15326,13 @@
    "type_sl": "Moške kopalne hlače · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBOCT-PM-01.jpg?v=1713268353",
-     "file": "SEBOCT-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBOCT-PM-ZOOM.jpg?v=1713951846",
+     "file": "SEBOCT-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBOCT-PM-ZOOM.jpg?v=1713951846",
-     "file": "SEBOCT-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBOCT-PM-01.jpg?v=1713268353",
+     "file": "SEBOCT-01.jpg",
      "role": "gallery"
     },
     {
@@ -15379,13 +15379,13 @@
    "type_sl": "Moške kopalne hlače · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBTMS-PM-01.jpg?v=1713268400",
-     "file": "SEBTMS-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBTMS-PM-ZOOM.jpg?v=1713268400",
+     "file": "SEBTMS-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBTMS-PM-ZOOM.jpg?v=1713268400",
-     "file": "SEBTMS-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SEBTMS-PM-01.jpg?v=1713268400",
+     "file": "SEBTMS-01.jpg",
      "role": "gallery"
     },
     {
@@ -16076,13 +16076,13 @@
    "type_sl": "Moške kopalne hlače · VOLLEY SHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMANW-PM-01-ICON.jpg?v=1741865079",
-     "file": "SSMANW-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMANW-PM-ZOOM.jpg?v=1741865079",
+     "file": "SSMANW-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMANW-PM-ZOOM.jpg?v=1741865079",
-     "file": "SSMANW-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSMANW-PM-01-ICON.jpg?v=1741865079",
+     "file": "SSMANW-01.jpg",
      "role": "gallery"
     },
     {
@@ -17427,13 +17427,13 @@
    "type_sl": "Moške kopalne hlače · 4 WAYS STRETCH · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBKPG-PM-02.jpg?v=1775651607",
-     "file": "SSBKPG-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBKPG-PM-ZOOM.jpg?v=1775651607",
+     "file": "SSBKPG-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBKPG-PM-ZOOM.jpg?v=1775651607",
-     "file": "SSBKPG-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBKPG-PM-02.jpg?v=1775651607",
+     "file": "SSBKPG-01.jpg",
      "role": "gallery"
     },
     {
@@ -17494,13 +17494,13 @@
    "type_sl": "Moške kopalne hlače · 4 WAYS STRETCH · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPLN-AG-01-ICON.jpg?v=1775651896",
-     "file": "SSBPLNAG-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPLN-AG-ZOOM.jpg?v=1775651896",
+     "file": "SSBPLNAG-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPLN-AG-ZOOM.jpg?v=1775651896",
-     "file": "SSBPLNAG-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBPLN-AG-01-ICON.jpg?v=1775651896",
+     "file": "SSBPLNAG-01.jpg",
      "role": "gallery"
     },
     {
@@ -17561,13 +17561,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNKPG-PM-02.jpg?v=1775652351",
-     "file": "SSNKPG-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNKPG-PM-ZOOM.jpg?v=1775652351",
+     "file": "SSNKPG-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNKPG-PM-ZOOM.jpg?v=1775652351",
-     "file": "SSNKPG-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNKPG-PM-02.jpg?v=1775652351",
+     "file": "SSNKPG-01.jpg",
      "role": "gallery"
     },
     {
@@ -17628,13 +17628,13 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNUWT-PM-02.jpg?v=1775652511",
-     "file": "SSNUWT-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNUWT-PM-ZOOM.jpg?v=1775652523",
+     "file": "SSNUWT-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNUWT-PM-ZOOM.jpg?v=1775652523",
-     "file": "SSNUWT-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNUWT-PM-02.jpg?v=1775652511",
+     "file": "SSNUWT-01.jpg",
      "role": "gallery"
     },
     {
@@ -17695,18 +17695,18 @@
    "type_sl": "Moške kopalne hlače · BOARDSHORT · 4 WAYS STRETCH",
    "images": [
     {
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNVCE-PM-ZOOM.jpg?v=1775652665",
+     "file": "SSNVCE-03.jpg",
+     "role": "main"
+    },
+    {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SLWVCE-PM-01-ICON.jpg?v=1778856802",
      "file": "SSNVCE-01.jpg",
-     "role": "main"
+     "role": "gallery"
     },
     {
      "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNVCE-PM-02.jpg?v=1775652665",
      "file": "SSNVCE-02.jpg",
-     "role": "gallery"
-    },
-    {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSNVCE-PM-ZOOM.jpg?v=1775652665",
-     "file": "SSNVCE-03.jpg",
      "role": "gallery"
     }
    ],
@@ -17831,13 +17831,13 @@
    "type_sl": "Moške kopalne hlače · 4 WAYS STRETCH · ELASTIC",
    "images": [
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBVCE-PM-02.jpg?v=1783442101",
-     "file": "SSBVCE-01.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBVCE-PM-ZOOM.jpg?v=1783442101",
+     "file": "SSBVCE-02.jpg",
      "role": "main"
     },
     {
-     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBVCE-PM-ZOOM.jpg?v=1783442101",
-     "file": "SSBVCE-02.jpg",
+     "src_url": "https://cdn.shopify.com/s/files/1/0778/4018/7715/files/SSBVCE-PM-02.jpg?v=1783442101",
+     "file": "SSBVCE-01.jpg",
      "role": "gallery"
     },
     {

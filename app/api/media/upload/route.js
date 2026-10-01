@@ -57,7 +57,8 @@ export async function POST(req) {
   const blob = await put(`products/${code}/${String(pos).padStart(2, "0")}.${ext}`, buf, {
     access: "public", contentType: type, addRandomSuffix: true,
   });
-  await sql`INSERT INTO product_images (code, pos, url, source) VALUES (${code}, ${pos}, ${blob.url}, ${source})
-    ON CONFLICT (code, pos) DO UPDATE SET url = EXCLUDED.url, source = EXCLUDED.source, created_at = now()`;
+  if (u.searchParams.get("nodb") !== "1")
+    await sql`INSERT INTO product_images (code, pos, url, source) VALUES (${code}, ${pos}, ${blob.url}, ${source})
+      ON CONFLICT (code, pos) DO UPDATE SET url = EXCLUDED.url, source = EXCLUDED.source, created_at = now()`;
   return NextResponse.json({ ok: true, url: blob.url }, { headers: h });
 }
