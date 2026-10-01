@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { db, dbConfigured, ensureSchema } from "../../../../lib/db";
-import { primeCatalog, getAnyProduct, defaultDescription } from "../../../../lib/catalog";
+import { primeCatalog, getAnyProduct, defaultDescription, getRawProduct } from "../../../../lib/catalog";
 import { getDict } from "../../../../lib/i18n";
 
 export const runtime = "nodejs";
@@ -57,7 +57,10 @@ export async function POST(req) {
     VALUES (${code}, ${name}, ${type}, ${desc}, ${price}, ${published}, now())
     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, type_sl = EXCLUDED.type_sl, description = EXCLUDED.description,
       price_cents = EXCLUDED.price_cents, published = EXCLUDED.published, updated_at = now()`;
-  await sql`UPDATE products SET name = COALESCE(${name}, name), price_cents = COALESCE(${price}, price_cents),
+  const raw = getRawProduct(code);
+  const baseName = raw?.name ?? null;
+  const basePrice = raw ? Math.round(raw.price * 100) : null;
+  await sql`UPDATE products SET name = COALESCE(${name}, ${baseName}, name), price_cents = COALESCE(${price}, ${basePrice}, price_cents),
     active = COALESCE(${published}, active) WHERE code = ${code}`;
   revalidateTag("catalog");
   revalidatePath("/", "layout");
