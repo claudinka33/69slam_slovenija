@@ -10,9 +10,10 @@
     "slike": "node scripts/download-images.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "next": "15.5.25",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "@neondatabase/serverless": "^0.10.4"
+    "xlsx": "^0.18.5"
   }
 }

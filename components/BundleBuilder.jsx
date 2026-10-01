@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useCart } from "./CartContext";
 import { fmt } from "../lib/i18n";
 
-const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
 
 export default function BundleBuilder({ t }) {
   const {
@@ -11,7 +10,7 @@ export default function BundleBuilder({ t }) {
     usedInCart, showToast, BUNDLE_N, BUNDLE_OFF,
   } = useCart();
 
-  const regular = products.filter((p) => !p.sale);
+  const regular = products.filter((p) => p.bundleable);
   const [sel, setSel] = useState([]);
   const [cur, setCur] = useState(regular[0]?.code);
 
@@ -87,7 +86,7 @@ export default function BundleBuilder({ t }) {
           </div>
           <div className="plabel">{t.size_label}</div>
           <div className="sizes">
-            {SIZE_ORDER.map((s) => {
+            {p.sizes.map((s) => {
               const has = s in p.stock;
               const f = has ? free(s) : 0;
               if (!has || f <= 0) return <div className="size out" key={s}>{s}</div>;

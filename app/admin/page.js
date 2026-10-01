@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { Fragment, useEffect, useMemo, useState, useCallback } from "react";
 import "./admin.css";
 
 /* ---------- pomočniki ---------- */
@@ -11,7 +11,16 @@ const dShort = (d) => new Date(d).toLocaleDateString("sl-SI", { day: "numeric", 
 const PAY = { card: "Kartica", proforma: "Predračun", cod: "Po povzetju", shopify: "Shopify" };
 const STATUSES = ["novo", "placano", "poslano", "zakljuceno", "preklicano"];
 const SLABEL = { novo: "Novo", placano: "Plačano", poslano: "Poslano", zakljuceno: "Zaključeno", preklicano: "Preklicano" };
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const STD = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+const sortSizes = (list) => {
+  const rank = (x) => { const i = STD.indexOf(x); if (i > -1) return i; const n = parseInt(x, 10); return Number.isFinite(n) ? 100 + n : 1000; };
+  return [...list].sort((a, b) => rank(a) - rank(b) || String(a).localeCompare(String(b)));
+};
+const GROUP_LABEL = { boksarice: "Boksarice", kopalke: "Kopalke", oblacila: "Oblačila", obutev: "Obutev", dodatki: "Dodatki", perilo: "Spodnje perilo" };
+const GENDER_LABEL = { moski: "Moški", zenske: "Ženske", otroci: "Otroci" };
+const groupKey = (p) => (p.gender === "moski" ? p.group : p.gender);
+const GROUP_ORDER = ["boksarice", "kopalke", "oblacila", "obutev", "dodatki", "zenske", "otroci"];
+const groupName = (k) => GROUP_LABEL[k] || GENDER_LABEL[k] || k;
 const REASONS = { prejem: "Prejem blaga", inventura: "Inventura", rocno: "Ročno" };
 const onum = (o) => (o.source === "shopify" ? `S#${o.number}` : `#${o.number}`);
 const getJSON = (url, opt) => fetch(url, opt).then((r) => r.json()).catch(() => null);
@@ -64,7 +73,8 @@ export default function Admin() {
   const NAV = [
     { id: "dashboard", ico: "📊", lbl: "Dashboard" },
     { id: "narocila", ico: "📦", lbl: "Naročila", bdg: newCount || null },
-    { id: "zaloga", ico: "👕", lbl: "Zaloga", bdg: lowCount || null, warn: true },
+    { id: "zaloga", ico: "👕", lbl: "Zaloga" },
+    { id: "inventura", ico: "📋", lbl: "Inventura" },
     { id: "stranke", ico: "👤", lbl: "Stranke" },
     { id: "nastavitve", ico: "⚙️", lbl: "Nastavitve", soon: true },
   ];
@@ -110,6 +120,7 @@ export default function Admin() {
         {view === "dashboard" && <Dashboard onOpenOrder={(id) => { setOpenOrder(id); }} goOrders={() => go("narocila")} />}
         {view === "narocila" && <Orders orders={orders} onOpen={setOpenOrder} />}
         {view === "zaloga" && <Stock stock={stock} reload={loadStock} />}
+        {view === "inventura" && <Inventory stock={stock} reload={loadStock} />}
         {view === "stranke" && <Customers reloadOrders={loadOrders} />}
       </main>
 
@@ -405,8 +416,11 @@ function Stock({ stock, reload }) {
     { id: "vsi", lbl: "Vsi", fn: () => true },
     { id: "low", lbl: "Samo pri koncu", fn: isLow },
     { id: "out", lbl: "Razprodano", fn: (p) => p.total === 0 },
-    { id: "boks", lbl: "Boksarice", fn: (p) => p.category === "boksarice" },
-    { id: "kop", lbl: "Kopalke", fn: (p) => p.category === "kopalke" },
+    { id: "boks", lbl: "Boksarice", fn: (p) => p.gender === "moski" && p.group === "boksarice" },
+    { id: "kop", lbl: "Kopalke", fn: (p) => p.gender === "moski" && p.group === "kopalke" },
+    { id: "ost", lbl: "Ostalo moško", fn: (p) => p.gender === "moski" && !["boksarice", "kopalke"].includes(p.group) },
+    { id: "zen", lbl: "Ženske −50 %", fn: (p) => p.gender === "zenske" },
+    { id: "otr", lbl: "Otroci −50 %", fn: (p) => p.gender === "otroci" },
   ];
   const list = useMemo(() => {
     const fn = FILTERS.find((x) => x.id === f).fn;
@@ -416,6 +430,11 @@ function Stock({ stock, reload }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stock, f, q]);
   const totals = useMemo(() => (stock || []).reduce((a, p) => a + p.total, 0), [stock]);
+  const { cols, extra } = useMemo(() => {
+    const all = sortSizes([...new Set(list.flatMap((p) => Object.keys(p.sizes)))]);
+    if (all.length <= 9) return { cols: all.length ? all : STD.slice(0, 6), extra: false };
+    return { cols: STD.filter((x) => all.includes(x)), extra: true };
+  }, [list]);
 
   async function seed() {
     if (!confirm("Uvozim katalog v bazo? Nove variante dobijo začetno zalogo, obstoječa zaloga ostane nedotaknjena.")) return;
@@ -451,14 +470,15 @@ function Stock({ stock, reload }) {
           <thead>
             <tr>
               <th>Print</th>
-              {SIZES.map((s) => <th key={s} className="sz">{s}</th>)}
+              {cols.map((s) => <th key={s} className="sz">{s}</th>)}
+              {extra && <th className="sz">Ostale vel.</th>}
               <th className="sz">Skupaj</th>
             </tr>
           </thead>
           <tbody>
-            {stock === null ? <tr><td colSpan={8} className="adm-empty">Nalagam …</td></tr> :
-             !stock.length ? <tr><td colSpan={8} className="adm-empty">Baza je prazna — klikni »Uvozi katalog v bazo« zgoraj.</td></tr> :
-             !list.length ? <tr><td colSpan={8} className="adm-empty">Ni zadetkov.</td></tr> :
+            {stock === null ? <tr><td colSpan={cols.length + 3} className="adm-empty">Nalagam …</td></tr> :
+             !stock.length ? <tr><td colSpan={cols.length + 3} className="adm-empty">Baza je prazna — klikni »Uvozi katalog v bazo« zgoraj.</td></tr> :
+             !list.length ? <tr><td colSpan={cols.length + 3} className="adm-empty">Ni zadetkov.</td></tr> :
              list.map((p) => (
               <tr key={p.code}>
                 <td style={{ minWidth: 220 }}>
@@ -466,11 +486,11 @@ function Stock({ stock, reload }) {
                     <Thumb src={p.img} sm />
                     <div>
                       <div className="strong">{p.name}</div>
-                      <div className="muted">{p.code}{p.collection === "limited" ? " · limited" : ""}{!p.active ? " · neaktiven" : ""}</div>
+                      <div className="muted">{p.code}{p.type ? ` · ${p.type}` : ""}{p.collection === "limited" ? " · limited" : ""}{!p.active ? " · neaktiven" : ""}</div>
                     </div>
                   </div>
                 </td>
-                {SIZES.map((s) => {
+                {cols.map((s) => {
                   const v = p.sizes[s];
                   if (!v) return <td key={s} className="cell"><span className="adm-cell none">—</span></td>;
                   const cls = v.stock === 0 ? "zero" : v.stock <= 2 ? "low" : "";
@@ -483,6 +503,22 @@ function Stock({ stock, reload }) {
                     </td>
                   );
                 })}
+                {extra && (
+                  <td className="cell" style={{ textAlign: "left" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {sortSizes(Object.keys(p.sizes).filter((x) => !cols.includes(x))).map((s) => {
+                        const v = p.sizes[s];
+                        const cls = v.stock === 0 ? "zero" : v.stock <= 2 ? "low" : "";
+                        return (
+                          <button key={s} className={`adm-cell ${cls}`} style={{ minWidth: 0, padding: "0 8px", fontSize: 12 }}
+                            title={`${v.sku} — popravi zalogo`} onClick={() => setEdit({ p, size: s })}>
+                            <span style={{ fontWeight: 500, marginRight: 4 }}>{s}</span>{v.stock}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </td>
+                )}
                 <td className="tot num">{p.total}</td>
               </tr>
             ))}
@@ -678,6 +714,304 @@ function Customers({ reloadOrders }) {
           </tbody>
         </table>
       </div>
+    </>
+  );
+}
+
+/* =========================== INVENTURA =========================== */
+const INV_KEY = "inv69-draft";
+const today = () => new Date().toLocaleDateString("sl-SI", { day: "numeric", month: "numeric", year: "numeric" });
+
+function Inventory({ stock, reload }) {
+  const [grp, setGrp] = useState("all");
+  const [onlyStock, setOnlyStock] = useState(true);
+  const [q, setQ] = useState("");
+  const [counts, setCounts] = useState({});
+  const [showSys, setShowSys] = useState(true);
+  const [printing, setPrinting] = useState(false);
+  const [review, setReview] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  // osnutek preštetih količin ostane shranjen v tem brskalniku
+  useEffect(() => {
+    try { const d = JSON.parse(localStorage.getItem(INV_KEY) || "{}"); if (d && typeof d === "object") setCounts(d); } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem(INV_KEY, JSON.stringify(counts)); } catch {}
+  }, [counts]);
+
+  const allRows = useMemo(() => {
+    const out = [];
+    for (const p of stock || []) {
+      const gk = groupKey(p);
+      for (const size of sortSizes(Object.keys(p.sizes))) {
+        const v = p.sizes[size];
+        out.push({ sku: v.sku, code: p.code, name: p.name, type: p.type, size, stock: v.stock, img: p.img, gk });
+      }
+    }
+    out.sort((a, b) => GROUP_ORDER.indexOf(a.gk) - GROUP_ORDER.indexOf(b.gk) || a.name.localeCompare(b.name) || a.code.localeCompare(b.code));
+    return out;
+  }, [stock]);
+  const bySku = useMemo(() => Object.fromEntries(allRows.map((r) => [r.sku, r])), [allRows]);
+  const groupsPresent = GROUP_ORDER.filter((g) => allRows.some((r) => r.gk === g));
+
+  const scoped = allRows.filter((r) => (grp === "all" || r.gk === grp) && (!onlyStock || r.stock > 0 || counts[r.sku] !== undefined));
+  const t = q.trim().toLowerCase();
+  const shown = t ? scoped.filter((r) => `${r.name} ${r.sku} ${r.type || ""}`.toLowerCase().includes(t)) : scoped;
+
+  const entered = Object.entries(counts).filter(([sku, val]) => val !== "" && bySku[sku]);
+  const diffs = entered
+    .map(([sku, val]) => ({ ...bySku[sku], counted: parseInt(val, 10) }))
+    .filter((r) => Number.isFinite(r.counted) && r.counted !== r.stock);
+  const doneInScope = scoped.filter((r) => counts[r.sku] !== undefined && counts[r.sku] !== "").length;
+
+  function setCount(sku, val) {
+    const clean = val.replace(/\D/g, "").slice(0, 5);
+    setCounts((c) => {
+      const n = { ...c };
+      if (clean === "") delete n[sku]; else n[sku] = clean;
+      return n;
+    });
+  }
+  function nextInput(e) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const inputs = [...document.querySelectorAll("input[data-inv]")];
+    const i = inputs.indexOf(e.target);
+    inputs[i + 1]?.focus();
+  }
+
+  // ---- PDF / tisk popisnega lista ----
+  useEffect(() => {
+    if (!printing) return;
+    const done = () => setPrinting(false);
+    window.addEventListener("afterprint", done, { once: true });
+    const id = setTimeout(() => window.print(), 80);
+    return () => { clearTimeout(id); window.removeEventListener("afterprint", done); };
+  }, [printing]);
+
+  // ---- Excel ----
+  async function exportXlsx() {
+    const XLSX = await import("xlsx");
+    const data = scoped.map((r) => ({
+      Skupina: groupName(r.gk), Artikel: r.name, Tip: r.type || "", SKU: r.sku, Velikost: r.size,
+      "V sistemu": r.stock, "Prešteto": counts[r.sku] !== undefined ? Number(counts[r.sku]) : "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{ wch: 14 }, { wch: 26 }, { wch: 34 }, { wch: 16 }, { wch: 9 }, { wch: 10 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inventura");
+    XLSX.writeFile(wb, `inventura-69slam-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+  async function importXlsx(file) {
+    if (!file) return;
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.read(await file.arrayBuffer());
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+      const norm = (k) => String(k).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+      let ok = 0, unknown = 0, skipped = 0;
+      const next = { ...counts };
+      for (const row of rows) {
+        const keys = Object.keys(row);
+        const kSku = keys.find((k) => norm(k) === "sku");
+        const kCnt = keys.find((k) => ["presteto", "presteta kolicina", "kolicina"].includes(norm(k)));
+        if (!kSku || !kCnt) { skipped++; continue; }
+        const sku = String(row[kSku]).trim();
+        const raw = String(row[kCnt]).trim();
+        if (raw === "") continue;
+        const n = parseInt(raw, 10);
+        if (!Number.isFinite(n) || n < 0) { skipped++; continue; }
+        if (!bySku[sku]) { unknown++; continue; }
+        next[sku] = String(n); ok++;
+      }
+      setCounts(next);
+      setMsg({ ok: ok > 0, t: ok
+        ? `✓ Naloženih ${ok} preštetih količin${unknown ? `, ${unknown} neznanih SKU preskočenih` : ""}. Preglej razlike in potrdi.`
+        : "V datoteki ni stolpcev »SKU« in »Prešteto« ali so prazni. Uporabi Excel, ki ga preneseš tukaj." });
+    } catch (e) {
+      setMsg({ ok: false, t: "Datoteke ni bilo mogoče prebrati. Shrani jo kot .xlsx in poskusi znova." });
+    }
+  }
+
+  async function confirm() {
+    setBusy(true);
+    const d = await getJSON("/api/admin/inventory", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ counts: entered.map(([sku, val]) => ({ sku, counted: Number(val) })), note: `Inventura ${today()}` }),
+    });
+    setBusy(false);
+    setReview(false);
+    if (!d?.ok) { setMsg({ ok: false, t: d?.message || "Napaka pri shranjevanju inventure." }); return; }
+    setMsg({ ok: true, t: `✓ ${d.message}` });
+    setCounts({});
+    await reload();
+  }
+
+  const printRows = scoped;
+  const printGroups = GROUP_ORDER.filter((g) => printRows.some((r) => r.gk === g));
+
+  return (
+    <>
+      <div className="adm-top">
+        <div>
+          <h1>Inventura</h1>
+          <div className="sub">Natisni popisni list, preštej kose, vpiši količine (ali naloži Excel), preveri razlike in potrdi.</div>
+        </div>
+      </div>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+
+      <div className="adm-inv-steps">
+        <div className="adm-card adm-step">
+          <div className="n">1</div>
+          <div className="b">
+            <b>Popisni list (PDF)</b>
+            <span>Natisni ali shrani kot PDF{grp !== "all" ? ` · samo ${groupName(grp)}` : ""}{onlyStock ? " · samo na zalogi" : ""}.</span>
+            <label className="adm-check"><input type="checkbox" checked={showSys} onChange={(e) => setShowSys(e.target.checked)} /> Pokaži stanje v sistemu</label>
+            <button className="adm-btn" onClick={() => setPrinting(true)} disabled={!printRows.length}>🖨 Natisni / shrani PDF</button>
+          </div>
+        </div>
+        <div className="adm-card adm-step">
+          <div className="n">2</div>
+          <div className="b">
+            <b>Vpiši preštete kose</b>
+            <span>Spodaj v tabelo — ali prenesi Excel, ga izpolni v stolpcu »Prešteto« in naloži nazaj.</span>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button className="adm-btn" onClick={exportXlsx} disabled={!scoped.length}>⬇ Prenesi Excel</button>
+              <label className="adm-btn" style={{ cursor: "pointer" }}>
+                ⬆ Naloži Excel
+                <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={(e) => { importXlsx(e.target.files?.[0]); e.target.value = ""; }} />
+              </label>
+            </div>
+          </div>
+        </div>
+        <div className="adm-card adm-step">
+          <div className="n">3</div>
+          <div className="b">
+            <b>Preglej in potrdi</b>
+            <span>{entered.length ? `Vpisanih ${entered.length} količin · ${diffs.length} z razliko.` : "Vpiši vsaj eno količino."} Neizpolnjene ostanejo nespremenjene.</span>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button className="adm-btn pri" onClick={() => setReview(true)} disabled={!entered.length}>Preglej razlike →</button>
+              {entered.length > 0 && <button className="adm-btn" onClick={() => { if (window.confirm("Izbrišem vse vpisane količine?")) setCounts({}); }}>Počisti</button>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="adm-bar">
+        <div className="adm-chips">
+          <button className={grp === "all" ? "on" : ""} onClick={() => setGrp("all")}>Vse</button>
+          {groupsPresent.map((g) => (
+            <button key={g} className={grp === g ? "on" : ""} onClick={() => setGrp(g)}>{groupName(g)}</button>
+          ))}
+        </div>
+        <label className="adm-check"><input type="checkbox" checked={onlyStock} onChange={(e) => setOnlyStock(e.target.checked)} /> Samo artikli na zalogi</label>
+        <div className="adm-search"><input placeholder="Išči: ime ali SKU …" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+      </div>
+      <div className="adm-progress"><i style={{ width: `${scoped.length ? (doneInScope / scoped.length) * 100 : 0}%` }} /><span>Vpisano {doneInScope} od {scoped.length}</span></div>
+
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>Artikel</th><th>Vel.</th><th>SKU</th><th className="r">V sistemu</th><th className="r">Prešteto</th><th className="r">Razlika</th></tr></thead>
+          <tbody>
+            {stock === null ? <tr><td colSpan={6} className="adm-empty">Nalagam …</td></tr> :
+             !shown.length ? <tr><td colSpan={6} className="adm-empty">Ni artiklov za ta izbor.</td></tr> :
+             shown.map((r, i) => {
+              const val = counts[r.sku];
+              const has = val !== undefined && val !== "";
+              const diff = has ? parseInt(val, 10) - r.stock : 0;
+              const head = i === 0 || shown[i - 1].gk !== r.gk;
+              return (
+                <Fragment key={r.sku}>
+                  {head && grp === "all" && <tr className="adm-grp"><td colSpan={6}>{groupName(r.gk)}</td></tr>}
+                  <tr className={has ? (diff ? "adm-diff" : "adm-ok") : ""}>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Thumb src={r.img} sm />
+                        <div><div className="strong">{r.name}</div><div className="muted">{r.type || r.code}</div></div>
+                      </div>
+                    </td>
+                    <td className="strong">{r.size}</td>
+                    <td className="muted">{r.sku}</td>
+                    <td className="r num">{r.stock}</td>
+                    <td className="r">
+                      <input className="adm-inv-in" data-inv inputMode="numeric" value={val ?? ""} placeholder="—"
+                        onChange={(e) => setCount(r.sku, e.target.value)} onKeyDown={nextInput} />
+                    </td>
+                    <td className="r num strong" style={{ color: !has ? "#C0C7D2" : diff > 0 ? "var(--a-green)" : diff < 0 ? "var(--a-red)" : "var(--a-muted)" }}>
+                      {!has ? "—" : diff > 0 ? `+${diff}` : diff === 0 ? "✓" : diff}
+                    </td>
+                  </tr>
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {review && (
+        <div className="adm-ov" onClick={(e) => e.target === e.currentTarget && setReview(false)}>
+          <div className="adm-modal" style={{ maxWidth: 560 }}>
+            <div className="adm-mh">
+              <div><h3>Potrdi inventuro</h3><div style={{ color: "var(--a-muted)", fontSize: 12.5 }}>{entered.length} vpisanih · {diffs.length} sprememb · {entered.length - diffs.length} brez razlike</div></div>
+              <button className="x" onClick={() => setReview(false)}>✕</button>
+            </div>
+            <div className="adm-mb" style={{ maxHeight: "55vh", overflowY: "auto" }}>
+              {diffs.length ? (
+                <div className="adm-items">
+                  {diffs.map((r) => (
+                    <div className="row" key={r.sku}>
+                      <div className="g"><b>{r.name}</b> · {r.size}<div style={{ color: "var(--a-muted)", fontSize: 12 }}>{r.sku}</div></div>
+                      <span className="num" style={{ color: "var(--a-muted)" }}>{r.stock} → <b style={{ color: "var(--a-text)" }}>{r.counted}</b></span>
+                      <b className="num" style={{ minWidth: 40, textAlign: "right", color: r.counted > r.stock ? "var(--a-green)" : "var(--a-red)" }}>
+                        {r.counted > r.stock ? "+" : ""}{r.counted - r.stock}
+                      </b>
+                    </div>
+                  ))}
+                </div>
+              ) : <div className="adm-note ok" style={{ margin: 0 }}>Vse vpisane količine se ujemajo s sistemom 👌</div>}
+              <p style={{ fontSize: 12.5, color: "var(--a-muted)", marginTop: 12 }}>Artikli brez vpisane količine ostanejo nespremenjeni. Vsaka sprememba se zapiše v zgodovino zaloge (razlog: inventura).</p>
+            </div>
+            <div className="adm-mf">
+              <button className="adm-btn" onClick={() => setReview(false)}>Nazaj</button>
+              <button className="adm-btn pri" onClick={confirm} disabled={busy}>{busy ? "Shranjujem …" : "Potrdi inventuro"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {printing && (
+        <div className="adm-print">
+          <div className="pp-head">
+            <div><b>69SLAM · Popisni list</b><span>Inventura {today()}{grp !== "all" ? ` · ${groupName(grp)}` : ""}{onlyStock ? " · samo artikli na zalogi" : ""}</span></div>
+            <div className="pp-meta">Preštel/-a: ______________________ &nbsp; Podpis: ______________</div>
+          </div>
+          {printGroups.map((g) => {
+            const rows = printRows.filter((r) => r.gk === g);
+            return (
+              <section key={g} className="pp-sec">
+                <h2>{groupName(g)} <small>({rows.length} vrstic · {rows.reduce((a, r) => a + r.stock, 0)} kosov v sistemu)</small></h2>
+                <table>
+                  <thead><tr><th style={{ width: 28 }}>#</th><th>Artikel</th><th>SKU</th><th style={{ width: 54 }}>Vel.</th>{showSys && <th style={{ width: 62 }}>Sistem</th>}<th style={{ width: 80 }}>Prešteto</th></tr></thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <tr key={r.sku}>
+                        <td>{i + 1}</td>
+                        <td><b>{r.name}</b>{r.type ? <span className="pp-type"> · {r.type}</span> : null}</td>
+                        <td>{r.sku}</td>
+                        <td><b>{r.size}</b></td>
+                        {showSys && <td className="c">{r.stock}</td>}
+                        <td className="box" />
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }

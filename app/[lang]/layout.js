@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProducts } from "../../lib/catalog";
+import { getProducts, slimProduct } from "../../lib/catalog";
 import { getDict, LANGS } from "../../lib/i18n";
 import { COMPANY } from "../../lib/legal";
 import { CartProvider } from "../../components/CartContext";
@@ -15,7 +15,7 @@ export default async function LangLayout({ children, params }) {
   const { lang } = await params;
   if (!LANGS.includes(lang)) notFound();
   const t = getDict(lang);
-  const products = getProducts();
+  const products = getProducts().map(slimProduct);
 
   return (
     <CartProvider products={products}>
@@ -30,7 +30,8 @@ export default async function LangLayout({ children, params }) {
           <div>
             <h4>{t.foot_shop}</h4>
             <a href={`/${lang}#shop`}>{t.shop_title}</a>
-            <a href={`/${lang}#shop`}>{t.filter_limited}</a>
+            <a href={`/${lang}/kopalke`}>{t.swim_title}</a>
+            <a href={`/${lang}/vse-more-ven`}>{t.out_title} −50 %</a>
           </div>
           <div>
             <h4>{t.foot_help}</h4>

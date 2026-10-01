@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { db, dbConfigured, ensureSchema } from "../../../lib/db";
-import { getProducts } from "../../../lib/catalog";
+import { getProducts, skuOf } from "../../../lib/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const BUNDLE_OFF = 0.15;
-const SALE_OFF = 0.5;
 const FREE_FROM = 5000; // v centih
 const SHIP = 350;
 const COD_FEE = 150;
@@ -62,8 +61,8 @@ export async function POST(req) {
       const key = `P3-${Date.now()}-${bundleIdx}`;
       const each = line.items.map((x) => {
         const p = products[x.id];
-        if (!p || p.sale) return null; // odprodaja ne sme v paket
-        return { sku: `${x.id}-${x.size}`, name: p.name, size: x.size, qty: 1,
+        if (!p || !p.bundleable || !(x.size in p.stock)) return null; // paket = samo redne moške boksarice
+        return { sku: skuOf(x.id, x.size), name: p.name, size: x.size, qty: 1,
                  price_cents: Math.round((p.price * (1 - BUNDLE_OFF)) * 100), bundle_key: key };
       });
       if (each.some((x) => !x))
@@ -71,9 +70,9 @@ export async function POST(req) {
       items.push(...each);
     } else if (line.id && line.size && line.qty > 0 && line.qty <= 20) {
       const p = products[line.id];
-      if (!p) return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
-      const eff = p.sale ? p.price * (1 - SALE_OFF) : p.price;
-      items.push({ sku: `${line.id}-${line.size}`, name: p.name, size: line.size,
+      if (!p || !(line.size in p.stock)) return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
+      const eff = p.effPrice; // odprodaja −50 % / VSE MORE VEN −50 % je že upoštevana
+      items.push({ sku: skuOf(line.id, line.size), name: p.name, size: line.size,
                    qty: line.qty, price_cents: Math.round(eff * 100), bundle_key: null });
     }
   }

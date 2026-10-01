@@ -4,7 +4,7 @@ import { db, dbConfigured, ensureSchema, catalogMeta, productCategory } from "..
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const REASONS = ["prejem", "inventura", "rocno"];
 
 /** Zaloga kot matrika: ena vrstica na print. */
@@ -28,6 +28,10 @@ export async function GET() {
         price_cents: r.price_cents,
         img: m.img || null,
         category: m.category || productCategory({ code: r.code, name: r.name, collection: r.collection }),
+        gender: m.gender || "moski",
+        group: m.group || "boksarice",
+        type: m.type || null,
+        material: m.material || null,
         sizes: {},
         total: 0,
       };

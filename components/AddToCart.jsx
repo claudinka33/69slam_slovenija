@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useCart } from "./CartContext";
 
-const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
 
 export default function AddToCart({ code, t }) {
   const { byId, addItem, usedInCart, showToast } = useCart();
@@ -16,7 +15,7 @@ export default function AddToCart({ code, t }) {
     <div>
       <div className="plabel">{t.size_label}</div>
       <div className="sizes">
-        {SIZE_ORDER.map((s) => {
+        {p.sizes.map((s) => {
           const has = s in p.stock;
           const avail = has ? (p.stock[s] || 0) - usedInCart(p.code, s) : 0;
           if (!has || (p.stock[s] || 0) === 0)

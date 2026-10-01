@@ -18,9 +18,10 @@ export async function generateMetadata({ params }) {
   const p = getProductBySlug(slug);
   if (!p) return {};
   const t = getDict(lang);
+  const micro = p.group === "boksarice" && p.material === "mikrofibra";
   return {
-    title: `${p.name} — ${t.shop_title} | 69SLAM.si`,
-    description: `69SLAM ${p.cut === "hip" ? t.line_hip : t.line_core} ${p.name}. ${t.sub}`,
+    title: micro ? `${p.name} — ${t.shop_title} | 69SLAM.si` : `${p.name} — ${p.type} | 69SLAM.si`,
+    description: micro ? `69SLAM ${p.cut === "hip" ? t.line_hip : t.line_core} ${p.name}. ${t.sub}` : `69SLAM ${p.type} ${p.name}.${p.outlet ? " " + t.out_line + "." : ""}`,
     alternates: {
       canonical: `https://69slam.si/${lang}/p/${p.slug}`,
       languages: Object.fromEntries(LANGS.map((l) => [l, `https://69slam.si/${l}/p/${p.slug}`])),
@@ -34,13 +35,21 @@ export default async function ProductPage({ params }) {
   const t = getDict(lang);
   const p = getProductBySlug(slug);
   if (!p) notFound();
-  const others = getProducts().filter((x) => x.collection === p.collection && x.cut === p.cut);
-  const desc = getSharedDescription();
+  const micro = p.group === "boksarice" && p.material === "mikrofibra";
+  const boxers = p.group === "boksarice";
+  const others = getProducts().filter((x) =>
+    micro ? x.group === "boksarice" && x.material === "mikrofibra" && x.collection === p.collection && x.cut === p.cut
+      : x.group === p.group && x.gender === p.gender && (!boxers || (x.cut === p.cut && x.material === p.material)));
+  const desc = micro ? getSharedDescription()
+    : p.material === "bambus" && (boxers || p.group === "perilo") ? t.desc_bambus
+    : t[`desc_${p.group}`] || t.desc_perilo;
+  const red = p.sale || p.outlet;
+  const backHref = p.outlet ? `/${lang}/vse-more-ven` : p.group === "kopalke" ? `/${lang}/kopalke` : `/${lang}#shop`;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: `69SLAM ${p.cut === "hip" ? "Hip" : "Box"} mikrofibra — ${p.name}`,
+    name: micro ? `69SLAM ${p.cut === "hip" ? "Hip" : "Box"} mikrofibra — ${p.name}` : `69SLAM ${p.type} — ${p.name}`,
     image: p.images.map((im) => im.src),
     description: desc,
     sku: p.code,
@@ -57,11 +66,11 @@ export default async function ProductPage({ params }) {
   return (
     <main className="ppage wrap">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Link href={`/${lang}#shop`} className="pback">{t.back}</Link>
+      <Link href={backHref} className="pback">{t.back}</Link>
       <div className="pgrid">
         <div>
           <div className="pmain">
-            <img src={p.img} alt={`69SLAM ${p.cut} mikrofibra ${p.name}`} />
+            <img src={p.img} alt={micro ? `69SLAM ${p.cut} mikrofibra ${p.name}` : `69SLAM ${p.type} ${p.name}`} />
           </div>
           {p.images.length > 1 && (
             <div className="pthumbs">
@@ -73,13 +82,13 @@ export default async function ProductPage({ params }) {
         </div>
         <div className="pdet">
           <h1>{p.name}</h1>
-          <a href="#ocene" className="pstars">★★★★★ <b>{REVIEW_SUMMARY.rating}</b> · {REVIEW_SUMMARY.count} {lang === "en" ? "reviews" : "ocen"}</a>
+          {!p.outlet && <a href="#ocene" className="pstars">★★★★★ <b>{REVIEW_SUMMARY.rating}</b> · {REVIEW_SUMMARY.count} {lang === "en" ? "reviews" : "ocen"}</a>}
           <div className="mline">
-            69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}
-            {p.sale ? ` · ${t.sale_line}` : ""}
+            {micro ? <>69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}</> : <>69SLAM · {p.type}</>}
+            {p.sale ? ` · ${t.sale_line}` : ""}{p.outlet ? ` · ${t.out_line}` : ""}
           </div>
           <div className="mprice">
-            {p.sale ? (
+            {red ? (
               <>
                 <span className="old">{fmt(p.price)}</span>
                 <span className="rednow">{fmt(p.effPrice)}</span>
@@ -89,9 +98,12 @@ export default async function ProductPage({ params }) {
               fmt(p.price)
             )}
           </div>
+          {micro && (
           <div className="feat">
             <span>{t.t2t}</span><span>{t.t1t}</span><span>{t.t3t}</span>
           </div>
+          )}
+          {boxers && (
           <details className="sizeguide">
             <summary>{lang === "en" ? "Which size fits me?" : "Katera velikost je zame?"}</summary>
             <table>
@@ -113,10 +125,11 @@ export default async function ProductPage({ params }) {
               ? "Waist: around the narrowest part of your waist. Low waist: around your natural waist, just above the hip bone – where the waistband sits. Official 69SLAM size guide."
               : "Pas: obseg na najožjem delu pasu. Nizek pas: obseg tik nad kolkom – tam, kjer sedi elastika. Uradna tabela velikosti 69SLAM."}</p>
           </details>
+          )}
           <AddToCart code={p.code} t={t} />
           <ProductBundle code={p.code} lang={lang} />
           <p className="pdesc">{desc}</p>
-          <div className="plabel">{t.other_prints}</div>
+          <div className="plabel">{micro ? t.other_prints : t.other_items}</div>
           <div className="othergrid">
             {others.slice(0, 14).map((x) => (
               <Link key={x.code} href={`/${lang}/p/${x.slug}`} className={x.code === p.code ? "cur" : ""} title={x.name}>
@@ -139,8 +152,9 @@ export default async function ProductPage({ params }) {
         </div>
       </div>
 
-      <DetailShots lang={lang} tone="light" />
+      {micro && <DetailShots lang={lang} tone="light" />}
 
+      {boxers && (
       <section className="pgal">
         <div className="pr-head">
           <h2>{lang === "en" ? "Made to be seen" : "Narejene, da se jih vidi"}</h2>
@@ -153,6 +167,9 @@ export default async function ProductPage({ params }) {
         </div>
       </section>
 
+      )}
+
+      {!p.outlet && (
       <section className="previews" id="ocene">
         <div className="pr-head">
           <h2>{lang === "en" ? "What customers say" : "Kaj pravijo kupci"}</h2>
@@ -177,6 +194,7 @@ export default async function ProductPage({ params }) {
           ? "A selection of reviews from 69slam.si customers, shown unedited. \"Verified purchase\" means the review is linked to an actual order in our shop."
           : "Izbor ocen kupcev trgovine 69slam.si, objavljenih brez sprememb. Oznaka »Preverjen nakup« pomeni, da je ocena povezana z dejanskim naročilom v naši trgovini."}</p>
       </section>
+      )}
     </main>
   );
 }

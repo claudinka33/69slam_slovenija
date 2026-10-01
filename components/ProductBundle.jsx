@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useCart } from "./CartContext";
 import { fmt } from "../lib/i18n";
 
-const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
 const TXT = {
   sl: { badge: "Paket 3 · −15 %", h: "Ta print + še 2 = 15 % ceneje", sub: "Izberi velikost in še dva printa. Paket ima brezplačno dostavo.",
         size: "Velikost za vse tri", pick: "Izberi še", picked: "Izbrano", none: "V tej velikosti trenutno ni drugih printov.",
@@ -19,15 +18,15 @@ export default function ProductBundle({ code, lang }) {
   const [picks, setPicks] = useState([]);
   const x = TXT[lang] || TXT.sl;
   const cur = byId(code);
-  if (!cur || cur.sale) return null;
+  if (!cur || !cur.bundleable) return null;
 
   const avail = (p, s) => (p.stock?.[s] || 0) - usedInCart(p.code, s);
-  const sizes = SIZE_ORDER.filter((s) => avail(cur, s) > 0);
+  const sizes = cur.sizes.filter((s) => avail(cur, s) > 0);
   if (sizes.length === 0) return null;
 
   const cands = size
     ? products
-        .filter((p) => !p.sale && p.code !== code && avail(p, size) > 0)
+        .filter((p) => p.bundleable && p.code !== code && avail(p, size) > 0)
         .sort((a, b) => (a.cut === cur.cut ? 0 : 1) - (b.cut === cur.cut ? 0 : 1))
     : [];
   const chosen = picks.map((c) => byId(c)).filter(Boolean);

@@ -1,4 +1,5 @@
-import { getProducts } from "../../lib/catalog";
+import Link from "next/link";
+import { getMenProducts, getOutletProducts, getSwimProducts } from "../../lib/catalog";
 import { getDict } from "../../lib/i18n";
 import ProductGrid from "../../components/ProductGrid";
 import BundleBar from "../../components/BundleBar";
@@ -22,8 +23,10 @@ export async function generateMetadata({ params }) {
 export default async function Home({ params }) {
   const { lang } = await params;
   const t = getDict(lang);
-  const products = getProducts();
-  const hero = products.find((p) => p.totalStock >= 10) || products[0];
+  const products = getMenProducts();
+  const boxers = products.filter((p) => p.group === "boksarice");
+  const swim = getSwimProducts().filter((p) => p.img).slice(0, 6);
+  const outlet = getOutletProducts();
 
   return (
     <main>
@@ -35,7 +38,7 @@ export default async function Home({ params }) {
             <h1>{t.h1a}<br /><em>{t.h1b}</em></h1>
             <p className="sub">{t.sub}</p>
             <div className="specs">
-              <div className="spec"><b>{products.length}</b><span>{t.spec1}</span></div>
+              <div className="spec"><b>{boxers.length}</b><span>{t.spec1}</span></div>
               <div className="spec"><b>2×</b><span>{t.spec2}</span></div>
               <div className="spec"><b>0</b><span>{t.spec3}</span></div>
             </div>
@@ -54,6 +57,14 @@ export default async function Home({ params }) {
         </div>
       </section>
 
+      {outlet.length > 0 && (
+        <Link href={`/${lang}/vse-more-ven`} className="outbar">
+          <span className="ob-tag">{t.out_badge}</span>
+          <b>{t.out_banner}</b>
+          <span className="ob-cta">{t.out_cta}</span>
+        </Link>
+      )}
+
       <section className="shop wrap" id="shop">
         <div className="shead">
           <div className="over">{t.shop_over}</div>
@@ -64,6 +75,27 @@ export default async function Home({ params }) {
       </section>
 
       <BundleBar t={t} />
+
+      {swim.length > 0 && (
+        <section className="swimband" id="kopalke">
+          <div className="wrap">
+            <div className="sw-txt">
+              <div className="over">☀️ {t.swim_over}</div>
+              <h2>{t.swim_title}</h2>
+              <p>{t.swim_sub}</p>
+              <Link href={`/${lang}/kopalke`} className="cta">{t.swim_cta}</Link>
+            </div>
+            <div className="sw-grid">
+              {swim.map((p) => (
+                <Link key={p.code} href={`/${lang}/p/${p.slug}`} className="sw-item" title={p.name}>
+                  <span style={{ backgroundImage: `url('${p.img}')` }} />
+                  <b>{p.name}</b>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="tech" id="tech">
         <div className="wrap">

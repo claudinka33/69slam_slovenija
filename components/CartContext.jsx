@@ -120,7 +120,7 @@ export function CartProvider({ children, products: initialProducts }) {
     for (const c of cart) {
       if (c.bundle) continue;
       const p = byId(c.id);
-      if (!p || p.sale) continue;
+      if (!p || !p.bundleable) continue;
       for (let k = 0; k < c.qty && sel.length < BUNDLE_N; k++)
         sel.push({ id: c.id, size: c.size, fromCart: true });
       if (sel.length >= BUNDLE_N) break;
@@ -144,7 +144,7 @@ export function CartProvider({ children, products: initialProducts }) {
     0
   );
   const shipping = subtotal >= FREE_FROM || subtotal === 0 ? 0 : SHIP;
-  const singles = cart.filter((c) => !c.bundle && !byId(c.id)?.sale).reduce((a, c) => a + c.qty, 0);
+  const singles = cart.filter((c) => !c.bundle && byId(c.id)?.bundleable).reduce((a, c) => a + c.qty, 0);
 
   return (
     <CartCtx.Provider

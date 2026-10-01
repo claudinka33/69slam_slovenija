@@ -43,7 +43,7 @@ export default function CartDrawer({ lang, t }) {
                   <div className="cmeta">
                     <b>{p.name}</b>
                     {c.size} · {fmt(p.effPrice)}
-                    {p.sale ? <span style={{ color: "var(--red)", fontWeight: 700 }}> −50%</span> : null}
+                    {p.sale || p.outlet ? <span style={{ color: "var(--red)", fontWeight: 700 }}> −50%</span> : null}
                   </div>
                   <div className="qty">
                     <button onClick={() => chQty(i, -1)}>−</button>

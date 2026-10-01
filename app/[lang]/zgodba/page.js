@@ -151,7 +151,7 @@ export default async function StoryPage({ params }) {
   const { lang } = await params;
   const s = STORY[lang] || STORY.sl;
   const [q, loud, print, crew, pack] = s.blocks;
-  const pics = getProducts().filter((p) => !p.sale && p.img).slice(0, 4);
+  const pics = getProducts().filter((p) => p.group === "boksarice" && p.gender === "moski" && !p.sale && p.img).slice(0, 4);
 
   return (
     <main>
