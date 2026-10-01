@@ -258,3 +258,9 @@ button.adm-cell:hover{border-color:#98A2B3;transform:translateY(-1px);}
   .adm-print .pp-type{font-size:8.5pt;color:#555;}
   .adm-print tr{page-break-inside:avoid;}
 }
+
+/* podrobnosti stranke */
+.adm-cstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;}
+.adm-cstats div{background:var(--a-gray-soft);border-radius:10px;padding:10px 12px;}
+.adm-cstats span{display:block;font-size:11.5px;color:var(--a-muted);font-weight:600;}
+.adm-cstats b{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;}

@@ -26,15 +26,18 @@ export async function POST(req) {
   if (kind === "customers") {
     const R = rows
       .map((r) => ({ email: str(r.email).toLowerCase(), name: str(r.name), phone: str(r.phone, 40), city: str(r.city, 80),
+        address: str(r.address), zip: str(r.zip, 20), country: str(r.country, 4),
         orders: Math.max(0, parseInt(r.orders, 10) || 0), spent: Math.max(0, c(r.spent)), mk: !!r.marketing }))
       .filter((r) => r.email.includes("@"));
     const uniq = [...new Map(R.map((r) => [r.email, r])).values()];
     if (!uniq.length) return NextResponse.json({ ok: true, customers: 0, subscribers: 0 });
-    await sql`INSERT INTO shop_customers (email, name, phone, city, orders_count, total_cents, accepts_marketing)
+    await sql`INSERT INTO shop_customers (email, name, phone, city, orders_count, total_cents, accepts_marketing, address, zip, country)
       SELECT * FROM unnest(${uniq.map((r) => r.email)}::text[], ${uniq.map((r) => r.name)}::text[],
         ${uniq.map((r) => r.phone)}::text[], ${uniq.map((r) => r.city)}::text[], ${uniq.map((r) => r.orders)}::int[],
-        ${uniq.map((r) => r.spent)}::int[], ${uniq.map((r) => r.mk)}::boolean[])
+        ${uniq.map((r) => r.spent)}::int[], ${uniq.map((r) => r.mk)}::boolean[], ${uniq.map((r) => r.address)}::text[],
+        ${uniq.map((r) => r.zip)}::text[], ${uniq.map((r) => r.country)}::text[])
       ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, phone = EXCLUDED.phone, city = EXCLUDED.city,
+        address = EXCLUDED.address, zip = EXCLUDED.zip, country = EXCLUDED.country,
         orders_count = EXCLUDED.orders_count, total_cents = EXCLUDED.total_cents,
         accepts_marketing = EXCLUDED.accepts_marketing, imported_at = now()`;
     const subs = uniq.filter((r) => r.mk).map((r) => r.email);

@@ -631,6 +631,7 @@ function Customers({ reloadOrders }) {
   const [imp, setImp] = useState(null); // { running, label, msg, ok }
 
   const [loadErr, setLoadErr] = useState("");
+  const [openC, setOpenC] = useState(null);
   const load = useCallback(async () => {
     const r = await fetch("/api/admin/customers").catch(() => null);
     const d = r ? await r.json().catch(() => null) : null;
@@ -678,6 +679,9 @@ function Customers({ reloadOrders }) {
         name: [pick(r, "first name"), pick(r, "last name")].filter(Boolean).join(" "),
         phone: String(pick(r, "phone", "default address phone")).replace(/^'/, ""),
         city: pick(r, "default address city", "city"),
+        address: [pick(r, "default address address1", "address1"), pick(r, "default address address2", "address2")].filter(Boolean).join(", "),
+        zip: String(pick(r, "default address zip", "zip")).replace(/^'/, ""),
+        country: pick(r, "default address country code", "country code", "country"),
         orders: num(pick(r, "total orders")),
         spent: num(pick(r, "total spent")),
         marketing: yes(pick(r, "accepts email marketing", "accepts marketing")),
@@ -794,7 +798,7 @@ function Customers({ reloadOrders }) {
             {list === null ? <tr><td colSpan={5} className="adm-empty">Nalagam …</td></tr> :
              !shown.length ? <tr><td colSpan={5} className="adm-empty">{list.length ? "Ni zadetkov." : "Še ni strank. Nova trgovina še nima naročil — naloži Shopify izvoz strank in naročil z gumboma zgoraj (1 in 2)."}</td></tr> :
              shown.map((c) => (
-              <tr key={c.email}>
+              <tr key={c.email} className="click" onClick={() => setOpenC(c)}>
                 <td>
                   <span className="strong">{c.name}</span>{" "}
                   {c.orders >= 2 && <span className="adm-tag ret">↺ vračajoča</span>}
@@ -809,6 +813,7 @@ function Customers({ reloadOrders }) {
           </tbody>
         </table>
       </div>
+      {openC && <CustomerPanel c={openC} onClose={() => setOpenC(null)} />}
     </>
   );
 }
@@ -1108,5 +1113,99 @@ function Inventory({ stock, reload }) {
         </div>
       )}
     </>
+  );
+}
+
+/* =========================== PODROBNOSTI STRANKE =========================== */
+function CustomerPanel({ c, onClose }) {
+  const [d, setD] = useState(null);
+  const [openO, setOpenO] = useState(null);
+  useEffect(() => {
+    getJSON(`/api/admin/customers/detail?email=${encodeURIComponent(c.email)}`).then((x) => setD(x || { ok: false }));
+    const k = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [c.email, onClose]);
+
+  const orders = d?.orders || [];
+  const withAddr = orders.find((o) => o.address && o.address !== "-");
+  const shop = d?.shop;
+  const phone = orders.find((o) => o.phone)?.phone || shop?.phone || "";
+  const addr = withAddr
+    ? { line: withAddr.address, city: `${withAddr.zip && withAddr.zip !== "-" ? withAddr.zip + " " : ""}${withAddr.city || ""}`, country: withAddr.country }
+    : shop?.address || shop?.city
+      ? { line: shop.address || "", city: `${shop.zip ? shop.zip + " " : ""}${shop.city || ""}`, country: shop.country }
+      : null;
+  const valid = orders.filter((o) => o.status !== "preklicano");
+  const firstOrder = valid.length ? valid[valid.length - 1].created_at : null;
+  const missing = Math.max(0, (c.orders || 0) - valid.length);
+
+  return (
+    <div className="adm-ov side" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="adm-panel">
+        <div className="adm-mh">
+          <div>
+            <h3>{c.name}</h3>
+            <div style={{ marginTop: 6, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {c.orders >= 2 && <span className="adm-tag ret">↺ vračajoča</span>}
+              {(d?.subscribed ?? c.subscribed) ? <span className="adm-tag sub">✓ prijavljena na novice</span> : <span className="adm-tag">ni prijave na novice</span>}
+              {c.from_shopify && <span className="adm-tag">Shopify</span>}
+            </div>
+          </div>
+          <button className="x" onClick={onClose}>✕</button>
+        </div>
+        <div className="adm-mb">
+          <div className="adm-cstats">
+            <div><span>Naročila</span><b>{c.orders}</b></div>
+            <div><span>Skupaj</span><b>{eur(c.total_cents)}</b></div>
+            <div><span>Povprečno</span><b>{c.orders ? eur(Math.round(c.total_cents / c.orders)) : "—"}</b></div>
+          </div>
+
+          <div className="adm-sec">Kontakt</div>
+          <dl className="adm-dl">
+            <dt>E-mail</dt><dd><a href={`mailto:${c.email}`} style={{ color: "var(--a-blue)" }}>{c.email}</a></dd>
+            <dt>Telefon</dt><dd>{phone ? <a href={`tel:${phone.replace(/\s/g, "")}`} style={{ color: "var(--a-blue)" }}>{phone}</a> : <span style={{ color: "var(--a-muted)" }}>ni podatka</span>}</dd>
+            <dt>Naslov</dt><dd>{addr ? <>{addr.line}{addr.line && <br />}{addr.city}{addr.country && addr.country !== "SI" ? `, ${addr.country}` : ""}</> : <span style={{ color: "var(--a-muted)" }}>{d ? "ni podatka" : "…"}</span>}</dd>
+            {firstOrder && <><dt>Prvi nakup</dt><dd>{dShort(firstOrder)}</dd></>}
+            {c.last_order && <><dt>Zadnji nakup</dt><dd>{dShort(c.last_order)}</dd></>}
+          </dl>
+
+          <div className="adm-sec">Naročila {orders.length ? `(${orders.length})` : ""}</div>
+          {!d ? <div className="adm-empty">Nalagam …</div> : !orders.length ? (
+            <div className="adm-note" style={{ margin: 0 }}>Podrobnosti naročil ni v bazi{c.orders ? ` — Shopify za to stranko šteje ${c.orders} naročil. Naloži izvoz naročil (gumb 2), da se pokažejo tukaj.` : "."}</div>
+          ) : (
+            <div className="adm-items">
+              {orders.map((o) => (
+                <div key={o.id}>
+                  <div className="row" style={{ cursor: "pointer" }} onClick={() => setOpenO(openO === o.id ? null : o.id)}>
+                    <div className="g">
+                      <b>{onum(o)}</b> <span style={{ color: "var(--a-muted)", fontSize: 12.5 }}>· {dShort(o.created_at)}</span>
+                      <div style={{ color: "var(--a-muted)", fontSize: 12.5 }}>{o.items.reduce((a, i) => a + i.qty, 0)} kos · {PAY[o.payment] || o.payment}</div>
+                    </div>
+                    <Pill s={o.status} />
+                    <b className="num" style={{ minWidth: 72, textAlign: "right" }}>{eur(o.total_cents)}</b>
+                    <span style={{ color: "var(--a-muted)", width: 14 }}>{openO === o.id ? "▴" : "▾"}</span>
+                  </div>
+                  {openO === o.id && (
+                    <div style={{ background: "#FAFBFC", padding: "6px 12px 10px", borderBottom: "1px solid #EEF1F5", fontSize: 13 }}>
+                      {o.items.length ? o.items.map((it, k) => (
+                        <div key={k} style={{ display: "flex", gap: 8, padding: "3px 0" }}>
+                          <span style={{ flex: 1 }}>{it.qty}× {it.name} <span style={{ color: "var(--a-muted)" }}>· {it.size}</span></span>
+                          <span className="num">{eur(it.price_cents)}</span>
+                        </div>
+                      )) : <span style={{ color: "var(--a-muted)" }}>Ni postavk.</span>}
+                      <div style={{ color: "var(--a-muted)", marginTop: 6 }}>Dostava: {o.address}, {o.zip} {o.city}{o.phone ? ` · ${o.phone}` : ""}</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {d && orders.length > 0 && missing > 0 && (
+            <p style={{ fontSize: 12.5, color: "var(--a-muted)", marginTop: 10 }}>Shopify za to stranko šteje še {missing} starejših naročil, ki jih ni v izvozu.</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
