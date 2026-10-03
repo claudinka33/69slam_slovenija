@@ -542,3 +542,27 @@ nav.main a.nav-out{color:var(--red);font-weight:800;}
 .ckcode-msg{font-size:.84rem;margin:-2px 0 10px;}
 .ckcode-msg.err{color:var(--red);}
 .ckcode-msg.ok{color:#06855f;font-weight:700;}
+
+/* ---- ocene (obrazec) ---- */
+.rv-form{display:grid;gap:14px}
+.rv-item input,.rv-item textarea{margin-top:10px}
+.rv-top{display:flex;gap:14px;align-items:center}
+.rv-top img{width:72px;height:90px;object-fit:cover;border-radius:10px}
+.rv-top b{display:block;text-transform:uppercase;font-weight:900}
+.rv-top small{color:var(--gray)}
+.rv-stars{display:flex;gap:4px;margin-top:6px}
+.rv-stars button{background:none;border:0;font-size:2rem;line-height:1;color:#d6d6d6;cursor:pointer;padding:0 2px}
+.rv-stars button.on{color:#FFB800}
+.rv-code{margin:18px auto 0;max-width:360px;padding:16px;border:2px dashed #FF5A1F;border-radius:14px;font-size:1rem}
+.rv-code b{display:block;font-size:1.5rem;letter-spacing:.06em;margin:4px 0}
+.rv-code small{color:var(--gray)}
+/* ---- prijava na novice (noga) ---- */
+.nl-box{margin:0 0 26px;padding:22px;border-radius:16px;background:#151515;display:flex;gap:18px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.nl-box h4{margin:0;font-size:1.05rem;font-weight:900;text-transform:uppercase;color:#fff}
+.nl-box p{margin:4px 0 0;color:#aaa;font-size:.88rem}
+.nl-form{display:flex;gap:8px;flex:1;min-width:260px;max-width:440px}
+.nl-form input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid #333;background:#0a0a0a;color:#fff;font-size:.95rem;min-width:0}
+.nl-form button{padding:12px 18px;border-radius:10px;border:0;background:#FF5A1F;color:#fff;font-weight:800;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.nl-msg{color:#06d6a0;font-size:.88rem;margin-top:6px;width:100%}
+/* ---- ocene iz baze ---- */
+.pr-stars.part{letter-spacing:1px}

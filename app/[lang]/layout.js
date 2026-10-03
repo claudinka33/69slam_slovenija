@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Newsletter from "../../components/Newsletter";
 import { getProducts, slimProduct, primeCatalog } from "../../lib/catalog";
 import { getDict, LANGS } from "../../lib/i18n";
 import { COMPANY } from "../../lib/legal";
@@ -23,6 +24,7 @@ export default async function LangLayout({ children, params }) {
       <Header lang={lang} t={t} />
       {children}
       <footer className="site" id="faq">
+        <div className="wrap" style={{ display: "block" }}><Newsletter lang={lang} /></div>
         <div className="wrap">
           <div>
             <h4>69SLAM.si</h4>

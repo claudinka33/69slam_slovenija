@@ -6,6 +6,7 @@ import AddToCart from "../../../../components/AddToCart";
 import ProductGallery from "../../../../components/ProductGallery";
 import ProductBundle from "../../../../components/ProductBundle";
 import { REVIEWS, REVIEW_SUMMARY } from "../../../../lib/reviews";
+import { loadApprovedReviews, reviewsFor } from "../../../../lib/customerReviews";
 import { GALLERY } from "../../../../lib/media";
 import DetailShots from "../../../../components/DetailShots";
 
@@ -38,6 +39,13 @@ export default async function ProductPage({ params }) {
   const t = getDict(lang);
   const p = getProductBySlug(slug);
   if (!p) notFound();
+  // ocene kupcev iz CMS (odobrene) + izbrane ocene iz Shopifyja
+  const dbRev = reviewsFor(await loadApprovedReviews(), p.code);
+  const allCount = REVIEW_SUMMARY.count + dbRev.length;
+  const allAvg = (parseFloat(REVIEW_SUMMARY.rating.replace(",", ".")) * REVIEW_SUMMARY.count + dbRev.reduce((a, r) => a + r.rating, 0)) / allCount;
+  const SUM = { rating: allAvg.toFixed(2).replace(".", ","), count: allCount };
+  const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
+  const dfmt = (d) => { const x = new Date(d); return `${x.getDate()}. ${x.getMonth() + 1}. ${x.getFullYear()}`; };
   const micro = p.group === "boksarice" && p.material === "mikrofibra";
   const boxers = p.group === "boksarice";
   const others = getProducts().filter((x) =>
@@ -75,7 +83,7 @@ export default async function ProductPage({ params }) {
           alt={micro ? `69SLAM ${p.cut} mikrofibra ${p.name}` : `69SLAM ${p.type} ${p.name}`} />
         <div className="pdet">
           <h1>{p.name}</h1>
-          {!p.outlet && <a href="#ocene" className="pstars">★★★★★ <b>{REVIEW_SUMMARY.rating}</b> · {REVIEW_SUMMARY.count} {lang === "en" ? "reviews" : "ocen"}</a>}
+          {!p.outlet && <a href="#ocene" className="pstars">★★★★★ <b>{SUM.rating}</b> · {SUM.count} {lang === "en" ? "reviews" : "ocen"}</a>}
           <div className="mline">
             {micro ? <>69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}</> : <>69SLAM · {p.type}</>}
             {p.sale ? ` · ${t.sale_line}` : ""}{p.outlet ? ` · ${t.out_line}` : ""}
@@ -167,10 +175,21 @@ export default async function ProductPage({ params }) {
         <div className="pr-head">
           <h2>{lang === "en" ? "What customers say" : "Kaj pravijo kupci"}</h2>
           <div className="pr-sum">
-            <span className="pr-stars">★★★★★</span> <b>{REVIEW_SUMMARY.rating} / 5</b> · {REVIEW_SUMMARY.count} {lang === "en" ? "customer reviews" : "ocen kupcev"}
+            <span className="pr-stars">★★★★★</span> <b>{SUM.rating} / 5</b> · {SUM.count} {lang === "en" ? "customer reviews" : "ocen kupcev"}
           </div>
         </div>
         <div className="pr-grid">
+          {dbRev.slice(0, 9).map((r) => (
+            <div className="pr-card" key={"d" + r.id}>
+              <div className="pr-stars">{stars(r.rating)}</div>
+              {r.title && <b className="pr-title">{r.title}</b>}
+              {r.body && <p>{r.body}</p>}
+              <div className="pr-meta">
+                <span>{r.name}<em>✓ {lang === "en" ? "Verified purchase" : "Preverjen nakup"}</em></span>
+                <small>{dfmt(r.created_at)}</small>
+              </div>
+            </div>
+          ))}
           {REVIEWS.map((r, i) => (
             <div className="pr-card" key={i}>
               <div className="pr-stars">★★★★★</div>

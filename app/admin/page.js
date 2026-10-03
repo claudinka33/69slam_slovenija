@@ -45,6 +45,7 @@ export default function Admin() {
   const [stock, setStock] = useState(null);
   const [nodb, setNodb] = useState(false);
   const [openOrder, setOpenOrder] = useState(null);
+  const [revCount, setRevCount] = useState(0);
 
   const loadOrders = useCallback(async () => {
     const d = await getJSON("/api/admin/orders");
@@ -56,6 +57,7 @@ export default function Admin() {
     setStock(d?.products || []);
   }, []);
   useEffect(() => { loadOrders(); loadStock(); }, [loadOrders, loadStock]);
+  useEffect(() => { getJSON("/api/admin/reviews").then((d) => setRevCount((d?.reviews || []).filter((r) => r.status === "caka").length)); }, []);
 
   const newCount = (orders || []).filter((o) => o.status === "novo").length;
   const lowCount = (stock || []).filter((p) => Object.values(p.sizes).some((v) => v.stock > 0 && v.stock <= 2)).length;
@@ -79,6 +81,8 @@ export default function Admin() {
     { id: "cenik", ico: "💶", lbl: "Cenik & RVC" },
     { id: "kode", ico: "🏷️", lbl: "Kode za popust" },
     { id: "stranke", ico: "👤", lbl: "Stranke" },
+    { id: "maili", ico: "✉️", lbl: "E-maili" },
+    { id: "ocene", ico: "⭐", lbl: "Ocene", bdg: revCount || null },
     { id: "nastavitve", ico: "⚙️", lbl: "Nastavitve", soon: true },
   ];
   const orderObj = openOrder ? (orders || []).find((o) => o.id === openOrder) : null;
@@ -128,6 +132,8 @@ export default function Admin() {
         {view === "cenik" && <PriceList />}
         {view === "kode" && <Coupons />}
         {view === "stranke" && <Customers reloadOrders={loadOrders} />}
+        {view === "maili" && <Mailing stock={stock} />}
+        {view === "ocene" && <Reviews onCount={setRevCount} />}
       </main>
 
       {orderObj && <OrderPanel o={orderObj} onClose={() => setOpenOrder(null)} setStatus={setStatus} />}
@@ -429,8 +435,12 @@ function couponState(c) {
   if (c.max_uses && c.uses >= c.max_uses) return ["porabljena", ""];
   return ["aktivna", "ok"];
 }
+const PERSONAL = /^(HVALA|KOSARICA)-/;
 function Coupons() {
-  const [list, setList] = useState(null);
+  const [all, setList] = useState(null);
+  const [showP, setShowP] = useState(false);
+  const list = all === null ? null : all.filter((c) => showP || !PERSONAL.test(c.code));
+  const nP = (all || []).filter((c) => PERSONAL.test(c.code)).length;
   const [form, setForm] = useState(null);
   const [msg, setMsg] = useState(null);
   const load = useCallback(async () => { const d = await getJSON("/api/admin/coupons"); setList(d?.coupons || []); }, []);
@@ -467,6 +477,7 @@ function Coupons() {
         <button className="adm-btn pri" onClick={() => setForm({ ...blank })}>+ Nova koda</button>
       </div>
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      {nP > 0 && <label className="adm-check" style={{ marginBottom: 10 }}><input type="checkbox" checked={showP} onChange={(e) => setShowP(e.target.checked)} /> Pokaži tudi osebne kode iz e-mailov (HVALA-…, KOSARICA-…): {nP}</label>}
       <div className="adm-card adm-scroll">
         <table className="adm-tbl">
           <thead><tr><th>Koda</th><th className="r">Popust</th><th>Velja</th><th>Pogoji</th><th className="r">Uporab</th><th className="r">Prodaja s kodo</th><th>Stanje</th><th></th></tr></thead>
@@ -1871,6 +1882,343 @@ function PriceList() {
         </table>
       </div>
       </>}
+    </>
+  );
+}
+
+/* =========================== E-MAILI =========================== */
+const CSTATUS = { osnutek: "Osnutek", "v pošiljanju": "Se pošilja", poslano: "Poslano" };
+const JOBKIND = { review: "⭐ Prošnja za oceno", cart1: "🛒 Košarica – 1. opomnik", cart2: "🛒 Košarica – 2. opomnik" };
+const JOBST = { cakajoce: "Čaka", "v teku": "V teku", poslano: "Poslano", "preskočeno": "Preskočeno", preklicano: "Preklicano", napaka: "Napaka" };
+const post = (url, body) => getJSON(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+function Mailing({ stock }) {
+  const [tab, setTab] = useState("kampanje");
+  return (
+    <>
+      <div className="adm-top">
+        <div><h1>E-maili</h1><div className="sub">Kampanje (novice), samodejni maili in naročniki. Potrditve naročil in »poslano« gredo samodejno.</div></div>
+        <div className="grow" />
+        <div className="adm-seg">
+          {[["kampanje", "Kampanje"], ["samodejni", "Samodejni maili"], ["narocniki", "Naročniki"]].map(([k, l]) => (
+            <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>
+          ))}
+        </div>
+      </div>
+      {tab === "kampanje" && <Campaigns stock={stock} />}
+      {tab === "samodejni" && <AutoMails />}
+      {tab === "narocniki" && <Subscribers />}
+    </>
+  );
+}
+
+function Campaigns({ stock }) {
+  const [list, setList] = useState(null);
+  const [subs, setSubs] = useState(0);
+  const [ed, setEd] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const load = useCallback(async () => { const d = await getJSON("/api/admin/campaigns"); setList(d?.campaigns || []); setSubs(d?.subscribers || 0); }, []);
+  useEffect(() => { load(); }, [load]);
+  const blank = () => ({ subject: "", preheader: "", title: "", lang: "sl", blocks: [
+    { type: "image", url: "", link: "" }, { type: "text", text: "" }, { type: "products", codes: [] }, { type: "button", text: "Poglej v trgovini", url: "https://69slam.si" }] });
+  async function act(c, action) {
+    if (action === "delete" && !confirm(`Izbrišem osnutek »${c.subject || "brez zadeve"}«?`)) return;
+    if (action === "delete") await getJSON(`/api/admin/campaigns?id=${c.id}`, { method: "DELETE" });
+    if (action === "copy") { const d = await post("/api/admin/campaigns", { id: c.id, action: "copy" }); setMsg({ ok: true, t: "Kopija narejena — najdeš jo na vrhu seznama." }); void d; }
+    if (action === "send") {
+      if (!confirm(`Nadaljujem pošiljanje kampanje »${c.subject}« (še ${c.left})?`)) return;
+      setMsg({ ok: true, t: "Pošiljam …" });
+      const d = await post("/api/admin/campaigns", { id: c.id, action: "send" });
+      setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." });
+    }
+    load();
+  }
+  if (ed) return <CampaignEditor init={ed} stock={stock} subs={subs} onClose={() => { setEd(null); load(); }} />;
+  return (
+    <>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+        <button className="adm-btn pri" onClick={() => setEd(blank())}>+ Nova kampanja</button>
+        <span className="muted">Aktivnih naročnikov: <b>{subs}</b></span>
+      </div>
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>Zadeva</th><th>Stanje</th><th className="r">Poslano</th><th>Datum</th><th></th></tr></thead>
+          <tbody>
+            {list === null ? <tr><td colSpan={5} className="adm-empty">Nalagam …</td></tr> :
+             !list.length ? <tr><td colSpan={5} className="adm-empty">Še ni kampanj — klikni »+ Nova kampanja«.</td></tr> :
+             list.map((c) => (
+              <tr key={c.id}>
+                <td><div className="strong">{c.subject || "(brez zadeve)"}</div>{c.preheader && <div className="muted">{c.preheader}</div>}{c.error && <div style={{ color: "#c0392b", fontSize: 12 }}>⚠️ {c.error}</div>}</td>
+                <td><span className={`adm-tag ${c.status === "poslano" ? "sub" : ""}`}>{CSTATUS[c.status] || c.status}</span>{c.left ? <div className="muted">še {c.left}</div> : null}</td>
+                <td className="r num">{c.sent_count || "—"}</td>
+                <td className="muted">{dShort(c.sent_at || c.updated_at)}</td>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  {c.status === "osnutek" && <><button className="adm-btn" onClick={() => setEd(c)}>Uredi</button>{" "}</>}
+                  {c.status === "v pošiljanju" && <><button className="adm-btn pri" onClick={() => act(c, "send")}>Nadaljuj</button>{" "}</>}
+                  <a className="adm-btn" href={`/api/admin/campaigns?id=${c.id}&preview=1`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>👁</a>{" "}
+                  <button className="adm-btn" onClick={() => act(c, "copy")}>Kopiraj</button>{" "}
+                  {c.status === "osnutek" && <button className="adm-btn" onClick={() => act(c, "delete")}>✕</button>}
+                </td>
+              </tr>))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function CampaignEditor({ init, stock, subs, onClose }) {
+  const [c, setC] = useState(init);
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [testTo, setTestTo] = useState("69slamslovenia@gmail.com");
+  const [pv, setPv] = useState(0);
+  const set = (k) => (e) => setC((x) => ({ ...x, [k]: e.target.value }));
+  const setB = (i, patch) => setC((x) => ({ ...x, blocks: x.blocks.map((b, j) => (j === i ? { ...b, ...patch } : b)) }));
+  const move = (i, d) => setC((x) => { const b = [...x.blocks]; const j = i + d; if (j < 0 || j >= b.length) return x; [b[i], b[j]] = [b[j], b[i]]; return { ...x, blocks: b }; });
+  const del = (i) => setC((x) => ({ ...x, blocks: x.blocks.filter((_, j) => j !== i) }));
+  const add = (type) => setC((x) => ({ ...x, blocks: [...x.blocks, type === "products" ? { type, codes: [] } : type === "button" ? { type, text: "Poglej", url: "https://69slam.si" } : type === "image" ? { type, url: "", link: "" } : { type, text: "" }] }));
+  async function save(action) {
+    setBusy(true); setMsg(null);
+    const d = await post("/api/admin/campaigns", { id: c.id, subject: c.subject, preheader: c.preheader, title: c.title, lang: c.lang, blocks: c.blocks, action, to: testTo });
+    setBusy(false);
+    if (d?.id) setC((x) => ({ ...x, id: d.id }));
+    setPv((n) => n + 1);
+    setMsg({ ok: !!d?.ok, t: d?.message || (d?.ok ? "Shranjeno ✓" : "Napaka pri shranjevanju.") });
+    return d;
+  }
+  async function sendAll() {
+    if (!c.subject.trim()) { setMsg({ ok: false, t: "Vpiši zadevo maila." }); return; }
+    if (!confirm(`Pošljem kampanjo »${c.subject}« vsem aktivnim naročnikom (${subs})?\n\nTega ni mogoče preklicati.`)) return;
+    setMsg({ ok: true, t: "Pošiljam … (lahko traja do 1 minute)" });
+    const d = await save("send");
+    if (d?.ok) setTimeout(onClose, 1500);
+  }
+  async function upload(i, file) {
+    if (!file) return;
+    setB(i, { uploading: true });
+    const d = await getJSON("/api/admin/campaigns?action=upload", { method: "POST", headers: { "Content-Type": file.type || "image/jpeg" }, body: file });
+    setB(i, { uploading: false, ...(d?.ok ? { url: d.url } : {}) });
+    if (!d?.ok) setMsg({ ok: false, t: d?.message || "Slike ni bilo mogoče naložiti." });
+  }
+  const LBL = { heading: "Naslov", text: "Besedilo", image: "Slika", products: "Artikli", button: "Gumb" };
+  return (
+    <div className="mail-ed">
+      <div className="mail-ed-form">
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          <button className="adm-btn" onClick={onClose}>← Nazaj</button>
+          <div className="grow" />
+          <button className="adm-btn" disabled={busy} onClick={() => save()}>💾 Shrani</button>
+        </div>
+        {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+        <div className="adm-card" style={{ padding: 16, marginBottom: 12 }}>
+          <div className="adm-field"><label>Zadeva maila (subject)</label><input value={c.subject} onChange={set("subject")} placeholder="npr. 🔥 Novi dizajni so tu!" /></div>
+          <div className="adm-field"><label>Predogled v inboxu (neobvezno)</label><input value={c.preheader || ""} onChange={set("preheader")} placeholder="Kratek stavek, ki se vidi ob zadevi" /></div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div className="adm-field" style={{ flex: 1 }}><label>Velik naslov v mailu</label><input value={c.title || ""} onChange={set("title")} placeholder="npr. NOVA KOLEKCIJA" /></div>
+            <div className="adm-field"><label>Jezik</label><select value={c.lang || "sl"} onChange={set("lang")}><option value="sl">SL</option><option value="en">EN</option></select></div>
+          </div>
+        </div>
+        {c.blocks.map((b, i) => (
+          <div className="adm-card mail-blk" key={i}>
+            <div className="mail-blk-h"><b>{LBL[b.type]}</b><div className="grow" />
+              <button className="adm-btn" onClick={() => move(i, -1)}>↑</button><button className="adm-btn" onClick={() => move(i, 1)}>↓</button><button className="adm-btn" onClick={() => del(i)}>✕</button></div>
+            {b.type === "heading" && <input value={b.text || ""} onChange={(e) => setB(i, { text: e.target.value })} placeholder="Podnaslov" />}
+            {b.type === "text" && <textarea rows={4} value={b.text || ""} onChange={(e) => setB(i, { text: e.target.value })} placeholder="Besedilo maila …" />}
+            {b.type === "button" && <div style={{ display: "flex", gap: 8 }}>
+              <input value={b.text || ""} onChange={(e) => setB(i, { text: e.target.value })} placeholder="Napis na gumbu" />
+              <input value={b.url || ""} onChange={(e) => setB(i, { url: e.target.value })} placeholder="https://69slam.si/…" /></div>}
+            {b.type === "image" && <div>
+              {b.url ? <img src={b.url} alt="" style={{ width: "100%", maxHeight: 220, objectFit: "cover", borderRadius: 10, marginBottom: 8 }} /> : null}
+              <label className="adm-btn" style={{ display: "inline-block", cursor: "pointer" }}>{b.uploading ? "Nalagam …" : b.url ? "Zamenjaj sliko" : "📷 Naloži sliko"}
+                <input type="file" accept="image/*" hidden onChange={(e) => upload(i, e.target.files?.[0])} /></label>
+              <input style={{ marginTop: 8 }} value={b.link || ""} onChange={(e) => setB(i, { link: e.target.value })} placeholder="Klik na sliko vodi na … (neobvezno, npr. https://69slam.si/sl/kopalke)" />
+            </div>}
+            {b.type === "products" && <ProductPicker stock={stock} codes={b.codes || []} onChange={(codes) => setB(i, { codes })} />}
+          </div>
+        ))}
+        <div className="adm-chips" style={{ margin: "4px 0 16px" }}>
+          {Object.entries(LBL).map(([k, l]) => <button key={k} onClick={() => add(k)}>+ {l}</button>)}
+        </div>
+        <div className="adm-card" style={{ padding: 16 }}>
+          <div className="adm-field"><label>Testni mail na</label>
+            <div style={{ display: "flex", gap: 8 }}><input value={testTo} onChange={(e) => setTestTo(e.target.value)} /><button className="adm-btn" disabled={busy} onClick={() => save("test")}>✉️ Pošlji test</button></div></div>
+          <button className="adm-btn pri" style={{ width: "100%", padding: 12 }} disabled={busy} onClick={sendAll}>🚀 Pošlji vsem naročnikom ({subs})</button>
+        </div>
+      </div>
+      <div className="mail-ed-pv">
+        <div className="muted" style={{ marginBottom: 6 }}>Predogled (osveži se ob shranjevanju)</div>
+        {c.id ? <iframe key={pv} src={`/api/admin/campaigns?id=${c.id}&preview=1&v=${pv}`} title="Predogled" /> : <div className="adm-empty adm-card">Klikni »Shrani« za predogled.</div>}
+      </div>
+    </div>
+  );
+}
+
+function ProductPicker({ stock, codes, onChange }) {
+  const [q, setQ] = useState("");
+  const by = useMemo(() => Object.fromEntries((stock || []).map((p) => [p.code, p])), [stock]);
+  const hits = q.trim().length < 2 ? [] : (stock || []).filter((p) => p.total > 0 && !codes.includes(p.code) &&
+    `${p.code} ${p.name} ${p.type || ""}`.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 8);
+  return (
+    <div>
+      <div className="mail-pp">
+        {codes.map((code) => <span key={code} className="mail-pp-chip">{by[code]?.img && <img src={by[code].img} alt="" />}{by[code]?.name || code}
+          <button onClick={() => onChange(codes.filter((x) => x !== code))}>✕</button></span>)}
+        {!codes.length && <span className="muted">Dodaj artikle (2, 4 ali 6 izgleda najlepše).</span>}
+      </div>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Išči artikel po imenu ali šifri …" />
+      {hits.length > 0 && <div className="mail-pp-hits">
+        {hits.map((p) => <button key={p.code} onClick={() => { onChange([...codes, p.code]); setQ(""); }}>
+          {p.img && <img src={p.img} alt="" />}<span><b>{p.name}</b><small>{p.code} · {p.total} kos</small></span></button>)}
+      </div>}
+    </div>
+  );
+}
+
+function AutoMails() {
+  const [d, setD] = useState(null);
+  const [s, setS] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const load = useCallback(async () => { const r = await getJSON("/api/admin/mail"); setD(r); setS(r?.settings || null); }, []);
+  useEffect(() => { load(); }, [load]);
+  const set = (k) => (e) => setS((x) => ({ ...x, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  async function save() { const r = await post("/api/admin/mail", { settings: s }); setMsg({ ok: !!r?.ok, t: r?.ok ? "Nastavitve shranjene ✓" : "Napaka." }); load(); }
+  async function run() { setMsg({ ok: true, t: "Pošiljam zapadle maile …" }); const r = await post("/api/admin/mail", { action: "run" }); setMsg({ ok: !!r?.ok, t: r?.skipped ? "Resend še ni nastavljen." : `Obdelanih: ${r?.processed ?? 0}` }); load(); }
+  if (!d || !s) return <div className="adm-card adm-empty">Nalagam …</div>;
+  const st = d.stats || {};
+  return (
+    <>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      {!d.resend && <div className="adm-note err">⚠️ Resend še ni nastavljen — maili se ne pošiljajo.</div>}
+      {!d.cron && <div className="adm-note">ℹ️ Samodejno pošiljanje še ni vklopljeno (manjka CRON_SECRET). Do takrat lahko klikneš »Pošlji zapadle zdaj«.</div>}
+      <div className="adm-stats">
+        <div className="adm-card adm-stat"><div className="k">Čaka na pošiljanje</div><div className="v">{st.waiting ?? 0}</div></div>
+        <div className="adm-card adm-stat"><div className="k">Poslano (30 dni)</div><div className="v">{st.sent30 ?? 0}</div></div>
+        <div className="adm-card adm-stat"><div className="k">Košarice z e-mailom (30 dni)</div><div className="v">{st.carts30 ?? 0}</div><div className="muted">rešenih: {st.recovered30 ?? 0}</div></div>
+        <div className="adm-card adm-stat"><div className="k">Prodaja po opomniku</div><div className="v">{eur(st.recovered_cents || 0)}</div></div>
+      </div>
+      <div className="mail-auto">
+        <div className="adm-card" style={{ padding: 18 }}>
+          <label className="adm-check" style={{ fontWeight: 800, marginBottom: 10 }}><input type="checkbox" checked={!!s.review_on} onChange={set("review_on")} /> ⭐ Hvala + prošnja za oceno</label>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div className="adm-field" style={{ flex: 1 }}><label>Dni po nakupu</label><input type="number" min="1" max="60" value={s.review_days} onChange={set("review_days")} /></div>
+            <div className="adm-field" style={{ flex: 1 }}><label>Koda za oceno (%)</label><input type="number" min="0" max="50" value={s.review_discount} onChange={set("review_discount")} /></div>
+          </div>
+          <div className="muted">Kupec po oddani oceni takoj dobi osebno kodo (HVALA-…, velja 60 dni, 1×). Ocene čakajo na tvojo odobritev v zavihku »Ocene«.</div>
+        </div>
+        <div className="adm-card" style={{ padding: 18 }}>
+          <label className="adm-check" style={{ fontWeight: 800, marginBottom: 10 }}><input type="checkbox" checked={!!s.cart_on} onChange={set("cart_on")} /> 🛒 Zapuščena košarica</label>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div className="adm-field" style={{ flex: 1 }}><label>1. opomnik (ur)</label><input type="number" min="1" max="72" value={s.cart_h1} onChange={set("cart_h1")} /></div>
+            <div className="adm-field" style={{ flex: 1 }}><label>2. opomnik (ur)</label><input type="number" min="2" max="168" value={s.cart_h2} onChange={set("cart_h2")} /></div>
+            <div className="adm-field" style={{ flex: 1 }}><label>Koda v 2. (%)</label><input type="number" min="0" max="50" value={s.cart_discount2} onChange={set("cart_discount2")} /></div>
+          </div>
+          <div className="muted">Košarica se shrani, ko kupec na blagajni vpiše e-mail. Če kupi, se opomniki samodejno prekličejo. Koda KOSARICA-… velja 3 dni, 1×. 0 % = brez kode.</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 8, margin: "12px 0 18px" }}>
+        <button className="adm-btn pri" onClick={save}>💾 Shrani nastavitve</button>
+        <button className="adm-btn" onClick={run}>▶ Pošlji zapadle zdaj</button>
+      </div>
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>Mail</th><th>Prejemnik</th><th>Kdaj</th><th>Stanje</th></tr></thead>
+          <tbody>
+            {!d.jobs?.length ? <tr><td colSpan={4} className="adm-empty">Še ni samodejnih mailov.</td></tr> :
+              d.jobs.map((j) => (
+                <tr key={j.id}>
+                  <td>{JOBKIND[j.kind] || j.kind}</td>
+                  <td className="muted">{j.email}</td>
+                  <td className="muted">{dt(j.sent_at || j.send_at)}</td>
+                  <td><span className={`adm-tag ${j.status === "poslano" ? "sub" : ""}`}>{JOBST[j.status] || j.status}</span>{j.info && j.status !== "poslano" && <div className="muted">{j.info}</div>}</td>
+                </tr>))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function Subscribers() {
+  const [q, setQ] = useState("");
+  const [list, setList] = useState(null);
+  const [add, setAdd] = useState("");
+  const [msg, setMsg] = useState(null);
+  const load = useCallback(async (qq = "") => { const d = await getJSON(`/api/admin/mail?view=subs&q=${encodeURIComponent(qq)}`); setList(d?.subs || []); }, []);
+  useEffect(() => { const t = setTimeout(() => load(q), 250); return () => clearTimeout(t); }, [q, load]);
+  async function act(email, action) { const d = await post("/api/admin/mail", { email, action }); setMsg({ ok: !!d?.ok, t: d?.ok ? "Urejeno ✓" : d?.message || "Napaka." }); if (action === "add") setAdd(""); load(q); }
+  const SRC = { blagajna: "Blagajna", "noga strani": "Noga strani", "ročno": "Ročno", odjava: "—" };
+  return (
+    <>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        <input className="adm-input" style={{ flex: 1, minWidth: 200 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Išči e-mail ali ime" />
+        <input className="adm-input" style={{ minWidth: 220 }} value={add} onChange={(e) => setAdd(e.target.value)} placeholder="Dodaj e-mail ročno" />
+        <button className="adm-btn" onClick={() => act(add, "add")}>+ Dodaj</button>
+      </div>
+      <div className="muted" style={{ marginBottom: 10 }}>Na seznamu so samo ljudje, ki so se prijavili na novice (uvoz iz Shopifyja, noga strani, kljukica na blagajni). Prikazanih največ 300.</div>
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>E-mail</th><th>Vir</th><th>Prijava</th><th>Stanje</th><th></th></tr></thead>
+          <tbody>
+            {list === null ? <tr><td colSpan={5} className="adm-empty">Nalagam …</td></tr> :
+             !list.length ? <tr><td colSpan={5} className="adm-empty">Ni zadetkov.</td></tr> :
+             list.map((s) => (
+              <tr key={s.id}>
+                <td><div className="strong">{s.email}</div>{s.name && <div className="muted">{s.name}</div>}</td>
+                <td className="muted">{SRC[s.source] || s.source || "Shopify"}</td>
+                <td className="muted">{dShort(s.created_at)}</td>
+                <td>{s.unsubscribed_at ? <span className="adm-tag">odjavljen {dShort(s.unsubscribed_at)}</span> : <span className="adm-tag sub">✓ aktiven</span>}</td>
+                <td>{s.unsubscribed_at ? <button className="adm-btn" onClick={() => act(s.email, "resub")}>Ponovno prijavi</button> : <button className="adm-btn" onClick={() => act(s.email, "unsub")}>Odjavi</button>}</td>
+              </tr>))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+/* =========================== OCENE =========================== */
+const RST = { caka: "Čaka odobritev", objavljeno: "Objavljeno", skrito: "Skrito" };
+function Reviews({ onCount }) {
+  const [list, setList] = useState(null);
+  const [f, setF] = useState("caka");
+  const load = useCallback(async () => { const d = await getJSON("/api/admin/reviews"); setList(d?.reviews || []); onCount?.((d?.reviews || []).filter((r) => r.status === "caka").length); }, [onCount]);
+  useEffect(() => { load(); }, [load]);
+  async function act(r, body) {
+    if (body.delete && !confirm("Izbrišem to oceno za vedno?")) return;
+    await post("/api/admin/reviews", { id: r.id, ...body }); load();
+  }
+  const rows = (list || []).filter((r) => f === "vse" || r.status === f);
+  return (
+    <>
+      <div className="adm-top">
+        <div><h1>Ocene kupcev</h1><div className="sub">Ocene iz e-maila »Kako so ti všeč?«. Objavljene se pokažejo na strani artikla pod »Kaj pravijo kupci«.</div></div>
+        <div className="grow" />
+        <div className="adm-seg">
+          {[["caka", "Čakajo"], ["objavljeno", "Objavljene"], ["skrito", "Skrite"], ["vse", "Vse"]].map(([k, l]) => (
+            <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>{l}</button>))}
+        </div>
+      </div>
+      {list === null ? <div className="adm-card adm-empty">Nalagam …</div> : !rows.length ? <div className="adm-card adm-empty">Ni ocen v tem pogledu.</div> :
+        <div className="rv-adm">
+          {rows.map((r) => (
+            <div className="adm-card rv-adm-card" key={r.id}>
+              <div className="rv-adm-h">{r.img && <img src={r.img} alt="" />}<div><b>{r.pname}</b><div className="muted">{r.code} · naročilo #{r.number} · {dShort(r.created_at)}</div></div></div>
+              <div className="rv-adm-stars">{"★".repeat(r.rating)}<span>{"★".repeat(5 - r.rating)}</span></div>
+              {r.title && <b>{r.title}</b>}
+              {r.body ? <p>{r.body}</p> : <p className="muted">(brez besedila)</p>}
+              <div className="muted">— {r.name} · {r.email}</div>
+              <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+                <span className={`adm-tag ${r.status === "objavljeno" ? "sub" : ""}`}>{RST[r.status]}</span>
+                <div className="grow" />
+                {r.status !== "objavljeno" && <button className="adm-btn pri" onClick={() => act(r, { status: "objavljeno" })}>✓ Objavi</button>}
+                {r.status !== "skrito" && <button className="adm-btn" onClick={() => act(r, { status: "skrito" })}>Skrij</button>}
+                <button className="adm-btn" onClick={() => act(r, { delete: true })}>✕</button>
+              </div>
+            </div>))}
+        </div>}
     </>
   );
 }

@@ -36,6 +36,16 @@ export default function CheckoutForm({ lang, t }) {
     else { setCoupon(null); setCmsg(r?.message || "Koda ni veljavna."); }
   }
 
+  // shrani košarico z e-mailom (opomnik, če nakup ne bo zaključen)
+  async function saveCart(email) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email || "") || !cart.length) return;
+    let token = "";
+    try { token = localStorage.getItem("cart69t") || ""; } catch {}
+    const r = await fetch("/api/cart-save", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, cart, lang, token, total: subtotal }) }).then((x) => x.json()).catch(() => null);
+    if (r?.token) try { localStorage.setItem("cart69t", r.token); } catch {}
+  }
+
   async function submit(e) {
     e.preventDefault();
     if (sending) return;
@@ -50,11 +60,13 @@ export default function CheckoutForm({ lang, t }) {
       });
       const out = await res.json();
       if (out.ok && out.redirect) {
+        try { localStorage.removeItem("cart69t"); } catch {}
         window.location.href = out.redirect; // Stripe plačilna stran
         return;
       }
       if (out.ok && out.number) {
         setSuccess(out.number);
+        try { localStorage.removeItem("cart69t"); } catch {}
         if (out.upn) setUpn(out.upn);
         clearCart();
       } else {
@@ -108,7 +120,10 @@ export default function CheckoutForm({ lang, t }) {
         <label>{t.ck_name}</label>
         <input name="name" required />
         <label>{t.ck_email}</label>
-        <input name="email" type="email" required />
+        <input name="email" type="email" required onBlur={(e) => saveCart(e.target.value.trim())} />
+        <small style={{ display: "block", color: "var(--gray)", fontSize: ".75rem", margin: "-4px 0 8px", lineHeight: 1.4 }}>
+          {lang === "en" ? "If you don't finish your order, we'll save your cart and send you a reminder." : "Če nakupa ne zaključiš, ti košarico shranimo in te nanjo opomnimo po e-mailu."}
+        </small>
         <label>{t.ck_phone}</label>
         <input name="phone" />
         <label>{t.ck_addr}</label>
@@ -137,6 +152,10 @@ export default function CheckoutForm({ lang, t }) {
         ))}
 
         <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "16px 0 0", fontSize: ".84rem", textTransform: "none", letterSpacing: 0, fontWeight: 500, color: "#333", lineHeight: 1.5 }}>
+          <input type="checkbox" name="newsletter" value="1" style={{ width: "auto", marginTop: 3, accentColor: "var(--accent)" }} />
+          <span>{lang === "en" ? "Send me news, new designs and subscriber-only deals (unsubscribe anytime)." : "Želim prejemati novice, nove dizajne in ugodnosti za naročnike (odjava kadarkoli)."}</span>
+        </label>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "10px 0 0", fontSize: ".84rem", textTransform: "none", letterSpacing: 0, fontWeight: 500, color: "#333", lineHeight: 1.5 }}>
           <input type="checkbox" name="agree" required style={{ width: "auto", marginTop: 3, accentColor: "var(--accent)" }} />
           <span>
             {t.ck_agree1} <a href={`/${lang}/info/splosni-pogoji`} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>{t.ck_agree2}</a> {t.ck_agree3}{" "}
