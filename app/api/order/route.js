@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, dbConfigured, ensureSchema } from "../../../lib/db";
 import { getProducts, skuOf, primeCatalog } from "../../../lib/catalog";
+import { stripe } from "../../../lib/payments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -129,6 +130,39 @@ export async function POST(req) {
         (SELECT p.cost_cents FROM variants v JOIN products p ON p.code = v.code WHERE v.sku = ${it.sku}))`;
     await sql`INSERT INTO stock_moves (sku, delta, reason, note)
       VALUES (${it.sku}, ${-it.qty}, 'narocilo', ${"Naročilo #" + order.number})`;
+  }
+
+  // ---- Plačilo s kartico: Stripe Checkout ----
+  if (payment === "card" && stripe()) {
+    const origin = req.headers.get("origin") || `https://${req.headers.get("host")}`;
+    const line_items = items.map((it) => ({
+      quantity: it.qty,
+      price_data: { currency: "eur", unit_amount: it.price_cents,
+        product_data: { name: `${it.name} (${it.size})${it.bundle_key ? " · Paket 3" : ""}` } },
+    }));
+    if (shipping > 0)
+      line_items.push({ quantity: 1, price_data: { currency: "eur", unit_amount: shipping, product_data: { name: lang === "en" ? "Shipping" : "Poštnina" } } });
+    try {
+      const session = await stripe().checkout.sessions.create({
+        mode: "payment",
+        line_items,
+        customer_email: c.email,
+        locale: lang === "en" ? "en" : "sl",
+        client_reference_id: String(order.id),
+        metadata: { order_id: String(order.id), order_number: String(order.number) },
+        payment_intent_data: { description: `69SLAM naročilo #${order.number}`, metadata: { order_id: String(order.id) } },
+        expires_at: Math.floor(Date.now() / 1000) + 35 * 60,
+        success_url: `${origin}/${lang}/blagajna/hvala?o=${order.number}&s={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/${lang}/blagajna/hvala?o=${order.number}&preklic=1`,
+      });
+      await sql`UPDATE orders SET payment_ref = ${session.id} WHERE id = ${order.id}`;
+      return NextResponse.json({ ok: true, number: Number(order.number), redirect: session.url });
+    } catch (e) {
+      // plačila ni bilo mogoče začeti → naročilo prekliči in vrni zalogo
+      const { cancelUnpaid } = await import("../../../lib/payments");
+      await cancelUnpaid(order.id, "Napaka pri začetku plačila");
+      return NextResponse.json({ ok: false, message: lang === "en" ? "Card payment could not be started. Please try again or choose another method." : "Plačila s kartico ni bilo mogoče začeti. Poskusi znova ali izberi drug način plačila." }, { status: 502 });
+    }
   }
 
   return NextResponse.json({ ok: true, number: Number(order.number), message: t.ok(order.number) });

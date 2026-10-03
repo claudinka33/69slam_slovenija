@@ -27,6 +27,10 @@ export default function CheckoutForm({ lang, t }) {
         body: JSON.stringify({ customer: data, payment: pay, cart, lang }),
       });
       const out = await res.json();
+      if (out.ok && out.redirect) {
+        window.location.href = out.redirect; // Stripe plačilna stran
+        return;
+      }
       if (out.ok && out.number) {
         setSuccess(out.number);
         clearCart();
