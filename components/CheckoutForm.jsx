@@ -11,6 +11,7 @@ export default function CheckoutForm({ lang, t }) {
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(null); // številka naročila
+  const [upn, setUpn] = useState(null); // podatki za plačilo po predračunu
   const codFee = pay === "cod" ? COD_FEE : 0;
   const total = subtotal + shipping + codFee;
 
@@ -33,6 +34,7 @@ export default function CheckoutForm({ lang, t }) {
       }
       if (out.ok && out.number) {
         setSuccess(out.number);
+        if (out.upn) setUpn(out.upn);
         clearCart();
       } else {
         setMsg(out.message || t.ck_stub);
@@ -57,6 +59,21 @@ export default function CheckoutForm({ lang, t }) {
             ? "Thank you! Your order is recorded — a confirmation will follow by e-mail."
             : "Hvala za nakup! Naročilo je zabeleženo — potrditev sledi na e-mail."}
         </p>
+        {upn && (
+          <div className="upnbox">
+            <h4>{lang === "en" ? "Pay by bank transfer" : "Plačilo po predračunu"}</h4>
+            <p>{lang === "en" ? "Scan the QR code with your mobile banking app — all details are filled in." : "Skeniraj QR kodo z mobilno banko — vsi podatki se izpolnijo sami."}</p>
+            <div className="upnqr" dangerouslySetInnerHTML={{ __html: upn.svg }} />
+            <dl>
+              <dt>{lang === "en" ? "Amount" : "Znesek"}</dt><dd><b>{fmt(upn.amount / 100)}</b></dd>
+              <dt>{lang === "en" ? "Payee" : "Prejemnik"}</dt><dd>{upn.payee}, {upn.address}</dd>
+              <dt>IBAN</dt><dd><b>{upn.iban}</b> ({upn.bank}, BIC {upn.bic})</dd>
+              <dt>{lang === "en" ? "Reference" : "Sklic"}</dt><dd><b>{upn.ref}</b></dd>
+              <dt>{lang === "en" ? "Due" : "Rok plačila"}</dt><dd>{upn.due}</dd>
+            </dl>
+            <p className="upnnote">{lang === "en" ? "We ship your order as soon as the payment arrives." : "Paket pošljemo takoj, ko prejmemo plačilo."}</p>
+          </div>
+        )}
       </div>
     );
   }

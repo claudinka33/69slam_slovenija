@@ -165,5 +165,16 @@ export async function POST(req) {
     }
   }
 
+  // ---- Predračun: UPN QR za mobilno banko ----
+  if (payment === "proforma") {
+    try {
+      const { upnSvg } = await import("../../../lib/upn");
+      const { COMPANY } = await import("../../../lib/legal");
+      const upn = await upnSvg({ amountCents: total, number: order.number, name: c.name, street: c.address, city: `${c.zip} ${c.city}` });
+      return NextResponse.json({ ok: true, number: Number(order.number), message: t.ok(order.number),
+        upn: { svg: upn.svg, ref: upn.ref, due: upn.due, amount: total, iban: COMPANY.iban, bank: COMPANY.bank, bic: COMPANY.bic, payee: COMPANY.short, address: COMPANY.address } });
+    } catch { /* brez QR — podatki gredo po e-mailu */ }
+  }
+
   return NextResponse.json({ ok: true, number: Number(order.number), message: t.ok(order.number) });
 }

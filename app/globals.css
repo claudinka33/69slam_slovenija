@@ -524,3 +524,13 @@ nav.main a.nav-out{color:var(--red);font-weight:800;}
 
 .legal .adminlink{display:inline;color:inherit;opacity:.6;text-decoration:none;}
 .legal .adminlink:hover{opacity:1;text-decoration:underline;}
+
+/* UPN QR po oddaji naročila */
+.upnbox{margin-top:22px;text-align:left;border-top:1px solid var(--line);padding-top:20px;}
+.upnbox h4{font-size:1rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.upnbox p{color:var(--gray);font-size:.9rem;}
+.upnqr{width:220px;max-width:100%;margin:14px auto;}
+.upnqr svg{width:100%;height:auto;display:block;}
+.upnbox dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.88rem;margin:10px 0;}
+.upnbox dt{color:var(--gray);}
+.upnnote{font-size:.82rem;}
