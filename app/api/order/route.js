@@ -165,6 +165,12 @@ export async function POST(req) {
     }
   }
 
+  // ---- E-maili (kartica: šele ko je plačano) ----
+  if (payment !== "card" || !stripe()) {
+    const { mailNewOrder } = await import("../../../lib/payments");
+    await mailNewOrder(order.id);
+  }
+
   // ---- Predračun: UPN QR za mobilno banko ----
   if (payment === "proforma") {
     try {

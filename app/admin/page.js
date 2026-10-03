@@ -65,8 +65,8 @@ export default function Admin() {
     await fetch("/api/admin/login", { method: "DELETE" });
     window.location.href = "/admin/prijava";
   }
-  async function setStatus(id, status) {
-    await fetch("/api/admin/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
+  async function setStatus(id, status, tracking) {
+    await fetch("/api/admin/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status, tracking }) });
     await Promise.all([loadOrders(), loadStock()]);
   }
 
@@ -337,6 +337,7 @@ function Orders({ orders, onOpen }) {
 
 function OrderPanel({ o, onClose, setStatus }) {
   const [busy, setBusy] = useState(false);
+  const [trk, setTrk] = useState(o.tracking || "");
   useEffect(() => {
     const k = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", k);
@@ -347,7 +348,7 @@ function OrderPanel({ o, onClose, setStatus }) {
     if (s === "preklicano" && !confirm(o.source === "shopify"
       ? "Označim naročilo kot preklicano?"
       : "Prekličem naročilo? Kosi se vrnejo na zalogo.")) return;
-    setBusy(true); await setStatus(o.id, s); setBusy(false);
+    setBusy(true); await setStatus(o.id, s, trk); setBusy(false);
   }
   const items = o.items || [];
   return (
@@ -369,6 +370,14 @@ function OrderPanel({ o, onClose, setStatus }) {
               <button key={s} disabled={busy} className={o.status === s ? "on" : ""} onClick={() => change(s)}>{SLABEL[s]}</button>
             ))}
           </div>
+
+          {o.source !== "shopify" && (
+            <div className="adm-field" style={{ marginTop: 12 }}>
+              <label>Sledilna številka Pošte (vpiši pred »Poslano«)</label>
+              <input value={trk} onChange={(e) => setTrk(e.target.value)} placeholder="npr. RB123456789SI" />
+              <div className="muted" style={{ marginTop: 6 }}>Ko klikneš »Poslano«, kupec dobi e-mail »Paket je na poti« s to številko.</div>
+            </div>
+          )}
 
           <div className="adm-sec">Kupec in dostava</div>
           <dl className="adm-dl">
