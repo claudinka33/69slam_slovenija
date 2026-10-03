@@ -521,3 +521,6 @@ nav.main a.nav-out{color:var(--red);font-weight:800;}
 
 /* velikosti na zalogi na kartici */
 .psizes{font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--gray);text-align:right;margin-left:10px;}
+
+.legal .adminlink{display:inline;color:inherit;opacity:.6;text-decoration:none;}
+.legal .adminlink:hover{opacity:1;text-decoration:underline;}

@@ -53,7 +53,7 @@ export default async function LangLayout({ children, params }) {
           <div className="legal">
             {COMPANY.name} · {COMPANY.address} · Matična št.: {COMPANY.reg} · ID za DDV: {COMPANY.vat} · Vpis: {COMPANY.court} · Osnovni kapital: {COMPANY.capital}
             <br />
-            {t.legal}
+            {t.legal} · <a href="/admin" className="adminlink" rel="nofollow">Admin</a>
           </div>
         </div>
       </footer>
