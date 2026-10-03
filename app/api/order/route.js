@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const BUNDLE_OFF = 0.15;
 const FREE_FROM = 5000; // v centih
-const SHIP = 350;
+const SHIP = 500; // 5,00 € (enako kot v pogojih in košarici)
 const COD_FEE = 150;
 
 const MSG = {
@@ -76,7 +76,7 @@ export async function POST(req) {
         const p = products[x.id];
         if (!p || !p.bundleable || !x.size) return null; // paket = samo redne moške boksarice
         return { sku: skuOf(x.id, x.size), name: p.name, size: x.size, qty: 1,
-                 price_cents: Math.round((p.price * (1 - BUNDLE_OFF)) * 100), bundle_key: key };
+                 price_cents: Math.round((p.price * (1 - BUNDLE_OFF)) * 100), bundle_key: key, base_cents: Math.round(p.price * 100) };
       });
       if (each.some((x) => !x))
         return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
@@ -86,11 +86,28 @@ export async function POST(req) {
       if (!p) return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
       const eff = p.effPrice; // odprodaja −50 % / VSE MORE VEN −50 % je že upoštevana
       items.push({ sku: skuOf(line.id, line.size), name: p.name, size: line.size,
-                   qty: line.qty, price_cents: Math.round(eff * 100), bundle_key: null });
+                   qty: line.qty, price_cents: Math.round(eff * 100), bundle_key: null, base_cents: Math.round(p.price * 100) });
     }
   }
   if (items.length === 0)
     return NextResponse.json({ ok: false, message: t.empty }, { status: 400 });
+
+  // ---- Koda za popust: velja boljši popust (koda ALI paket/odprodaja), nikoli oba ----
+  let couponCode = null;
+  let discount = 0;
+  if (body.coupon) {
+    const { checkCoupon, bestUnit } = await import("../../../lib/coupon");
+    const before = items.reduce((a, x) => a + x.price_cents * x.qty, 0);
+    const chk = await checkCoupon(db(), body.coupon, c.email, before, lang === "en");
+    if (!chk.ok) return NextResponse.json({ ok: false, message: chk.message }, { status: 400 });
+    for (const it of items) {
+      const np = bestUnit(it.price_cents, it.base_cents, chk.coupon.percent);
+      discount += (it.price_cents - np) * it.qty;
+      it.price_cents = np;
+    }
+    if (discount > 0) couponCode = chk.coupon.code;
+    else discount = 0;
+  }
 
   const subtotal = items.reduce((a, x) => a + x.price_cents * x.qty, 0);
   const shipping = subtotal >= FREE_FROM ? 0 : SHIP;
@@ -119,9 +136,9 @@ export async function POST(req) {
   // ---- Zapiši naročilo ----
   const [order] = await sql`INSERT INTO orders
     (status, payment, name, email, phone, address, zip, city, country, lang,
-     subtotal_cents, shipping_cents, cod_fee_cents, total_cents)
+     subtotal_cents, shipping_cents, cod_fee_cents, total_cents, coupon_code, discount_cents)
     VALUES ('novo', ${payment}, ${c.name}, ${c.email}, ${c.phone || null}, ${c.address},
-            ${c.zip}, ${c.city}, 'SI', ${lang}, ${subtotal}, ${shipping}, ${codFee}, ${total})
+            ${c.zip}, ${c.city}, 'SI', ${lang}, ${subtotal}, ${shipping}, ${codFee}, ${total}, ${couponCode}, ${discount})
     RETURNING id, number`;
 
   for (const it of items) {

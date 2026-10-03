@@ -12,8 +12,29 @@ export default function CheckoutForm({ lang, t }) {
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(null); // številka naročila
   const [upn, setUpn] = useState(null); // podatki za plačilo po predračunu
+  const [code, setCode] = useState("");
+  const [coupon, setCoupon] = useState(null); // { code, percent }
+  const [cmsg, setCmsg] = useState("");
+  // velja boljši popust: koda ALI paket/odprodaja (nikoli oba)
+  const best = (cur, base) => (coupon ? Math.min(cur, Math.round(base * (1 - coupon.percent / 100) * 100) / 100) : cur);
+  const lineTotal = (c) => {
+    if (c.bundle) return c.items.reduce((a, x) => { const p = byId(x.id); const base = p?.price || 0; return a + best(+(base * 0.85).toFixed(2), base); }, 0);
+    const p = byId(c.id); return best(p?.effPrice || 0, p?.price || 0) * c.qty;
+  };
+  const sub2 = coupon ? +cart.reduce((a, c) => a + lineTotal(c), 0).toFixed(2) : subtotal;
+  const discount = +(subtotal - sub2).toFixed(2);
+  const ship2 = coupon ? (sub2 >= 50 || sub2 === 0 ? 0 : 5) : shipping;
   const codFee = pay === "cod" ? COD_FEE : 0;
-  const total = subtotal + shipping + codFee;
+  const total = sub2 + ship2 + codFee;
+  async function applyCode() {
+    setCmsg("");
+    if (!code.trim()) return;
+    const email = document.querySelector('input[name="email"]')?.value || "";
+    const r = await fetch("/api/coupon", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, email, subtotal, lang }) }).then((x) => x.json()).catch(() => null);
+    if (r?.ok) { setCoupon({ code: r.code, percent: r.percent }); setCode(r.code); }
+    else { setCoupon(null); setCmsg(r?.message || "Koda ni veljavna."); }
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -25,7 +46,7 @@ export default function CheckoutForm({ lang, t }) {
       const res = await fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customer: data, payment: pay, cart, lang }),
+        body: JSON.stringify({ customer: data, payment: pay, cart, lang, coupon: coupon?.code || null }),
       });
       const out = await res.json();
       if (out.ok && out.redirect) {
@@ -149,8 +170,18 @@ export default function CheckoutForm({ lang, t }) {
           );
         })}
         <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "12px 0" }} />
+        <div className="ckcode">
+          <input placeholder={lang === "en" ? "Discount code" : "Koda za popust"} value={code}
+            onChange={(e) => { setCode(e.target.value.toUpperCase()); if (coupon) setCoupon(null); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(); } }} />
+          <button type="button" onClick={applyCode}>{lang === "en" ? "Apply" : "Uporabi"}</button>
+        </div>
+        {cmsg && <div className="ckcode-msg err">{cmsg}</div>}
+        {coupon && <div className="ckcode-msg ok">✓ {lang === "en" ? `Code ${coupon.code}: −${coupon.percent} %` : `Koda ${coupon.code}: −${coupon.percent} %`}
+          {discount <= 0 && <span> — {lang === "en" ? "your current discount is already better." : "trenutni popust (paket/akcija) je že boljši."}</span>}</div>}
         <div className="trow"><span>{t.subtotal}</span><b>{fmt(subtotal)}</b></div>
-        <div className="trow"><span>{t.shipping}</span><b>{shipping === 0 ? t.ship_free : fmt(shipping)}</b></div>
+        {coupon && discount > 0 && <div className="trow" style={{ color: "var(--red)" }}><span>{lang === "en" ? "Discount" : "Popust"} ({coupon.code})</span><b>−{fmt(discount)}</b></div>}
+        <div className="trow"><span>{t.shipping}</span><b>{ship2 === 0 ? t.ship_free : fmt(ship2)}</b></div>
         {codFee > 0 && <div className="trow"><span>{t.cod_fee}</span><b>{fmt(codFee)}</b></div>}
         <div className="trow total"><span>{t.total}</span><span>{fmt(total)}</span></div>
       </div>

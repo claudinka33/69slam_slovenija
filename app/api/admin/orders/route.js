@@ -9,7 +9,7 @@ export async function GET() {
   const sql = db();
   await ensureSchema();
   const orders = await sql`SELECT id, number, status, payment, name, email, phone, address, zip, city,
-      lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at
+      lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at, coupon_code, discount_cents
     FROM orders ORDER BY created_at DESC, id DESC LIMIT 2000`;
   const items = await sql`SELECT order_id, sku, name, size, qty, price_cents, bundle_key
     FROM order_items WHERE order_id = ANY(${orders.map((o) => o.id)})`;

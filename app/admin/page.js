@@ -77,6 +77,7 @@ export default function Admin() {
     { id: "prevzemi", ico: "📥", lbl: "Prevzemi" },
     { id: "inventura", ico: "📋", lbl: "Inventura" },
     { id: "cenik", ico: "💶", lbl: "Cenik & RVC" },
+    { id: "kode", ico: "🏷️", lbl: "Kode za popust" },
     { id: "stranke", ico: "👤", lbl: "Stranke" },
     { id: "nastavitve", ico: "⚙️", lbl: "Nastavitve", soon: true },
   ];
@@ -125,6 +126,7 @@ export default function Admin() {
         {view === "inventura" && <Inventory stock={stock} reload={loadStock} />}
         {view === "prevzemi" && <Receipts stock={stock} reloadStock={loadStock} />}
         {view === "cenik" && <PriceList />}
+        {view === "kode" && <Coupons />}
         {view === "stranke" && <Customers reloadOrders={loadOrders} />}
       </main>
 
@@ -385,7 +387,8 @@ function OrderPanel({ o, onClose, setStatus }) {
             <dt>E-mail</dt><dd><a href={`mailto:${o.email}`} style={{ color: "var(--a-blue)" }}>{o.email}</a></dd>
             {o.phone && <><dt>Telefon</dt><dd>{o.phone}</dd></>}
             <dt>Naslov</dt><dd>{o.address}<br />{o.zip} {o.city}{o.country && o.country !== "SI" ? `, ${o.country}` : ""}</dd>
-            <dt>Plačilo</dt><dd>{PAY[o.payment] || o.payment}</dd>
+            <dt>Plačilo</dt><dd>{PAY[o.payment] || o.payment}{o.paid_at ? " · ✓ plačano" : ""}</dd>
+            {o.coupon_code && <><dt>Koda</dt><dd><b>{o.coupon_code}</b> (popust {eur(o.discount_cents)})</dd></>}
             {o.source === "shopify" && <><dt>Izvor</dt><dd><span className="adm-tag">uvoz iz Shopifyja</span></dd></>}
           </dl>
 
@@ -413,6 +416,108 @@ function OrderPanel({ o, onClose, setStatus }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/* =========================== KODE ZA POPUST =========================== */
+const isoDay = (v) => (v ? new Date(v).toLocaleDateString("sv-SE", { timeZone: "Europe/Ljubljana" }) : "");
+function couponState(c) {
+  const now = Date.now();
+  if (!c.active) return ["izklopljena", ""];
+  if (c.starts_at && new Date(c.starts_at).getTime() > now) return ["čaka na začetek", "warn"];
+  if (c.expires_at && new Date(c.expires_at).getTime() < now) return ["potekla", ""];
+  if (c.max_uses && c.uses >= c.max_uses) return ["porabljena", ""];
+  return ["aktivna", "ok"];
+}
+function Coupons() {
+  const [list, setList] = useState(null);
+  const [form, setForm] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const load = useCallback(async () => { const d = await getJSON("/api/admin/coupons"); setList(d?.coupons || []); }, []);
+  useEffect(() => { load(); }, [load]);
+  const blank = { code: "", percent: "20", starts: "", ends: "", min_order: "", max_uses: "", once: false, active: true, note: "" };
+  function edit(c) {
+    setForm({ id: c.id, code: c.code, percent: String(c.percent), starts: isoDay(c.starts_at), ends: isoDay(c.expires_at),
+      min_order: c.min_order_cents ? (c.min_order_cents / 100).toString().replace(".", ",") : "", max_uses: c.max_uses ? String(c.max_uses) : "",
+      once: c.once_per_email, active: c.active, note: c.note || "" });
+  }
+  async function save(e) {
+    e.preventDefault();
+    const d = await getJSON("/api/admin/coupons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." });
+    if (d?.ok) { setForm(null); load(); }
+  }
+  async function remove(c) {
+    if (!confirm(`Izbrišem kodo ${c.code}?`)) return;
+    const d = await getJSON(`/api/admin/coupons?id=${c.id}`, { method: "DELETE" });
+    setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." }); load();
+  }
+  async function toggle(c) {
+    await getJSON("/api/admin/coupons", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: c.id, code: c.code, percent: c.percent, starts: isoDay(c.starts_at), ends: isoDay(c.expires_at),
+        min_order: c.min_order_cents ? c.min_order_cents / 100 : "", max_uses: c.max_uses || "", once: c.once_per_email, active: !c.active, note: c.note }) });
+    load();
+  }
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  return (
+    <>
+      <div className="adm-top">
+        <div><h1>Kode za popust</h1><div className="sub">Velja <b>boljši popust</b>: koda ALI Paket 3 / odprodaja — nikoli oba skupaj. Znižani artikli (−50 %) s kodo ne dobijo dodatnega popusta.</div></div>
+        <div className="grow" />
+        <button className="adm-btn pri" onClick={() => setForm({ ...blank })}>+ Nova koda</button>
+      </div>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>Koda</th><th className="r">Popust</th><th>Velja</th><th>Pogoji</th><th className="r">Uporab</th><th className="r">Prodaja s kodo</th><th>Stanje</th><th></th></tr></thead>
+          <tbody>
+            {list === null ? <tr><td colSpan={8} className="adm-empty">Nalagam …</td></tr> :
+             !list.length ? <tr><td colSpan={8} className="adm-empty">Še ni nobene kode — klikni »+ Nova koda«.</td></tr> :
+             list.map((c) => { const [st, cls] = couponState(c); return (
+              <tr key={c.id}>
+                <td><div className="strong">{c.code}</div>{c.note && <div className="muted">{c.note}</div>}</td>
+                <td className="r num strong">−{c.percent} %</td>
+                <td className="muted">{c.starts_at ? isoDay(c.starts_at).split("-").reverse().join(". ") : "takoj"} – {c.expires_at ? isoDay(c.expires_at).split("-").reverse().join(". ") : "brez konca"}</td>
+                <td className="muted">{[c.min_order_cents ? `nad ${eur(c.min_order_cents)}` : null, c.once_per_email ? "1× na kupca" : null, c.max_uses ? `največ ${c.max_uses}×` : null].filter(Boolean).join(" · ") || "—"}</td>
+                <td className="r num">{c.uses}{c.max_uses ? ` / ${c.max_uses}` : ""}</td>
+                <td className="r num">{c.uses ? <>{eur(c.revenue_cents)}<div className="muted">popust {eur(c.discount_cents)}</div></> : "—"}</td>
+                <td><span className={`adm-tag ${cls === "ok" ? "sub" : ""}`}>{st}</span></td>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <button className="adm-btn" onClick={() => edit(c)}>Uredi</button>{" "}
+                  <button className="adm-btn" onClick={() => toggle(c)}>{c.active ? "Izklopi" : "Vklopi"}</button>{" "}
+                  <button className="adm-btn" onClick={() => remove(c)}>✕</button>
+                </td>
+              </tr>); })}
+          </tbody>
+        </table>
+      </div>
+      {form && (
+        <div className="adm-ov" onClick={(e) => e.target === e.currentTarget && setForm(null)}>
+          <form className="adm-modal" onSubmit={save} style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto" }}>
+            <div className="adm-mh"><h3>{form.id ? `Uredi kodo ${form.code}` : "Nova koda za popust"}</h3><button type="button" className="x" onClick={() => setForm(null)}>✕</button></div>
+            <div className="adm-mb">
+              <div className="adm-field"><label>Koda (kupec jo vpiše na blagajni)</label>
+                <input value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase().replace(/\s/g, "") }))} placeholder="npr. NOVA69SLAM" required /></div>
+              <div className="adm-field"><label>Popust (%)</label>
+                <input type="number" min="1" max="90" value={form.percent} onChange={set("percent")} required style={{ maxWidth: 120 }} /></div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <div className="adm-field" style={{ flex: 1 }}><label>Velja od</label><input type="date" value={form.starts} onChange={set("starts")} /></div>
+                <div className="adm-field" style={{ flex: 1 }}><label>Velja do (vključno)</label><input type="date" value={form.ends} onChange={set("ends")} /></div>
+              </div>
+              <div className="muted" style={{ marginTop: -6, marginBottom: 12 }}>Prazno = velja takoj / brez konca.</div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <div className="adm-field" style={{ flex: 1 }}><label>Najmanjši nakup (€)</label><input inputMode="decimal" value={form.min_order} onChange={set("min_order")} placeholder="brez" /></div>
+                <div className="adm-field" style={{ flex: 1 }}><label>Največ uporab skupaj</label><input type="number" min="1" value={form.max_uses} onChange={set("max_uses")} placeholder="neomejeno" /></div>
+              </div>
+              <label className="adm-check" style={{ marginBottom: 10 }}><input type="checkbox" checked={form.once} onChange={set("once")} /> Vsak kupec (e-mail) jo lahko uporabi samo 1×</label>
+              <label className="adm-check" style={{ marginBottom: 14 }}><input type="checkbox" checked={form.active} onChange={set("active")} /> Koda je vklopljena</label>
+              <div className="adm-field"><label>Opomba (samo zate)</label><input value={form.note} onChange={set("note")} placeholder="npr. odprtje nove trgovine" /></div>
+              <button className="adm-btn pri" type="submit">💾 Shrani kodo</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </>
   );
 }
 

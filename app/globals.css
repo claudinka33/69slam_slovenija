@@ -534,3 +534,11 @@ nav.main a.nav-out{color:var(--red);font-weight:800;}
 .upnbox dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.88rem;margin:10px 0;}
 .upnbox dt{color:var(--gray);}
 .upnnote{font-size:.82rem;}
+
+/* koda za popust na blagajni */
+.ckcode{display:flex;gap:8px;margin:4px 0 8px;}
+.ckcode input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;text-transform:uppercase;letter-spacing:.04em;}
+.ckcode button{border:0;border-radius:10px;background:#0a0a0a;color:#fff;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:0 16px;cursor:pointer;font-size:.8rem;}
+.ckcode-msg{font-size:.84rem;margin:-2px 0 10px;}
+.ckcode-msg.err{color:var(--red);}
+.ckcode-msg.ok{color:#06855f;font-weight:700;}
