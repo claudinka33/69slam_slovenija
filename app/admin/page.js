@@ -2121,6 +2121,7 @@ function AutoMails() {
         <button className="adm-btn pri" onClick={save}>💾 Shrani nastavitve</button>
         <button className="adm-btn" onClick={run}>▶ Pošlji zapadle zdaj</button>
       </div>
+      <MailPreviews />
       <div className="adm-card adm-scroll">
         <table className="adm-tbl">
           <thead><tr><th>Mail</th><th>Prejemnik</th><th>Kdaj</th><th>Stanje</th></tr></thead>
@@ -2140,6 +2141,26 @@ function AutoMails() {
   );
 }
 
+const PREVIEWS = [["confirm", "✅ Potrditev (kartica)"], ["upn", "🧾 Potrditev (predračun + QR)"], ["cod", "📦 Potrditev (po povzetju)"], ["shipped", "🚚 Paket je na poti"],
+  ["review", "⭐ Hvala + ocena"], ["cart1", "🛒 Košarica – 1. opomnik"], ["cart2", "🛒 Košarica – 2. opomnik (koda)"]];
+function MailPreviews() {
+  const [k, setK] = useState("confirm");
+  const [lang, setLang] = useState("sl");
+  return (
+    <div className="adm-card" style={{ padding: 16, marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+        <b>👁 Predogled mailov</b><span className="muted">vzorčni podatki — nič se ne pošlje</span>
+        <div className="grow" />
+        <div className="adm-seg">{["sl", "en"].map((l) => <button key={l} className={lang === l ? "on" : ""} onClick={() => setLang(l)}>{l.toUpperCase()}</button>)}</div>
+      </div>
+      <div className="adm-chips" style={{ marginBottom: 12 }}>
+        {PREVIEWS.map(([id, l]) => <button key={id} className={k === id ? "on" : ""} style={k === id ? { background: "var(--a-navy)", color: "#fff", borderColor: "var(--a-navy)" } : null} onClick={() => setK(id)}>{l}</button>)}
+      </div>
+      <iframe title="Predogled maila" src={`/api/admin/mail/preview?kind=${k}&lang=${lang}`} style={{ width: "100%", maxWidth: 680, height: 760, border: "1px solid var(--a-line)", borderRadius: 14, background: "#f5f5f7", display: "block", margin: "0 auto" }} />
+    </div>
+  );
+}
+
 function Subscribers() {
   const [q, setQ] = useState("");
   const [list, setList] = useState(null);
@@ -2148,7 +2169,7 @@ function Subscribers() {
   const load = useCallback(async (qq = "") => { const d = await getJSON(`/api/admin/mail?view=subs&q=${encodeURIComponent(qq)}`); setList(d?.subs || []); }, []);
   useEffect(() => { const t = setTimeout(() => load(q), 250); return () => clearTimeout(t); }, [q, load]);
   async function act(email, action) { const d = await post("/api/admin/mail", { email, action }); setMsg({ ok: !!d?.ok, t: d?.ok ? "Urejeno ✓" : d?.message || "Napaka." }); if (action === "add") setAdd(""); load(q); }
-  const SRC = { blagajna: "Blagajna", "noga strani": "Noga strani", "ročno": "Ročno", odjava: "—" };
+  const SRC = { blagajna: "Blagajna", "noga strani": "Noga strani", "ročno": "Ročno", odjava: "—", stranka: "Stranka", kupec: "Kupec" };
   return (
     <>
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
@@ -2156,8 +2177,9 @@ function Subscribers() {
         <input className="adm-input" style={{ flex: 1, minWidth: 200 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Išči e-mail ali ime" />
         <input className="adm-input" style={{ minWidth: 220 }} value={add} onChange={(e) => setAdd(e.target.value)} placeholder="Dodaj e-mail ročno" />
         <button className="adm-btn" onClick={() => act(add, "add")}>+ Dodaj</button>
+        <button className="adm-btn" onClick={async () => { const d = await post("/api/admin/mail", { action: "customers" }); setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." }); load(q); }}>👥 Dodaj vse stranke</button>
       </div>
-      <div className="muted" style={{ marginBottom: 10 }}>Na seznamu so samo ljudje, ki so se prijavili na novice (uvoz iz Shopifyja, noga strani, kljukica na blagajni). Prikazanih največ 300.</div>
+      <div className="muted" style={{ marginBottom: 10 }}>Naročniki: prijave (Shopify, noga strani) in vse stranke — vsak kupec je dodan samodejno. Kdor se odjavi, ostane odjavljen. Prikazanih največ 300.</div>
       <div className="adm-card adm-scroll">
         <table className="adm-tbl">
           <thead><tr><th>E-mail</th><th>Vir</th><th>Prijava</th><th>Stanje</th><th></th></tr></thead>

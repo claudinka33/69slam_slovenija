@@ -46,6 +46,17 @@ export async function POST(req) {
       cart_on: !!s.cart_on, cart_h1: n(s.cart_h1, 1, 72, 1), cart_h2: n(s.cart_h2, 2, 168, 24), cart_discount2: n(s.cart_discount2, 0, 50, 10) });
     return NextResponse.json({ ok: true, settings: saved });
   }
+  if (b.action === "customers") {
+    // vse stranke (naročila + uvoz iz Shopifyja) → naročniki; kdor se je že odjavil, ostane odjavljen
+    const r = await sql`INSERT INTO subscribers (email, lang, source, name)
+      SELECT DISTINCT ON (e) e, 'sl', 'stranka', n FROM (
+        SELECT lower(trim(email)) AS e, name AS n FROM orders WHERE email LIKE '%@%'
+        UNION ALL SELECT lower(trim(email)), name FROM shop_customers WHERE email LIKE '%@%') x
+      ORDER BY e
+      ON CONFLICT (email) DO NOTHING RETURNING id`;
+    const [t] = await sql`SELECT COUNT(*)::int AS n FROM subscribers WHERE unsubscribed_at IS NULL`;
+    return NextResponse.json({ ok: true, added: r.length, active: t.n, message: `Dodanih ${r.length} strank. Aktivnih naročnikov: ${t.n}.` });
+  }
   if (b.action === "run") return NextResponse.json({ ok: true, ...(await processJobs(40)) });
   const email = String(b.email || "").trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return NextResponse.json({ ok: false, message: "E-mail ni pravilen." }, { status: 400 });

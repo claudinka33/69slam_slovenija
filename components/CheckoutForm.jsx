@@ -151,10 +151,9 @@ export default function CheckoutForm({ lang, t }) {
           </label>
         ))}
 
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "16px 0 0", fontSize: ".84rem", textTransform: "none", letterSpacing: 0, fontWeight: 500, color: "#333", lineHeight: 1.5 }}>
-          <input type="checkbox" name="newsletter" value="1" style={{ width: "auto", marginTop: 3, accentColor: "var(--accent)" }} />
-          <span>{lang === "en" ? "Send me news, new designs and subscriber-only deals (unsubscribe anytime)." : "Želim prejemati novice, nove dizajne in ugodnosti za naročnike (odjava kadarkoli)."}</span>
-        </label>
+        <p style={{ margin: "16px 0 0", fontSize: ".78rem", color: "var(--gray)", lineHeight: 1.5 }}>
+          {lang === "en" ? "We'll occasionally send you news and offers for similar products. You can unsubscribe in every e-mail." : "Občasno ti bomo poslali novice in ponudbe za podobne izdelke. Odjaviš se lahko v vsakem e-mailu."}
+        </p>
         <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "10px 0 0", fontSize: ".84rem", textTransform: "none", letterSpacing: 0, fontWeight: 500, color: "#333", lineHeight: 1.5 }}>
           <input type="checkbox" name="agree" required style={{ width: "auto", marginTop: 3, accentColor: "var(--accent)" }} />
           <span>

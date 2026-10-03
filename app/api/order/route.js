@@ -149,13 +149,11 @@ export async function POST(req) {
       VALUES (${it.sku}, ${-it.qty}, 'narocilo', ${"Naročilo #" + order.number})`;
   }
 
-  // ---- Prijava na novice (če je kupec obkljukal) ----
-  if (c.newsletter) {
-    try {
-      await sql`INSERT INTO subscribers (email, lang, source, name) VALUES (${String(c.email).trim().toLowerCase()}, ${lang}, 'blagajna', ${c.name})
-        ON CONFLICT (email) DO UPDATE SET unsubscribed_at = NULL, name = COALESCE(subscribers.name, EXCLUDED.name)`;
-    } catch {}
-  }
+  // ---- Kupec postane naročnik na novice (odjava kadarkoli; kdor se je odjavil, ostane odjavljen) ----
+  try {
+    await sql`INSERT INTO subscribers (email, lang, source, name) VALUES (${String(c.email).trim().toLowerCase()}, ${lang}, 'kupec', ${c.name})
+      ON CONFLICT (email) DO NOTHING`;
+  } catch {}
 
   // ---- Plačilo s kartico: Stripe Checkout ----
   if (payment === "card" && stripe()) {
