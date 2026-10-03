@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { LOGO_WHITE } from "../lib/brand";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "./CartContext";
@@ -27,7 +28,7 @@ export default function Header({ lang, t }) {
           ) : (
             <img
               ref={logoRef}
-              src="/logo.png"
+              src={LOGO_WHITE}
               alt="69SLAM"
               onError={() => setLogoFailed(true)}
               style={{ height: 26, width: "auto", display: "block" }}

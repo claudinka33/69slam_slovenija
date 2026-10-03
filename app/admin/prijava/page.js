@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { LOGO_WHITE } from "../../../lib/brand";
 import "../admin.css";
 
 export default function AdminLogin() {
@@ -27,7 +28,7 @@ export default function AdminLogin() {
       <form onSubmit={submit}>
         <div className="lg">
           {logoBad ? <b style={{ color: "#fff", fontSize: 22, fontStyle: "italic" }}>69SLAM</b>
-            : <img src="/logo.png" alt="69SLAM" ref={(el) => { if (el && el.complete && el.naturalWidth === 0) setLogoBad(true); }} onError={() => setLogoBad(true)} />}
+            : <img src={LOGO_WHITE} alt="69SLAM" ref={(el) => { if (el && el.complete && el.naturalWidth === 0) setLogoBad(true); }} onError={() => setLogoBad(true)} />}
           <small>ADMIN · CMS</small>
         </div>
         <div className="adm-field">

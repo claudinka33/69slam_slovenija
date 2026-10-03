@@ -1,5 +1,6 @@
 "use client";
 import { Fragment, useEffect, useMemo, useState, useCallback } from "react";
+import { LOGO_WHITE } from "../../lib/brand";
 import "./admin.css";
 
 /* ---------- pomočniki ---------- */
@@ -33,7 +34,7 @@ function Thumb({ src, sm }) {
 function Logo() {
   const [bad, setBad] = useState(false);
   const ref = (el) => { if (el && el.complete && el.naturalWidth === 0 && !bad) setBad(true); };
-  return bad ? <span className="wm">69SLAM</span> : <img ref={ref} src="/logo.png" alt="69SLAM" onError={() => setBad(true)} />;
+  return bad ? <span className="wm">69SLAM</span> : <img ref={ref} src={LOGO_WHITE} alt="69SLAM" onError={() => setBad(true)} />;
 }
 const Pill = ({ s }) => <span className={`adm-pill ${s}`}>{SLABEL[s] || s}</span>;
 
