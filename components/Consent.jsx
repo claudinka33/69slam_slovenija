@@ -6,41 +6,56 @@ import { PIXEL_ID, GA_ID, getConsent, saveConsent, currentConsent, flushPending 
 const TXT = {
   sl: {
     title: "Piškotki",
-    body: "Nujne piškotke uporabljamo za delovanje košarice. Z tvojim dovoljenjem bi uporabili še analitične (Google Analytics) in oglaševalske (Meta Pixel), da vidimo, kaj deluje, in ti kažemo bolj relevantne oglase.",
-    more: "Več o piškotkih",
-    accept: "Sprejmi vse",
-    reject: "Zavrni",
+    intro: "Spletna stran 69slam.si (upravljavec: Freestyle Freak d.o.o.) uporablja nujne piškotke za delovanje košarice. S tvojo privolitvijo bi uporabili še:",
+    items: [
+      "analitične piškotke Google Analytics (Google) – za statistiko obiska,",
+      "oglaševalske piškotke Meta Pixel (Meta) – za merjenje oglasov in prikaz prilagojenih oglasov na Facebooku in Instagramu.",
+    ],
+    outro: "Privolitev lahko kadarkoli prekličeš v »Nastavitve piškotkov« v nogi strani.",
+    more: "Politika piškotkov",
+    accept: "Strinjam se",
+    reject: "Ne strinjam se",
     settings: "Nastavitve",
     save: "Shrani izbiro",
     nec: "Nujni", necD: "Košarica, jezik in tvoja izbira glede piškotkov. Vedno vključeni.",
-    ana: "Analitični", anaD: "Google Analytics — anonimna statistika obiska, da izboljšamo trgovino.",
-    mkt: "Oglaševalski", mktD: "Meta Pixel (Facebook, Instagram) — merjenje oglasov in prikaz relevantnih oglasov.",
+    ana: "Analitični", anaD: "Google Analytics (Google Ireland Ltd.) — statistika obiska in nakupov. Piškotka _ga, do 2 leti.",
+    mkt: "Oglaševalski", mktD: "Meta Pixel (Meta Platforms Ireland Ltd.) — merjenje oglasov in prilagojeni oglasi. Piškotka _fbp/_fbc, do 90 dni.",
     link: "Nastavitve piškotkov",
   },
   hr: {
     title: "Kolačići",
-    body: "Nužne kolačiće koristimo za rad košarice. Uz tvoje dopuštenje koristili bismo i analitičke (Google Analytics) i marketinške (Meta Pixel) kolačiće.",
-    more: "Više o kolačićima",
-    accept: "Prihvati sve",
-    reject: "Odbij",
+    intro: "Web stranica 69slam.si (voditelj obrade: Freestyle Freak d.o.o.) koristi nužne kolačiće za rad košarice. Uz tvoj pristanak koristili bismo i:",
+    items: [
+      "analitičke kolačiće Google Analytics (Google) – za statistiku posjeta,",
+      "marketinške kolačiće Meta Pixel (Meta) – za mjerenje oglasa i prilagođene oglase na Facebooku i Instagramu.",
+    ],
+    outro: "Pristanak možeš povući bilo kada u »Postavke kolačića« u podnožju stranice.",
+    more: "Politika kolačića",
+    accept: "Slažem se",
+    reject: "Ne slažem se",
     settings: "Postavke",
     save: "Spremi odabir",
     nec: "Nužni", necD: "Košarica, jezik i tvoj odabir kolačića. Uvijek uključeni.",
-    ana: "Analitički", anaD: "Google Analytics — anonimna statistika posjeta.",
-    mkt: "Marketinški", mktD: "Meta Pixel (Facebook, Instagram) — mjerenje oglasa i relevantniji oglasi.",
+    ana: "Analitički", anaD: "Google Analytics (Google Ireland Ltd.) — statistika posjeta. Kolačić _ga, do 2 godine.",
+    mkt: "Marketinški", mktD: "Meta Pixel (Meta Platforms Ireland Ltd.) — mjerenje oglasa. Kolačići _fbp/_fbc, do 90 dana.",
     link: "Postavke kolačića",
   },
   en: {
     title: "Cookies",
-    body: "We use essential cookies to run the cart. With your permission we'd also use analytics (Google Analytics) and advertising cookies (Meta Pixel) to see what works and show you more relevant ads.",
-    more: "About cookies",
-    accept: "Accept all",
-    reject: "Reject",
+    intro: "69slam.si (controller: Freestyle Freak d.o.o.) uses essential cookies to run the cart. With your consent we would also use:",
+    items: [
+      "analytics cookies – Google Analytics (Google), for visit statistics,",
+      "advertising cookies – Meta Pixel (Meta), to measure ads and show personalised ads on Facebook and Instagram.",
+    ],
+    outro: "You can withdraw your consent at any time via “Cookie settings” in the footer.",
+    more: "Cookie policy",
+    accept: "I agree",
+    reject: "I don't agree",
     settings: "Settings",
     save: "Save choice",
     nec: "Essential", necD: "Cart, language and your cookie choice. Always on.",
-    ana: "Analytics", anaD: "Google Analytics — anonymous visit statistics to improve the store.",
-    mkt: "Advertising", mktD: "Meta Pixel (Facebook, Instagram) — ad measurement and more relevant ads.",
+    ana: "Analytics", anaD: "Google Analytics (Google Ireland Ltd.) — visit statistics. Cookie _ga, up to 2 years.",
+    mkt: "Advertising", mktD: "Meta Pixel (Meta Platforms Ireland Ltd.) — ad measurement. Cookies _fbp/_fbc, up to 90 days.",
     link: "Cookie settings",
   },
 };
@@ -166,9 +181,11 @@ export default function Consent({ lang = "sl" }) {
         <div className="ck69-head">
           <b>🍪 {t.title}</b>
         </div>
-        <p className="ck69-body">
-          {t.body} <a href={`/${lang}/info/piskotki`}>{t.more}</a>
-        </p>
+        <div className="ck69-body">
+          <p>{t.intro}</p>
+          <ul>{t.items.map((x) => <li key={x}>{x}</li>)}</ul>
+          <p>{t.outro} <a href={`/${lang}/info/piskotki`}>{t.more}</a></p>
+        </div>
         {prefs && (
           <div className="ck69-prefs">
             <label className="ck69-row">
@@ -186,14 +203,14 @@ export default function Consent({ lang = "sl" }) {
           </div>
         )}
         <div className="ck69-btns">
-          {prefs ? (
-            <button className="ck69-b ck69-ghost" onClick={() => decide(ana, mkt)}>{t.save}</button>
-          ) : (
-            <button className="ck69-b ck69-ghost" onClick={() => setPrefs(true)}>{t.settings}</button>
-          )}
-          <button className="ck69-b ck69-ghost" onClick={() => decide(false, false)}>{t.reject}</button>
+          <button className="ck69-b ck69-main" onClick={() => decide(false, false)}>{t.reject}</button>
           <button className="ck69-b ck69-main" onClick={() => decide(true, true)}>{t.accept}</button>
         </div>
+        {prefs ? (
+          <button className="ck69-b ck69-ghost ck69-wide" onClick={() => decide(ana, mkt)}>{t.save}</button>
+        ) : (
+          <button className="ck69-link" onClick={() => setPrefs(true)}>{t.settings}</button>
+        )}
       </div>
     </div>
   );
