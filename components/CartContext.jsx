@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { sortSizes } from "../lib/sizes";
+import { track } from "../lib/track";
 
 const CartCtx = createContext(null);
 export const useCart = () => useContext(CartCtx);
@@ -82,6 +83,7 @@ export function CartProvider({ children, products: initialProducts }) {
       if (i > -1) { const n = [...c]; n[i] = { ...n[i], qty: n[i].qty + 1 }; return n; }
       return [...c, { id, size, qty: 1 }];
     });
+    track("AddToCart", { value: p.effPrice, items: [{ id, name: p.name, price: p.effPrice, qty: 1, size }] });
     setDrawerOpen(true);
     return true;
   }
@@ -104,6 +106,10 @@ export function CartProvider({ children, products: initialProducts }) {
   }
 
   function addBundle(sel) {
+    track("AddToCart", {
+      value: bundlePrice(sel),
+      items: sel.map((x) => { const p = byId(x.id); return { id: x.id, name: p?.name, price: +((p?.price || 0) * (1 - BUNDLE_OFF)).toFixed(2), qty: 1, size: x.size }; }),
+    });
     // kose, prenesene iz košarice, odstrani med posameznimi
     setCart((c) => {
       let n = [...c];

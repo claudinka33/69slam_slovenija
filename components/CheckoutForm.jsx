@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "./CartContext";
 import { fmt } from "../lib/i18n";
+import { track, adCookies } from "../lib/track";
+import { TrackPurchase } from "./Track";
 
 const COD_FEE = 1.5;
 
@@ -15,6 +17,17 @@ export default function CheckoutForm({ lang, t }) {
   const [code, setCode] = useState("");
   const [coupon, setCoupon] = useState(null); // { code, percent }
   const [cmsg, setCmsg] = useState("");
+  const [bought, setBought] = useState(null); // podatki za dogodek nakupa
+  const startSent = useRef(false);
+  // začetek nakupa (enkrat, ko je košarica naložena)
+  useEffect(() => {
+    if (startSent.current || !cart.length) return;
+    startSent.current = true;
+    const items = cart.flatMap((c) => c.bundle
+      ? c.items.map((x) => { const p = byId(x.id); return { id: x.id, name: p?.name, price: +((p?.price || 0) * 0.85).toFixed(2), qty: 1, size: x.size }; })
+      : [{ id: c.id, name: byId(c.id)?.name, price: byId(c.id)?.effPrice || 0, qty: c.qty, size: c.size }]);
+    track("InitiateCheckout", { value: subtotal, items });
+  }, [cart.length]);
   // velja boljši popust: koda ALI paket/odprodaja (nikoli oba)
   const best = (cur, base) => (coupon ? Math.min(cur, Math.round(base * (1 - coupon.percent / 100) * 100) / 100) : cur);
   const lineTotal = (c) => {
@@ -56,7 +69,7 @@ export default function CheckoutForm({ lang, t }) {
       const res = await fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customer: data, payment: pay, cart, lang, coupon: coupon?.code || null }),
+        body: JSON.stringify({ customer: data, payment: pay, cart, lang, coupon: coupon?.code || null, ad: adCookies() }),
       });
       const out = await res.json();
       if (out.ok && out.redirect) {
@@ -65,6 +78,7 @@ export default function CheckoutForm({ lang, t }) {
         return;
       }
       if (out.ok && out.number) {
+        if (out.track) setBought({ number: out.number, ...out.track });
         setSuccess(out.number);
         try { localStorage.removeItem("cart69t"); } catch {}
         if (out.upn) setUpn(out.upn);
@@ -81,6 +95,7 @@ export default function CheckoutForm({ lang, t }) {
   if (success) {
     return (
       <div className="ckcard" style={{ maxWidth: 560, marginTop: 24, textAlign: "center", padding: 40 }}>
+        {bought && <TrackPurchase number={bought.number} value={bought.value} items={bought.items} />}
         <div style={{ fontSize: "3rem" }}>✅</div>
         <h3 style={{ margin: "10px 0 6px", fontSize: "1.4rem" }}>
           {lang === "hr" ? "Narudžba" : lang === "en" ? "Order" : "Naročilo"} #{success}

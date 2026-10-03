@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db, dbConfigured, ensureSchema } from "../../../lib/db";
 import { getProducts, skuOf, primeCatalog } from "../../../lib/catalog";
 import { stripe } from "../../../lib/payments";
+import { requestMeta, sendPurchase } from "../../../lib/capi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,7 +76,7 @@ export async function POST(req) {
       const each = line.items.map((x) => {
         const p = products[x.id];
         if (!p || !p.bundleable || !x.size) return null; // paket = samo redne moške boksarice
-        return { sku: skuOf(x.id, x.size), name: p.name, size: x.size, qty: 1,
+        return { code: x.id, sku: skuOf(x.id, x.size), name: p.name, size: x.size, qty: 1,
                  price_cents: Math.round((p.price * (1 - BUNDLE_OFF)) * 100), bundle_key: key, base_cents: Math.round(p.price * 100) };
       });
       if (each.some((x) => !x))
@@ -85,7 +86,7 @@ export async function POST(req) {
       const p = products[line.id];
       if (!p) return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
       const eff = p.effPrice; // odprodaja −50 % / VSE MORE VEN −50 % je že upoštevana
-      items.push({ sku: skuOf(line.id, line.size), name: p.name, size: line.size,
+      items.push({ code: line.id, sku: skuOf(line.id, line.size), name: p.name, size: line.size,
                    qty: line.qty, price_cents: Math.round(eff * 100), bundle_key: null, base_cents: Math.round(p.price * 100) });
     }
   }
@@ -141,6 +142,16 @@ export async function POST(req) {
             ${c.zip}, ${c.city}, 'SI', ${lang}, ${subtotal}, ${shipping}, ${codFee}, ${total}, ${couponCode}, ${discount})
     RETURNING id, number`;
 
+  // podatki za merjenje oglasov (samo ob oglaševalski privolitvi v obvestilu o piškotkih)
+  const adMeta = requestMeta(req, body.ad);
+  if (adMeta) {
+    try { await sql`UPDATE orders SET ad_meta = ${JSON.stringify(adMeta)} WHERE id = ${order.id}`; } catch {}
+  }
+  const trackData = {
+    value: total / 100,
+    items: items.map((it) => ({ id: it.code, name: it.name, size: it.size, qty: it.qty, price: it.price_cents / 100 })),
+  };
+
   for (const it of items) {
     await sql`INSERT INTO order_items (order_id, sku, name, size, qty, price_cents, bundle_key, cost_cents)
       VALUES (${order.id}, ${it.sku}, ${it.name}, ${it.size}, ${it.qty}, ${it.price_cents}, ${it.bundle_key},
@@ -192,6 +203,7 @@ export async function POST(req) {
   if (payment !== "card" || !stripe()) {
     const { mailNewOrder } = await import("../../../lib/payments");
     await mailNewOrder(order.id);
+    await sendPurchase(order.id);
   }
 
   // ---- Predračun: UPN QR za mobilno banko ----
@@ -200,10 +212,10 @@ export async function POST(req) {
       const { upnSvg } = await import("../../../lib/upn");
       const { COMPANY } = await import("../../../lib/legal");
       const upn = await upnSvg({ amountCents: total, number: order.number, name: c.name, street: c.address, city: `${c.zip} ${c.city}` });
-      return NextResponse.json({ ok: true, number: Number(order.number), message: t.ok(order.number),
+      return NextResponse.json({ ok: true, number: Number(order.number), message: t.ok(order.number), track: trackData,
         upn: { svg: upn.svg, ref: upn.ref, due: upn.due, amount: total, iban: COMPANY.iban, bank: COMPANY.bank, bic: COMPANY.bic, payee: COMPANY.short, address: COMPANY.address } });
     } catch { /* brez QR — podatki gredo po e-mailu */ }
   }
 
-  return NextResponse.json({ ok: true, number: Number(order.number), message: t.ok(order.number) });
+  return NextResponse.json({ ok: true, number: Number(order.number), message: t.ok(order.number), track: trackData });
 }

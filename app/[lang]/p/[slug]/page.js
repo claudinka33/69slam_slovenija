@@ -9,6 +9,7 @@ import { REVIEWS, REVIEW_SUMMARY } from "../../../../lib/reviews";
 import { loadApprovedReviews, reviewsFor } from "../../../../lib/customerReviews";
 import { GALLERY } from "../../../../lib/media";
 import DetailShots from "../../../../components/DetailShots";
+import { TrackView } from "../../../../components/Track";
 
 export function generateStaticParams() {
   const products = getProducts({ withEmpty: true });
@@ -77,6 +78,7 @@ export default async function ProductPage({ params }) {
   return (
     <main className="ppage wrap">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <TrackView id={p.code} name={p.name} price={p.effPrice} />
       <Link href={backHref} className="pback">{t.back}</Link>
       <div className="pgrid">
         <ProductGallery images={p.images.length ? p.images : (p.img ? [{ src: p.img }] : [])} name={p.name}
