@@ -47,9 +47,15 @@ export default async function Home({ params }) {
     } catch {}
   }
   const stockOf = (p) => live[p.code] ?? p.totalStock ?? 0;
+  // pravila: slika od blizu (ZOOM) ima prednost, nato največ zaloge; isti dizajn se ne ponovi pri dveh modelih
+  const isZoom = (p) => /zoom/i.test(p.img || "");
+  const usedNames = new Set();
   const swim = SWIM_MODELS.map((m) => {
-    const list = swimAll.filter((p) => p.code.startsWith(m.pre) && stockOf(p) > 0).sort((a, b) => stockOf(b) - stockOf(a));
-    return list.length ? { ...m, p: list[0], n: list.length } : null;
+    const list = swimAll.filter((p) => p.code.startsWith(m.pre) && stockOf(p) > 0)
+      .sort((a, b) => (isZoom(b) - isZoom(a)) || (stockOf(b) - stockOf(a)));
+    const pick = list.find((p) => !usedNames.has(p.name.toUpperCase())) || list[0];
+    if (pick) usedNames.add(pick.name.toUpperCase());
+    return pick ? { ...m, p: pick, n: list.length } : null;
   }).filter(Boolean);
   const outlet = getOutletProducts();
 
