@@ -622,3 +622,9 @@ nav.main a.nav-out{color:var(--red);font-weight:800;}
 .cset-img{border:1px solid var(--line);background-origin:content-box;padding:3px;background-clip:content-box;}
 .sw-item span{margin:6px 6px 0;border-radius:12px;}
 main > section:last-child{margin-bottom:clamp(32px,5vw,64px);}
+
+/* ---- najnižja cena v zadnjih 30 dneh ---- */
+.omni{display:block;font-size:.72rem;font-weight:500;color:var(--gray);margin-top:4px;font-style:normal;letter-spacing:0;text-transform:none;}
+.pomni{font-size:.64rem;color:var(--gray);margin-top:3px;line-height:1.3;}
+.pb-price .omni{flex-basis:100%;margin-top:0;}
+.mprice .omni{font-size:.74rem;}

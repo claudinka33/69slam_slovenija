@@ -169,6 +169,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
                   )}
                   <span className="psizes">{(p.sizes || []).filter((s) => (p.stock?.[s] || 0) > 0).join(" ")}</span>
                 </div>
+                {red && <div className="pomni">{t.omni}: {fmt(p.low30 ?? p.price)}</div>}
               </div>
             </Link>
           );

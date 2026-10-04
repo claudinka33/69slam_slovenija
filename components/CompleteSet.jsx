@@ -29,7 +29,8 @@ function SetItem({ p, lang, t, addItem, usedInCart, showToast }) {
       <div className="cset-body">
         <Link href={`/${lang}/p/${p.slug}`} className="cset-name">{p.name}</Link>
         <div className="cset-type">{seg.slice(1).join(" · ") || seg[0]}</div>
-        <div className="cset-price">{red ? <><s>{fmt(p.price)}</s> <b className="red">{fmt(p.effPrice)}</b></> : <b>{fmt(p.price)}</b>}</div>
+        <div className="cset-price">{red ? <><s>{fmt(p.price)}</s> <b className="red">{fmt(p.effPrice)}</b></> : <b>{fmt(p.price)}</b>}
+          <span className="omni">{t.omni}: {fmt(p.low30 ?? p.price)}</span></div>
         <div className="cset-sizes">
           {p.sizes.filter((s) => (p.stock[s] || 0) > 0).map((s) => {
             const avail = (p.stock[s] || 0) - usedInCart(p.code, s);

@@ -53,6 +53,11 @@ export async function POST(req) {
   await ensureSchema();
   const [p] = await sql`SELECT code FROM products WHERE code = ${code}`;
   if (!p) return NextResponse.json({ ok: false, message: "Artikel ne obstaja." }, { status: 404 });
+  // zgodovina cen: ob spremembi redne cene zapišemo staro ceno (velja do zdaj)
+  const [cur] = await sql`SELECT price_cents FROM products WHERE code = ${code}`;
+  const newPrice = price ?? (getRawProduct(code) ? Math.round(getRawProduct(code).price * 100) : null);
+  if (cur?.price_cents != null && newPrice != null && cur.price_cents !== newPrice)
+    await sql`INSERT INTO price_history (code, price_cents) VALUES (${code}, ${cur.price_cents})`;
   await sql`INSERT INTO product_edits (code, name, type_sl, description, price_cents, published, updated_at)
     VALUES (${code}, ${name}, ${type}, ${desc}, ${price}, ${published}, now())
     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, type_sl = EXCLUDED.type_sl, description = EXCLUDED.description,

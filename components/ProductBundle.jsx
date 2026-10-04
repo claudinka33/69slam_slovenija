@@ -6,10 +6,10 @@ import { fmt } from "../lib/i18n";
 const TXT = {
   sl: { badge: "Paket 3 · −15 %", h: "Ta print + še 2 = 15 % ceneje", sub: "Izberi velikost in še dva printa. Paket ima brezplačno dostavo.",
         size: "Velikost za vse tri", pick: "Izberi še", picked: "Izbrano", none: "V tej velikosti trenutno ni drugih printov.",
-        add: "Dodaj paket v košarico", save: "prihraniš", first: "Najprej izberi velikost" },
+        add: "Dodaj paket v košarico", save: "prihraniš", first: "Najprej izberi velikost", omni: "Najnižja cena v zadnjih 30 dneh" },
   en: { badge: "Bundle of 3 · −15%", h: "This print + 2 more = 15% off", sub: "Pick a size and two more prints. Bundles ship free.",
         size: "Size for all three", pick: "Pick", picked: "Picked", none: "No other prints in this size right now.",
-        add: "Add bundle to cart", save: "you save", first: "Pick a size first" },
+        add: "Add bundle to cart", save: "you save", first: "Pick a size first", omni: "Lowest price in the last 30 days" },
 };
 
 export default function ProductBundle({ code, lang }) {
@@ -31,6 +31,7 @@ export default function ProductBundle({ code, lang }) {
     : [];
   const chosen = picks.map((c) => byId(c)).filter(Boolean);
   const full = cur.price + chosen.reduce((s, p) => s + p.price, 0);
+  const low = (cur.low30 ?? cur.price) + chosen.reduce((s, p) => s + (p.low30 ?? p.price), 0);
   const price = +(full * (1 - BUNDLE_OFF)).toFixed(2);
   const ready = size && chosen.length === 2;
 
@@ -77,7 +78,7 @@ export default function ProductBundle({ code, lang }) {
 
       <div className="pb-foot">
         <div className="pb-price">
-          {ready ? (<><span className="old">{fmt(full)}</span><b>{fmt(price)}</b><small>{x.save} {fmt(full - price)}</small></>) : <b>−15 %</b>}
+          {ready ? (<><span className="old">{fmt(full)}</span><b>{fmt(price)}</b><small>{x.save} {fmt(full - price)}</small><span className="omni">{x.omni}: {fmt(low)}</span></>) : <b>−15 %</b>}
         </div>
         <button className="checkout-btn" disabled={!ready}
           onClick={() => ready && addBundle([{ id: code, size }, ...picks.map((c) => ({ id: c, size }))])}>
