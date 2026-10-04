@@ -610,3 +610,15 @@ nav.main a.nav-out{color:var(--red);font-weight:800;}
 .cset-sizes button:disabled{opacity:.35;cursor:not-allowed;}
 .cset-add{border:0;background:#0a0a0a;color:#fff;border-radius:10px;padding:9px 14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.74rem;cursor:pointer;}
 .cset-add:hover{background:var(--accent);}
+
+/* ---- zračnost: slike ne segajo čisto do roba ---- */
+.ppage{padding-bottom:clamp(48px,7vw,96px);}
+.othergrid{gap:10px;}
+.othergrid a{padding:3px;background:#fff;border-width:1px;}
+.othergrid img{border-radius:5px;}
+.pthumbs{gap:10px;margin-top:12px;}
+.pthumbs img{padding:3px;background:#fff;}
+.pmain{margin-bottom:4px;}
+.cset-img{border:1px solid var(--line);background-origin:content-box;padding:3px;background-clip:content-box;}
+.sw-item span{margin:6px 6px 0;border-radius:12px;}
+main > section:last-child{margin-bottom:clamp(32px,5vw,64px);}

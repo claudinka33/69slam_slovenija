@@ -86,7 +86,7 @@ export default async function ProductPage({ params }) {
           alt={micro ? `69SLAM ${p.cut} mikrofibra ${p.name}` : `69SLAM ${p.type} ${p.name}`} />
         <div className="pdet">
           <h1>{p.name}</h1>
-          {!p.outlet && <a href="#ocene" className="pstars">★★★★★ <b>{SUM.rating}</b> · {SUM.count} {lang === "en" ? "reviews" : "ocen"}</a>}
+          {<a href="#ocene" className="pstars">★★★★★ <b>{SUM.rating}</b> · {SUM.count} {lang === "en" ? "reviews" : "ocen"}</a>}
           <div className="mline">
             {micro ? <>69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}</> : <>69SLAM · {p.type}</>}
             {p.sale ? ` · ${t.sale_line}` : ""}{p.outlet ? ` · ${t.out_line}` : ""}
@@ -176,7 +176,7 @@ export default async function ProductPage({ params }) {
 
       )}
 
-      {!p.outlet && (
+      {(
       <section className="previews" id="ocene">
         <div className="pr-head">
           <h2>{lang === "en" ? "What customers say" : "Kaj pravijo kupci"}</h2>
