@@ -6,7 +6,7 @@ import { useCart } from "./CartContext";
 
 const COLL = ["all", "core", "limited", "sale"];
 const MEN_GROUPS = ["boksarice", "kopalke", "oblacila", "obutev", "dodatki"];
-const OUT_GROUPS = ["perilo", "kopalke", "oblacila", "obutev"];
+const OUT_GROUPS = ["boksarice", "perilo", "kopalke", "oblacila", "obutev"];
 
 /** Kratka vrstica pod imenom na kartici. */
 function cardLine(p, t) {
@@ -33,7 +33,7 @@ const KIND_LABEL = { BOARDSHORT: "Boardshort", VOLLEY: "Volley", ELASTIC: "Elast
 export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   const { byId } = useCart();
   // živa zaloga iz baze: razprodani izginejo, ponovno prevzeti se vrnejo
-  const products = all.map((p) => byId(p.code) || p).filter((p) => p.totalStock > 0);
+  const products = all.map((p) => byId(p.code) || p).filter((p) => p.totalStock > 0 && (mode !== "outlet" || p.outlet || p.sale));
   const [group, setGroup] = useState(mode === "men" ? "boksarice" : "all");
   const [gender, setGender] = useState("all");
   const [kind, setKind] = useState("all");
@@ -72,9 +72,9 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
     <>
       {mode === "outlet" && (
         <div className="filters">
-          {["all", "zenske", "otroci"].map((g) => (
+          {["all", "moski", "zenske", "otroci"].filter((g) => g === "all" || products.some((p) => p.gender === g)).map((g) => (
             <button key={g} className={`chip ${gender === g ? "active" : ""}`} onClick={() => setGender(g)}>
-              {g === "all" ? t.out_all : g === "zenske" ? t.out_women : t.out_kids}
+              {g === "all" ? t.out_all : g === "moski" ? (t.out_men || "Moški") : g === "zenske" ? t.out_women : t.out_kids}
             </button>
           ))}
         </div>

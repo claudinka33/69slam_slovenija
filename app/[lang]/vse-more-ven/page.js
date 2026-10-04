@@ -1,4 +1,4 @@
-import { getOutletProducts, primeCatalog } from "../../../lib/catalog";
+import { getOutletProducts, getMenProducts, primeCatalog } from "../../../lib/catalog";
 import { getDict, LANGS } from "../../../lib/i18n";
 import ProductGrid from "../../../components/ProductGrid";
 
@@ -19,7 +19,8 @@ export default async function OutletPage({ params }) {
   await primeCatalog();
   const { lang } = await params;
   const t = getDict(lang);
-  const products = getOutletProducts({ withEmpty: true });
+  // ženske + otroci (−50 %) in moške boksarice, ki jim je ostala zadnja velikost (−50 %, preveri se po živi zalogi)
+  const products = [...getMenProducts({ withEmpty: true }).filter((p) => p.group === "boksarice"), ...getOutletProducts({ withEmpty: true })];
   return (
     <main>
       <section className="pagehead outhead">
