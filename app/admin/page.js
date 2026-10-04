@@ -82,7 +82,7 @@ export default function Admin() {
     { id: "cenik", ico: "💶", lbl: "Cenik & RVC" },
     { id: "kode", ico: "🏷️", lbl: "Kode za popust" },
     { id: "stranke", ico: "👤", lbl: "Stranke" },
-    { id: "racuni", ico: "🧾", lbl: "Računi" },
+    { id: "racuni", ico: "🧾", lbl: "Računi & dokumenti" },
     { id: "maili", ico: "✉️", lbl: "E-maili" },
     { id: "ocene", ico: "⭐", lbl: "Ocene", bdg: revCount || null },
     { id: "nastavitve", ico: "⚙️", lbl: "Nastavitve", soon: true },
@@ -2302,66 +2302,91 @@ async function openPdf(body) {
 }
 function alertBox(t) { console.warn(t); }
 
+const DOCK = { racun: "Računi", predracun: "Predračuni", dobavnica: "Dobavnice" };
+const DOC1 = { racun: "račun", predracun: "predračun", dobavnica: "dobavnico", dobropis: "dobropis" };
 function Invoices() {
-  const [tab, setTab] = useState("seznam");
+  const [tab, setTab] = useState("racun");
   const [list, setList] = useState(null);
   const [month, setMonth] = useState(null);
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState(null);
   const [send, setSend] = useState(null); // { inv, to }
-  const load = useCallback(async (qq = "") => { const d = await getJSON(`/api/admin/invoices?q=${encodeURIComponent(qq)}`); setList(d?.invoices || []); setMonth(d?.month || null); }, []);
-  useEffect(() => { const t = setTimeout(() => load(q), 250); return () => clearTimeout(t); }, [q, load]);
+  const [trk, setTrk] = useState({});
+  const listTab = ["racun", "predracun", "dobavnica"].includes(tab);
+  const load = useCallback(async (qq = "", k = tab) => {
+    if (!["racun", "predracun", "dobavnica"].includes(k)) return;
+    setList(null);
+    const d = await getJSON(`/api/admin/invoices?kind=${k}&q=${encodeURIComponent(qq)}`); setList(d?.invoices || []); setMonth(d?.month || null);
+  }, [tab]);
+  useEffect(() => { const t = setTimeout(() => load(q, tab), 250); return () => clearTimeout(t); }, [q, tab, load]);
   async function act(inv, action) {
     if (action === "storno" && !confirm(`Storniram račun ${inv.number}? Izdal se bo dobropis z negativnimi zneski.`)) return;
+    if (action === "convert" && !confirm(`Iz ${inv.number} naredim račun?`)) return;
     const d = await post("/api/admin/invoices", { action, id: inv.id });
     if (d?.message) setMsg({ ok: !!d.ok, t: d.message });
-    load(q);
+    load(q, tab);
+  }
+  async function shipped(inv) {
+    const t = (trk[inv.id] ?? inv.tracking ?? "").trim();
+    if (!t && !confirm("Ni vpisane številke pošiljke. Vseeno označim kot poslano?")) return;
+    setMsg({ ok: true, t: "Označujem kot poslano, izdajam račun in pošiljam kupcu …" });
+    const r = await fetch("/api/admin/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: inv.order_id, status: "poslano", tracking: t }) }).then((x) => x.json()).catch(() => null);
+    setMsg({ ok: !!r?.ok, t: r?.ok ? `Poslano ✓${r.invoice ? ` — račun ${r.invoice}` : ""}${r.mailed ? " poslan kupcu po e-mailu" : ""}.` : "Napaka." });
+    load(q, tab);
   }
   async function doSend() {
     setMsg({ ok: true, t: "Pošiljam …" });
     const d = await post("/api/admin/invoices", { action: "send", id: send.inv.id, to: send.to });
-    setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." }); setSend(null); load(q);
+    setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." }); setSend(null); load(q, tab);
   }
   return (
     <>
       <div className="adm-top">
-        <div><h1>Računi</h1><div className="sub">Izdajanje računov (spletna naročila, fizični kupci, storitve). Številke: leto-zaporedna (2026-1000 …). Pošiljanje samo po e-mailu. 🌱</div></div>
+        <div><h1>Računi & dokumenti</h1><div className="sub">Spletno naročilo → dobavnica → »Poslano« → račun (gre kupcu po e-mailu). Ročni predračun/dobavnica → »Ustvari račun«. 🌱 Samo e-mail, brez tiskanja.</div></div>
         <div className="grow" />
         <div className="adm-seg">
-          {[["seznam", "Seznam"], ["nov", "+ Nov račun"], ["oblika", "Oblika računa"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
+          {[["racun", "Računi"], ["predracun", "Predračuni"], ["dobavnica", "Dobavnice"], ["nov", "+ Nov dokument"], ["oblika", "Oblika"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
         </div>
       </div>
       <div className="adm-note">ℹ️ Davčno potrjevanje (FURS: ZOI/EOR) še ni vklopljeno — za gotovinske/kartične račune na licu mesta se najprej dogovori z računovodjo. Računi za nakazilo na TRR ga ne potrebujejo.</div>
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
-      {tab === "nov" && <InvoiceForm onDone={(m) => { setMsg(m); setTab("seznam"); load(""); }} />}
+      {tab === "nov" && <InvoiceForm onDone={(m, k) => { setMsg(m); setTab(k || "racun"); }} />}
       {tab === "oblika" && <InvoiceSettings />}
-      {tab === "seznam" && (
+      {listTab && (
         <>
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
-            <input className="adm-input" style={{ flex: 1, minWidth: 220 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Išči po številki, kupcu, e-mailu" />
-            {month && <span className="muted">Ta mesec: <b>{month.n}</b> računov · <b>{eur(month.total)}</b></span>}
+            <input className="adm-input" style={{ flex: 1, minWidth: 220 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Išči po številki, kupcu, e-mailu, naročilu" />
+            {tab === "racun" && month && <span className="muted">Ta mesec: <b>{month.n}</b> računov · <b>{eur(month.total)}</b></span>}
           </div>
           <div className="adm-card adm-scroll">
             <table className="adm-tbl">
-              <thead><tr><th>Številka</th><th>Datum</th><th>Kupec</th><th className="r">Znesek</th><th>Plačilo</th><th>Stanje</th><th></th></tr></thead>
+              <thead><tr><th>Številka</th><th>Datum</th><th>Kupec</th><th className="r">Znesek</th><th>{tab === "dobavnica" ? "Pošiljka" : "Plačilo"}</th><th>Stanje</th><th></th></tr></thead>
               <tbody>
                 {list === null ? <tr><td colSpan={7} className="adm-empty">Nalagam …</td></tr> :
-                 !list.length ? <tr><td colSpan={7} className="adm-empty">Še ni računov — klikni »+ Nov račun«. Računi spletnih naročil se naredijo sami, ko naročilo označiš kot Poslano.</td></tr> :
-                 list.map((r) => (
+                 !list.length ? <tr><td colSpan={7} className="adm-empty">{tab === "dobavnica" ? "Dobavnice spletnih naročil se naredijo same ob novem naročilu." : tab === "predracun" ? "Predračuni se naredijo sami pri plačilu po predračunu — ali klikni »+ Nov dokument«." : "Še ni računov."}</td></tr> :
+                 list.map((r) => {
+                  const open = r.status === "izdan" && !r.converted_to;
+                  const canShip = r.kind === "dobavnica" && r.order_id && open && r.order_status !== "poslano" && r.order_status !== "preklicano";
+                  return (
                   <tr key={r.id}>
-                    <td><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}` : r.order_id ? "Spletno naročilo" : "Ročni račun"}</div></td>
+                    <td><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}` : r.order_number ? `Spletno naročilo #${r.order_number}` : "Ročni dokument"}</div></td>
                     <td className="muted">{dShort(r.issued_at)}</td>
                     <td><div>{r.customer_name}</div>{r.customer_email && <div className="muted">{r.customer_email}</div>}</td>
                     <td className="r num strong">{eur(r.total_cents)}</td>
-                    <td className="muted">{PAYL[r.payment] || r.payment}{r.payment === "trr" && r.kind === "racun" ? <div>{r.paid_at ? <span className="adm-tag sub">✓ plačano</span> : <span className="adm-tag">rok {dShort(r.due_date)}</span>}</div> : null}</td>
-                    <td>{r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.sent_at ? <span className="adm-tag sub">✉️ poslan</span> : <span className="adm-tag">ni poslan</span>}</td>
+                    <td className="muted">{tab === "dobavnica"
+                      ? (canShip ? <input className="adm-input" style={{ width: 150, padding: "6px 8px" }} placeholder="Št. pošiljke" value={trk[r.id] ?? r.tracking ?? ""} onChange={(e) => setTrk((x) => ({ ...x, [r.id]: e.target.value }))} /> : (r.tracking || "—"))
+                      : <>{PAYL[r.payment] || r.payment}{r.payment === "trr" && r.kind === "racun" ? <div>{r.paid_at ? <span className="adm-tag sub">✓ plačano</span> : <span className="adm-tag">rok {dShort(r.due_date)}</span>}</div> : null}</>}</td>
+                    <td>{r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
+                      : r.converted_to ? <span className="adm-tag sub">→ račun {r.converted_to}</span> : r.sent_at ? <span className="adm-tag sub">✉️ poslan</span> : <span className="adm-tag">{r.kind === "dobavnica" ? "za pakiranje" : "ni poslan"}</span>}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
+                      {canShip && <><button className="adm-btn pri" onClick={() => shipped(r)}>📦 Poslano</button>{" "}</>}
+                      {!canShip && open && (r.kind === "predracun" || r.kind === "dobavnica") && <><button className="adm-btn pri" onClick={() => act(r, "convert")}>🧾 Ustvari račun</button>{" "}</>}
                       <a className="adm-btn" href={`/api/admin/invoices?pdf=${r.id}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>PDF</a>{" "}
                       <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "" })}>✉️</button>{" "}
                       {r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
                       {r.kind === "racun" && r.status !== "storniran" && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
                     </td>
-                  </tr>))}
+                  </tr>); })}
               </tbody>
             </table>
           </div>
@@ -2370,7 +2395,7 @@ function Invoices() {
       {send && (
         <div className="adm-ov" onClick={(e) => e.target === e.currentTarget && setSend(null)}>
           <div className="adm-modal" style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 440 }}>
-            <div className="adm-mh"><h3>Pošlji račun {send.inv.number}</h3><button className="x" onClick={() => setSend(null)}>✕</button></div>
+            <div className="adm-mh"><h3>Pošlji {send.inv.number}</h3><button className="x" onClick={() => setSend(null)}>✕</button></div>
             <div className="adm-mb">
               <div className="adm-field"><label>E-mail prejemnika</label><input value={send.to} onChange={(e) => setSend({ ...send, to: e.target.value })} placeholder="kupec@email.si" /></div>
               <button className="adm-btn pri" onClick={doSend}>✉️ Pošlji PDF</button>
@@ -2383,6 +2408,8 @@ function Invoices() {
 }
 
 function InvoiceForm({ onDone }) {
+  const [kind, setKind] = useState("racun");
+  const [tracking, setTracking] = useState("");
   const blankItem = () => ({ code: "", desc: "", qty: "1", unit: "kos", price: "", disc: "", vat: 22 });
   const [c, setC] = useState({ name: "", address: "", zip_city: "", country: "Slovenija", vat: "", email: "" });
   const [items, setItems] = useState([blankItem()]);
@@ -2398,18 +2425,24 @@ function InvoiceForm({ onDone }) {
   const setI = (i, k, v) => setItems((x) => x.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
   const sc = (k) => (e) => setC((x) => ({ ...x, [k]: e.target.value }));
   const tot = calcInv(items, gross);
-  const body = () => ({ customer: c, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
+  const body = () => ({ kind, tracking, customer: c, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
   async function issue(send) {
     setErr("");
     if (send && !c.email.trim()) { setErr("Za pošiljanje vpiši e-mail kupca."); return; }
-    if (!confirm(`Izdam račun za ${c.name || "kupca"} v znesku ${eur(tot.total)}?${send ? `\nPoslan bo na ${c.email}.` : ""}\n\nIzdanega računa ni mogoče spreminjati (lahko ga storniraš).`)) return;
+    if (!confirm(`Izdam ${DOC1[kind]} za ${c.name || "kupca"} v znesku ${eur(tot.total)}?${send ? `\nPoslan bo na ${c.email}.` : ""}\n\nIzdanega dokumenta ni mogoče spreminjati.`)) return;
     setBusy(true);
     const d = await post("/api/admin/invoices", { action: "issue", ...body(), send });
     setBusy(false);
-    if (d?.ok) onDone({ ok: true, t: d.message }); else setErr(d?.message || "Napaka.");
+    if (d?.ok) onDone({ ok: true, t: d.message }, kind); else setErr(d?.message || "Napaka.");
   }
   return (
     <div className="inv-form">
+      <div className="adm-card" style={{ padding: 14, marginBottom: 12, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <b>Vrsta dokumenta</b>
+        <div className="adm-seg">{[["racun", "Račun"], ["predracun", "Predračun"], ["dobavnica", "Dobavnica"]].map(([k, l]) => <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>)}</div>
+        {kind === "dobavnica" && <input className="adm-input" style={{ minWidth: 200 }} value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Št. pošiljke (neobvezno)" />}
+        <span className="muted">{kind === "racun" ? "Uradni račun — številka 2026-…" : kind === "predracun" ? "PR-2026-… z UPN QR kodo; kasneje »Ustvari račun«." : "DOB-2026-… s cenami; kasneje »Ustvari račun«."}</span>
+      </div>
       <div className="adm-card" style={{ padding: 16 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
           <b>Kupec</b><div className="grow" />
@@ -2471,8 +2504,8 @@ function InvoiceForm({ onDone }) {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="adm-btn" disabled={busy} onClick={() => openPdf({ action: "preview", ...body() })}>👁 Predogled PDF</button>
           <div className="grow" />
-          <button className="adm-btn" disabled={busy} onClick={() => issue(false)}>🧾 Izdaj račun</button>
-          <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>🧾 Izdaj in pošlji po e-mailu</button>
+          <button className="adm-btn" disabled={busy} onClick={() => issue(false)}>🧾 Izdaj {DOC1[kind]}</button>
+          <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>✉️ Izdaj in pošlji po e-mailu</button>
         </div>
       </div>
     </div>

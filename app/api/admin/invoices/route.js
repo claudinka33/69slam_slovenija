@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, dbConfigured, ensureSchema } from "../../../../lib/db";
-import { issueInvoice, invoicePdf, emailInvoice, invoiceFromOrder, getInvSettings, saveInvSettings, computeInvoice } from "../../../../lib/invoices";
+import { issueInvoice, invoicePdf, emailInvoice, invoiceFromOrder, getInvSettings, saveInvSettings, computeInvoice, convertToInvoice, docsForNewOrder, KIND_FILE } from "../../../../lib/invoices";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export async function GET(req) {
     if (!inv) return new NextResponse("Ni računa.", { status: 404 });
     const pdf = await invoicePdf(inv);
     return new NextResponse(pdf, { headers: { "Content-Type": "application/pdf",
-      "Content-Disposition": `${u.searchParams.get("dl") ? "attachment" : "inline"}; filename="${inv.kind === "dobropis" ? "dobropis" : "racun"}-${inv.number}.pdf"` } });
+      "Content-Disposition": `${u.searchParams.get("dl") ? "attachment" : "inline"}; filename="${KIND_FILE[inv.kind] || "racun"}-${inv.number}.pdf"` } });
   }
   if (u.searchParams.get("settings")) return NextResponse.json({ ok: true, settings: await getInvSettings() });
   if (u.searchParams.get("customers")) {
@@ -29,9 +29,12 @@ export async function GET(req) {
   }
   const order = u.searchParams.get("order");
   const q = `%${(u.searchParams.get("q") || "").toLowerCase()}%`;
+  const kinds = u.searchParams.get("kind") === "predracun" ? ["predracun"] : u.searchParams.get("kind") === "dobavnica" ? ["dobavnica"] : ["racun", "dobropis"];
   const rows = order
     ? await sql`SELECT * FROM invoices WHERE order_id = ${order} ORDER BY id DESC`
-    : await sql`SELECT * FROM invoices WHERE lower(number || ' ' || customer_name || ' ' || COALESCE(customer_email,'')) LIKE ${q} ORDER BY id DESC LIMIT 300`;
+    : await sql`SELECT i.*, o.number AS order_number, o.status AS order_status FROM invoices i LEFT JOIN orders o ON o.id = i.order_id
+        WHERE i.kind = ANY(${kinds}) AND lower(i.number || ' ' || i.customer_name || ' ' || COALESCE(i.customer_email,'') || ' ' || COALESCE(o.number::text,'')) LIKE ${q}
+        ORDER BY i.id DESC LIMIT 300`;
   const [sum] = await sql`SELECT COALESCE(SUM(total_cents),0)::int AS total, COUNT(*)::int AS n FROM invoices
     WHERE status <> 'storniran' AND kind = 'racun' AND date_trunc('month', issued_at) = date_trunc('month', now())`;
   return NextResponse.json({ ok: true, invoices: rows, month: sum });
@@ -50,7 +53,7 @@ export async function POST(req) {
       const calc = computeInvoice(b.items, !!b.gross);
       const now = new Date();
       const dd = b.payment === "trr" ? Number(b.due_days ?? s.due_days) : 0;
-      const pdf = await invoicePdf({ number: "PREDOGLED", kind: "racun", issued_at: now.toISOString(), service_date: b.service_date || now.toISOString().slice(0, 10),
+      const pdf = await invoicePdf({ number: "PREDOGLED", kind: b.kind || "racun", tracking: b.tracking, issued_at: now.toISOString(), service_date: b.service_date || now.toISOString().slice(0, 10),
         due_date: new Date(now.getTime() + dd * 86400000).toISOString().slice(0, 10), place: s.place,
         customer_name: b.customer?.name || "", customer_address: b.customer?.address, customer_zip_city: b.customer?.zip_city, customer_country: b.customer?.country,
         customer_vat: b.customer?.vat, items: (b.items || []).filter((i) => String(i.desc || "").trim()), prices_gross: !!b.gross, payment: b.payment, notes: b.notes,
@@ -62,7 +65,7 @@ export async function POST(req) {
       const items = (b.items || []).filter((i) => String(i.desc || "").trim());
       if (!items.length) return NextResponse.json({ ok: false, message: "Dodaj vsaj eno postavko." }, { status: 400 });
       const inv = await issueInvoice({ ...b, items });
-      let message = `Račun ${inv.number} je izdan ✓`;
+      let message = `${inv.number} je izdan ✓`;
       if (b.send && inv.customer_email) {
         const r = await emailInvoice(inv);
         message += r.error ? ` — pošiljanje ni uspelo: ${r.error.message || r.error.name}` : r.skipped ? " (Resend ni nastavljen)" : ` in poslan na ${inv.customer_email}`;
@@ -89,6 +92,14 @@ export async function POST(req) {
         items, notes: `Dobropis (storno) k računu št. ${inv.number}.` });
       await sql`UPDATE invoices SET status = 'storniran' WHERE id = ${inv.id}`;
       return NextResponse.json({ ok: true, invoice: cr, message: `Račun ${inv.number} storniran — izdan dobropis ${cr.number}.` });
+    }
+    if (b.action === "convert" && inv) {
+      const r = await convertToInvoice(inv.id);
+      return NextResponse.json({ ok: true, invoice: r, message: `Narejen račun ${r.number} ✓` });
+    }
+    if (b.action === "orderdocs") {
+      const r = await docsForNewOrder(b.order_id);
+      return NextResponse.json({ ok: true, message: r.dobavnica ? `Dobavnica ${r.dobavnica.number} ✓` : "Ni naročila." });
     }
     if (b.action === "order") {
       const r = await invoiceFromOrder(b.order_id);

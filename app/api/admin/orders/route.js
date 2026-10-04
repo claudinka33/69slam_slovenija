@@ -59,6 +59,11 @@ export async function PATCH(req) {
     } catch (e) { console.error(e); }
   }
 
+  // preklic: neizkoriščeni dokumenti naročila (dobavnica, predračun) se prekličejo
+  if (status === "preklicano" && prev.status !== "preklicano")
+    await sql`UPDATE invoices SET status = 'preklican' WHERE order_id = ${id} AND kind IN ('dobavnica','predracun') AND converted_to IS NULL`;
+  if (tracking) await sql`UPDATE invoices SET tracking = ${String(tracking).trim().slice(0, 60)} WHERE order_id = ${id} AND kind = 'dobavnica'`;
+
   // uvožena Shopify naročila ne vplivajo na zalogo
   if (status === "preklicano" && prev.status !== "preklicano" && prev.source !== "shopify") {
     const items = await sql`SELECT sku, qty FROM order_items WHERE order_id = ${id}`;
