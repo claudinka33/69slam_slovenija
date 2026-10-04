@@ -25,6 +25,20 @@ function swimKind(p) {
   for (const k of ["BOARDSHORT", "VOLLEY", "ELASTIC", "MEDIUM", "LONG", "CLASSIC"]) if (tp.includes(k)) return k;
   return "DRUGO";
 }
+/** Vrsta dodatka (stran Dodatki). */
+function accKind(p) {
+  const tp = `${p.type || ""} ${p.name || ""}`.toUpperCase();
+  if (p.group === "obutev") return "OBUTEV";
+  if (p.group === "oblacila") return "OBLACILA";
+  if (tp.includes("OBESEK")) return "OBESKI";
+  if (tp.includes("KAPA")) return "KAPE";
+  if (tp.includes("NOGAVIC")) return "NOGAVICE";
+  if (tp.includes("BAG") || tp.includes("TORB")) return "TORBE";
+  return "DRUGO";
+}
+const ACC_ORDER = ["KAPE", "NOGAVICE", "OBESKI", "TORBE", "OBUTEV", "OBLACILA", "DRUGO"];
+const ACC_LABEL = { sl: { KAPE: "Kape", NOGAVICE: "Nogavice", OBESKI: "Obeski za ključe", TORBE: "Torbe", OBUTEV: "Japonke & natikači", OBLACILA: "Oblačila", DRUGO: "Ostalo" },
+  en: { KAPE: "Caps", NOGAVICE: "Socks", OBESKI: "Keychains", TORBE: "Bags", OBUTEV: "Flip-flops & slides", OBLACILA: "Clothing", DRUGO: "Other" } };
 const KIND_LABEL = { BOARDSHORT: "Boardshort", VOLLEY: "Volley", ELASTIC: "Elastic", MEDIUM: "Medium length", LONG: "Long length", CLASSIC: "Classic", MAJICE: "Kopalne majice", DRUGO: "Ostalo" };
 
 /**
@@ -39,8 +53,8 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   const [kind, setKind] = useState("all");
   // ?model=BOARDSHORT ipd. (povezava s prve strani) → izbran model kopalk
   useEffect(() => {
-    if (mode !== "swim") return;
-    const m = new URLSearchParams(window.location.search).get("model");
+    if (mode !== "swim" && mode !== "extra") return;
+    const m = new URLSearchParams(window.location.search).get(mode === "swim" ? "model" : "vrsta");
     if (m) setKind(m.toUpperCase());
   }, [mode]);
   const [filter, setFilter] = useState("all");
@@ -54,8 +68,10 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   const gCount = (g) => scope.filter((p) => p.group === g).length;
   if (groups.length && group !== "all") base = base.filter((p) => p.group === group);
 
-  const kinds = mode === "swim" ? [...new Set(products.map(swimKind))] : [];
-  if (mode === "swim" && kind !== "all") base = base.filter((p) => swimKind(p) === kind);
+  const kindOf = mode === "extra" ? accKind : swimKind;
+  const kinds = mode === "swim" ? [...new Set(products.map(swimKind))]
+    : mode === "extra" ? ACC_ORDER.filter((k) => products.some((p) => accKind(p) === k)) : [];
+  if ((mode === "swim" || mode === "extra") && kind !== "all") base = base.filter((p) => kindOf(p) === kind);
 
   const boxers = mode === "men" && group === "boksarice";
   const hasHip = boxers && base.some((p) => p.cut === "hip");
@@ -104,10 +120,11 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
 
       {kinds.length > 1 && (
         <div className="filters">
-          <button className={`chip ${kind === "all" ? "active" : ""}`} onClick={() => setKind("all")}>{t.swim_all}</button>
+          <button className={`chip ${kind === "all" ? "active" : ""}`} onClick={() => setKind("all")}>{mode === "extra" ? t.grp_all : t.swim_all}</button>
           {kinds.map((k) => (
             <button key={k} className={`chip ${kind === k ? "active" : ""}`} onClick={() => setKind(k)}>
-              {k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}
+              {mode === "extra" ? (ACC_LABEL[lang] || ACC_LABEL.sl)[k] : k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}
+              {mode === "extra" && <small> {products.filter((p) => accKind(p) === k).length}</small>}
             </button>
           ))}
         </div>
