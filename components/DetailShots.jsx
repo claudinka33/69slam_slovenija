@@ -1,6 +1,6 @@
 // Detajlne fotografije kvalitete (pas, razteg, mikrofibra).
 // Slike: public/img/detail/  ·  Uporaba: <DetailShots lang={lang} tone="dark|light" />
-const SHOTS = [
+const MICRO = [
   {
     src: "/img/detail/pas.jpg",
     sl: { t: "Mehak elastičen pas", p: "Širok pas z logotipom 69SLAM se prilagodi telesu in drži boksarice na mestu." },
@@ -21,13 +21,58 @@ const SHOTS = [
   },
 ];
 
+const BAMBUS = [
+  {
+    src: "/img/detail/bambus-pas.jpg",
+    sl: { t: "Mehak širok pas", p: "Elastičen pas se prilagodi telesu, ne reže in drži spodnjice na mestu ves dan." },
+    hr: { t: "Mekani široki pojas", p: "Elastični pojas prilagođava se tijelu, ne steže i drži gaće na mjestu cijeli dan." },
+    en: { t: "Soft wide waistband", p: "The elastic waistband moves with your body, doesn't dig in and keeps everything in place all day." },
+  },
+  {
+    src: "/img/detail/bambus-material.jpg",
+    sl: { t: "Mehka bambusova viskoza", p: "Izjemno mehka, zračna tkanina, prijazna do kože. Naravno uravnava temperaturo." },
+    hr: { t: "Mekana bambusova viskoza", p: "Iznimno mekana, prozračna tkanina, nježna prema koži. Prirodno regulira temperaturu." },
+    en: { t: "Soft bamboo viscose", p: "Extremely soft, breathable fabric that's gentle on your skin and naturally regulates temperature." },
+  },
+  {
+    src: "/img/detail/bambus-rob.jpg",
+    sl: { t: "Čisti robovi in šivi", p: "Ravni šivi in mehak rob hlačnice, ki lepo naleže in ne drgne." },
+    hr: { t: "Čisti rubovi i šavovi", p: "Ravni šavovi i mekani rub nogavice koji lijepo naliježe i ne žulja." },
+    en: { t: "Clean hems and seams", p: "Flat seams and a soft leg hem that lies smoothly and doesn't chafe." },
+  },
+];
+
+const SWIM = [
+  {
+    src: "/img/detail/kopalke-vrvica.jpg",
+    sl: { t: "Vrvica za zavezat", p: "Pas z vrvico, da kopalke ostanejo na mestu — tudi v valovih." },
+    hr: { t: "Vezica za vezanje", p: "Pojas s vezicom da kupaće ostanu na mjestu — i u valovima." },
+    en: { t: "Tie drawstring", p: "A drawstring waist keeps your shorts in place — even in the waves." },
+  },
+  {
+    src: "/img/detail/kopalke-stretch.jpg",
+    sl: { t: "4-way stretch, hitro sušenje", p: "Material se razteza v vse 4 smeri in se hitro posuši — iz vode naravnost na plažo." },
+    hr: { t: "4-way stretch, brzo sušenje", p: "Materijal se rasteže u sva 4 smjera i brzo se suši — iz vode ravno na plažu." },
+    en: { t: "4-way stretch, quick-dry", p: "The fabric stretches in all four directions and dries fast — straight from the water to the beach." },
+  },
+  {
+    src: "/img/detail/kopalke-zep.jpg",
+    sl: { t: "Stranski žep z zadrgo", p: "Ključi in drobiž ostanejo na varnem. Brez mrežice — udobne tudi kot kratke hlače." },
+    hr: { t: "Bočni džep s patentom", p: "Ključevi i sitniš ostaju na sigurnom. Bez mrežice — udobne i kao kratke hlače." },
+    en: { t: "Zip side pocket", p: "Keys and change stay safe. No mesh lining — comfy as everyday shorts too." },
+  },
+];
+
+const SETS = { micro: MICRO, bambus: BAMBUS, kopalke: SWIM };
+
 const HEAD = {
   sl: { over: "Kvaliteta od blizu", title: "Poglej jih od blizu" },
   hr: { over: "Kvaliteta izbliza", title: "Pogledaj ih izbliza" },
   en: { over: "Quality up close", title: "See them up close" },
 };
 
-export default function DetailShots({ lang = "sl", tone = "light", showTitle = true }) {
+export default function DetailShots({ lang = "sl", tone = "light", showTitle = true, kind = "micro" }) {
+  const SHOTS = SETS[kind] || MICRO;
   const h = HEAD[lang] || HEAD.sl;
   return (
     <section className={`detail detail-${tone}`}>

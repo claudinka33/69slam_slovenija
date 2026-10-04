@@ -156,6 +156,8 @@ export default async function ProductPage({ params }) {
       </div>
 
       {micro && <DetailShots lang={lang} tone="light" />}
+      {!micro && boxers && p.material === "bambus" && <DetailShots lang={lang} tone="light" kind="bambus" />}
+      {p.group === "kopalke" && /boardshort/i.test(p.type || "") && <DetailShots lang={lang} tone="light" kind="kopalke" />}
 
       {boxers && (
       <section className="pgal">
