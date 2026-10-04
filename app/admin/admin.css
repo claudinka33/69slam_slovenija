@@ -320,3 +320,14 @@ button.adm-cell:hover{border-color:#98A2B3;transform:translateY(-1px);}
 .rv-adm-stars{color:#FFB800;font-size:18px;letter-spacing:1px;}
 .rv-adm-stars span{color:#ddd;}
 .adm .grow{flex:1;}
+
+/* ---- Računi ---- */
+.inv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;}
+.inv-items td{vertical-align:top;}
+.inv-items input,.inv-items select,.inv-items textarea{border:1px solid var(--a-line);border-radius:8px;padding:7px 8px;font-size:13px;font-family:inherit;background:#fff;}
+.inv-items textarea{width:100%;min-width:200px;resize:vertical;}
+.inv-tot{margin:14px 0 0 auto;max-width:300px;}
+.inv-tot div{display:flex;justify-content:space-between;padding:4px 0;font-size:14px;}
+.inv-tot div.big{border-top:1px solid var(--a-line);margin-top:4px;padding-top:8px;font-size:17px;}
+.adm-field select,.adm-field textarea{width:100%;border:1px solid var(--a-line);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;}
+@media(max-width:700px){.inv-grid{grid-template-columns:1fr;}}

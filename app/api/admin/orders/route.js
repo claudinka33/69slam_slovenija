@@ -37,8 +37,26 @@ export async function PATCH(req) {
     WHERE id = ${id}`;
   // kupcu: »paket je na poti« (ne za uvožena Shopify naročila)
   let mailed = false;
+  let invoiceNo = null;
   if (status === "poslano" && prev.status !== "poslano" && prev.source !== "shopify") {
-    try { const { sendShipped, mailConfigured } = await import("../../../../lib/mail"); if (mailConfigured()) { await sendShipped(id); mailed = true; } } catch (e) { console.error(e); }
+    // račun se izda ob pošiljanju in gre kupcu kot priloga maila »paket je na poti«
+    let att = null;
+    try {
+      const { invoiceFromOrder, invoicePdf } = await import("../../../../lib/invoices");
+      const inv = await invoiceFromOrder(id);
+      if (inv) {
+        att = [{ filename: `racun-${inv.number}.pdf`, content: (await invoicePdf(inv)).toString("base64") }];
+        invoiceNo = inv.number;
+      }
+    } catch (e) { console.error("[račun]", e); }
+    try {
+      const { sendShipped, mailConfigured } = await import("../../../../lib/mail");
+      if (mailConfigured()) {
+        const r = await sendShipped(id, att);
+        mailed = true;
+        if (att && invoiceNo && !r?.error) await sql`UPDATE invoices SET sent_at = now(), sent_to = (SELECT email FROM orders WHERE id = ${id}) WHERE number = ${invoiceNo}`;
+      }
+    } catch (e) { console.error(e); }
   }
 
   // uvožena Shopify naročila ne vplivajo na zalogo
@@ -50,5 +68,5 @@ export async function PATCH(req) {
         VALUES (${it.sku}, ${it.qty}, 'preklic', ${"Preklic naročila (id " + id + ")"})`;
     }
   }
-  return NextResponse.json({ ok: true, mailed });
+  return NextResponse.json({ ok: true, mailed, invoice: invoiceNo });
 }

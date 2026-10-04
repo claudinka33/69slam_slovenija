@@ -13,6 +13,7 @@
     "@neondatabase/serverless": "^0.10.4",
     "@vercel/blob": "^2.8.0",
     "next": "15.5.25",
+    "pdfkit": "^0.15.2",
     "qrcode": "^1.5.4",
     "react": "19.1.1",
     "react-dom": "19.1.1",

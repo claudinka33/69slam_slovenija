@@ -82,6 +82,7 @@ export default function Admin() {
     { id: "cenik", ico: "💶", lbl: "Cenik & RVC" },
     { id: "kode", ico: "🏷️", lbl: "Kode za popust" },
     { id: "stranke", ico: "👤", lbl: "Stranke" },
+    { id: "racuni", ico: "🧾", lbl: "Računi" },
     { id: "maili", ico: "✉️", lbl: "E-maili" },
     { id: "ocene", ico: "⭐", lbl: "Ocene", bdg: revCount || null },
     { id: "nastavitve", ico: "⚙️", lbl: "Nastavitve", soon: true },
@@ -133,6 +134,7 @@ export default function Admin() {
         {view === "cenik" && <PriceList />}
         {view === "kode" && <Coupons />}
         {view === "stranke" && <Customers reloadOrders={loadOrders} />}
+        {view === "racuni" && <Invoices />}
         {view === "maili" && <Mailing stock={stock} />}
         {view === "ocene" && <Reviews onCount={setRevCount} />}
       </main>
@@ -344,6 +346,19 @@ function Orders({ orders, onOpen }) {
   );
 }
 
+function OrderInvoice({ orderId, status }) {
+  const [inv, setInv] = useState(undefined);
+  const load = useCallback(async () => { const d = await getJSON(`/api/admin/invoices?order=${orderId}`); setInv((d?.invoices || []).find((x) => x.kind === "racun" && x.status !== "storniran") || null); }, [orderId]);
+  useEffect(() => { load(); }, [load, status]);
+  if (inv === undefined) return null;
+  return (
+    <div className="adm-note" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
+      🧾 {inv ? <>Račun <b>{inv.number}</b>{inv.sent_at ? " · ✉️ poslan" : ""}<div className="grow" /><a className="adm-btn" href={`/api/admin/invoices?pdf=${inv.id}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>PDF</a></>
+        : <>Račun se naredi in pošlje sam, ko klikneš <b>Poslano</b>.<div className="grow" /><button className="adm-btn" onClick={async () => { await post("/api/admin/invoices", { action: "order", order_id: orderId }); load(); }}>Izdaj zdaj</button></>}
+    </div>
+  );
+}
+
 function OrderPanel({ o, onClose, setStatus }) {
   const [busy, setBusy] = useState(false);
   const [trk, setTrk] = useState(o.tracking || "");
@@ -373,6 +388,7 @@ function OrderPanel({ o, onClose, setStatus }) {
           <button className="x" onClick={onClose}>✕</button>
         </div>
         <div className="adm-mb">
+          {o.source !== "shopify" && <OrderInvoice orderId={o.id} status={o.status} />}
           <div className="adm-sec" style={{ marginTop: 0 }}>Spremeni status</div>
           <div className="adm-status">
             {STATUSES.map((s) => (
@@ -2255,5 +2271,242 @@ function Reviews({ onCount }) {
             </div>))}
         </div>}
     </>
+  );
+}
+
+/* =========================== RAČUNI =========================== */
+const PAYL = { trr: "Nakazilo na TRR", gotovina: "Gotovina", kartica: "Plačilna kartica", povzetje: "Po povzetju", placano: "Že plačano" };
+const VATS = [22, 9.5, 5, 0];
+const numIn = (v) => { const n = parseFloat(String(v ?? "").replace(",", ".")); return Number.isFinite(n) ? n : 0; };
+function calcInv(items, gross) {
+  const g = {};
+  for (const it of items) {
+    if (!String(it.desc || "").trim()) continue;
+    const a = Math.round(numIn(it.qty) * numIn(it.price) * 100 * (1 - Math.min(100, numIn(it.disc)) / 100));
+    g[it.vat] = (g[it.vat] || 0) + a;
+  }
+  let net = 0, vat = 0, total = 0;
+  for (const [r, sum] of Object.entries(g)) {
+    const rate = Number(r) / 100;
+    const base = gross ? Math.round(sum / (1 + rate)) : sum;
+    const v = gross ? sum - base : Math.round(sum * rate);
+    net += base; vat += v; total += base + v;
+  }
+  return { net, vat, total };
+}
+async function openPdf(body) {
+  const r = await fetch("/api/admin/invoices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) { alertBox("Predogleda ni bilo mogoče narediti."); return; }
+  const url = URL.createObjectURL(await r.blob());
+  window.open(url, "_blank");
+}
+function alertBox(t) { console.warn(t); }
+
+function Invoices() {
+  const [tab, setTab] = useState("seznam");
+  const [list, setList] = useState(null);
+  const [month, setMonth] = useState(null);
+  const [q, setQ] = useState("");
+  const [msg, setMsg] = useState(null);
+  const [send, setSend] = useState(null); // { inv, to }
+  const load = useCallback(async (qq = "") => { const d = await getJSON(`/api/admin/invoices?q=${encodeURIComponent(qq)}`); setList(d?.invoices || []); setMonth(d?.month || null); }, []);
+  useEffect(() => { const t = setTimeout(() => load(q), 250); return () => clearTimeout(t); }, [q, load]);
+  async function act(inv, action) {
+    if (action === "storno" && !confirm(`Storniram račun ${inv.number}? Izdal se bo dobropis z negativnimi zneski.`)) return;
+    const d = await post("/api/admin/invoices", { action, id: inv.id });
+    if (d?.message) setMsg({ ok: !!d.ok, t: d.message });
+    load(q);
+  }
+  async function doSend() {
+    setMsg({ ok: true, t: "Pošiljam …" });
+    const d = await post("/api/admin/invoices", { action: "send", id: send.inv.id, to: send.to });
+    setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." }); setSend(null); load(q);
+  }
+  return (
+    <>
+      <div className="adm-top">
+        <div><h1>Računi</h1><div className="sub">Izdajanje računov (spletna naročila, fizični kupci, storitve). Številke: leto-zaporedna (2026-1000 …). Pošiljanje samo po e-mailu. 🌱</div></div>
+        <div className="grow" />
+        <div className="adm-seg">
+          {[["seznam", "Seznam"], ["nov", "+ Nov račun"], ["oblika", "Oblika računa"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
+        </div>
+      </div>
+      <div className="adm-note">ℹ️ Davčno potrjevanje (FURS: ZOI/EOR) še ni vklopljeno — za gotovinske/kartične račune na licu mesta se najprej dogovori z računovodjo. Računi za nakazilo na TRR ga ne potrebujejo.</div>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      {tab === "nov" && <InvoiceForm onDone={(m) => { setMsg(m); setTab("seznam"); load(""); }} />}
+      {tab === "oblika" && <InvoiceSettings />}
+      {tab === "seznam" && (
+        <>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+            <input className="adm-input" style={{ flex: 1, minWidth: 220 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Išči po številki, kupcu, e-mailu" />
+            {month && <span className="muted">Ta mesec: <b>{month.n}</b> računov · <b>{eur(month.total)}</b></span>}
+          </div>
+          <div className="adm-card adm-scroll">
+            <table className="adm-tbl">
+              <thead><tr><th>Številka</th><th>Datum</th><th>Kupec</th><th className="r">Znesek</th><th>Plačilo</th><th>Stanje</th><th></th></tr></thead>
+              <tbody>
+                {list === null ? <tr><td colSpan={7} className="adm-empty">Nalagam …</td></tr> :
+                 !list.length ? <tr><td colSpan={7} className="adm-empty">Še ni računov — klikni »+ Nov račun«. Računi spletnih naročil se naredijo sami, ko naročilo označiš kot Poslano.</td></tr> :
+                 list.map((r) => (
+                  <tr key={r.id}>
+                    <td><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}` : r.order_id ? "Spletno naročilo" : "Ročni račun"}</div></td>
+                    <td className="muted">{dShort(r.issued_at)}</td>
+                    <td><div>{r.customer_name}</div>{r.customer_email && <div className="muted">{r.customer_email}</div>}</td>
+                    <td className="r num strong">{eur(r.total_cents)}</td>
+                    <td className="muted">{PAYL[r.payment] || r.payment}{r.payment === "trr" && r.kind === "racun" ? <div>{r.paid_at ? <span className="adm-tag sub">✓ plačano</span> : <span className="adm-tag">rok {dShort(r.due_date)}</span>}</div> : null}</td>
+                    <td>{r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.sent_at ? <span className="adm-tag sub">✉️ poslan</span> : <span className="adm-tag">ni poslan</span>}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <a className="adm-btn" href={`/api/admin/invoices?pdf=${r.id}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>PDF</a>{" "}
+                      <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "" })}>✉️</button>{" "}
+                      {r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
+                      {r.kind === "racun" && r.status !== "storniran" && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
+                    </td>
+                  </tr>))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {send && (
+        <div className="adm-ov" onClick={(e) => e.target === e.currentTarget && setSend(null)}>
+          <div className="adm-modal" style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 440 }}>
+            <div className="adm-mh"><h3>Pošlji račun {send.inv.number}</h3><button className="x" onClick={() => setSend(null)}>✕</button></div>
+            <div className="adm-mb">
+              <div className="adm-field"><label>E-mail prejemnika</label><input value={send.to} onChange={(e) => setSend({ ...send, to: e.target.value })} placeholder="kupec@email.si" /></div>
+              <button className="adm-btn pri" onClick={doSend}>✉️ Pošlji PDF</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function InvoiceForm({ onDone }) {
+  const blankItem = () => ({ code: "", desc: "", qty: "1", unit: "kos", price: "", disc: "", vat: 22 });
+  const [c, setC] = useState({ name: "", address: "", zip_city: "", country: "Slovenija", vat: "", email: "" });
+  const [items, setItems] = useState([blankItem()]);
+  const [gross, setGross] = useState(false);
+  const [payment, setPayment] = useState("trr");
+  const [dueDays, setDueDays] = useState("8");
+  const [serviceDate, setServiceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [notes, setNotes] = useState("");
+  const [past, setPast] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(() => { getJSON("/api/admin/invoices?customers=1").then((d) => setPast(d?.customers || [])); getJSON("/api/admin/invoices?settings=1").then((d) => d?.settings && setDueDays(String(d.settings.due_days))); }, []);
+  const setI = (i, k, v) => setItems((x) => x.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
+  const sc = (k) => (e) => setC((x) => ({ ...x, [k]: e.target.value }));
+  const tot = calcInv(items, gross);
+  const body = () => ({ customer: c, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
+  async function issue(send) {
+    setErr("");
+    if (send && !c.email.trim()) { setErr("Za pošiljanje vpiši e-mail kupca."); return; }
+    if (!confirm(`Izdam račun za ${c.name || "kupca"} v znesku ${eur(tot.total)}?${send ? `\nPoslan bo na ${c.email}.` : ""}\n\nIzdanega računa ni mogoče spreminjati (lahko ga storniraš).`)) return;
+    setBusy(true);
+    const d = await post("/api/admin/invoices", { action: "issue", ...body(), send });
+    setBusy(false);
+    if (d?.ok) onDone({ ok: true, t: d.message }); else setErr(d?.message || "Napaka.");
+  }
+  return (
+    <div className="inv-form">
+      <div className="adm-card" style={{ padding: 16 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+          <b>Kupec</b><div className="grow" />
+          {past.length > 0 && <select className="adm-input" defaultValue="" onChange={(e) => { const p = past[e.target.value]; if (p) setC({ name: p.name || "", address: p.address || "", zip_city: p.zip_city || "", country: p.country || "Slovenija", vat: p.vat || "", email: p.email || "" }); }}>
+            <option value="" disabled>Izberi preteklega kupca …</option>
+            {past.map((p, i) => <option key={i} value={i}>{p.name}</option>)}
+          </select>}
+        </div>
+        <div className="inv-grid">
+          <div className="adm-field" style={{ gridColumn: "1 / -1" }}><label>Naziv / ime in priimek</label><input value={c.name} onChange={sc("name")} placeholder="npr. ALPSKA ŠOLA … s.p. ali Janez Novak" /></div>
+          <div className="adm-field"><label>Naslov</label><input value={c.address} onChange={sc("address")} /></div>
+          <div className="adm-field"><label>Pošta in kraj</label><input value={c.zip_city} onChange={sc("zip_city")} placeholder="3210 Slovenske Konjice" /></div>
+          <div className="adm-field"><label>Država</label><input value={c.country} onChange={sc("country")} /></div>
+          <div className="adm-field"><label>ID za DDV (podjetja)</label><input value={c.vat} onChange={sc("vat")} placeholder="SI12345678" /></div>
+          <div className="adm-field" style={{ gridColumn: "1 / -1" }}><label>E-mail (za pošiljanje računa)</label><input value={c.email} onChange={sc("email")} /></div>
+        </div>
+      </div>
+
+      <div className="adm-card" style={{ padding: 16, marginTop: 12 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+          <b>Postavke</b><div className="grow" />
+          <label className="adm-check"><input type="checkbox" checked={gross} onChange={(e) => setGross(e.target.checked)} /> Cene vključujejo DDV (maloprodaja)</label>
+        </div>
+        <div className="adm-scroll">
+          <table className="adm-tbl inv-items">
+            <thead><tr><th style={{ width: "34%" }}>Opis (lahko karkoli)</th><th>Šifra</th><th>Kol.</th><th>EM</th><th>{gross ? "Cena z DDV" : "Cena brez DDV"}</th><th>Pop. %</th><th>DDV %</th><th className="r">Vrednost</th><th></th></tr></thead>
+            <tbody>
+              {items.map((it, i) => (
+                <tr key={i}>
+                  <td><textarea rows={1} value={it.desc} onChange={(e) => setI(i, "desc", e.target.value)} placeholder="npr. Marketing – vodenje oglasov, september" /></td>
+                  <td><input value={it.code} onChange={(e) => setI(i, "code", e.target.value)} style={{ width: 90 }} /></td>
+                  <td><input value={it.qty} onChange={(e) => setI(i, "qty", e.target.value)} style={{ width: 56 }} inputMode="decimal" /></td>
+                  <td><input value={it.unit} onChange={(e) => setI(i, "unit", e.target.value)} style={{ width: 52 }} /></td>
+                  <td><input value={it.price} onChange={(e) => setI(i, "price", e.target.value)} style={{ width: 84 }} inputMode="decimal" placeholder="0,00" /></td>
+                  <td><input value={it.disc} onChange={(e) => setI(i, "disc", e.target.value)} style={{ width: 52 }} inputMode="decimal" /></td>
+                  <td><select value={it.vat} onChange={(e) => setI(i, "vat", Number(e.target.value))}>{VATS.map((v) => <option key={v} value={v}>{String(v).replace(".", ",")}</option>)}</select></td>
+                  <td className="r num">{eur(Math.round(numIn(it.qty) * numIn(it.price) * 100 * (1 - Math.min(100, numIn(it.disc)) / 100)))}</td>
+                  <td><button className="adm-btn" onClick={() => setItems((x) => x.length > 1 ? x.filter((_, j) => j !== i) : [blankItem()])}>✕</button></td>
+                </tr>))}
+            </tbody>
+          </table>
+        </div>
+        <button className="adm-btn" style={{ marginTop: 10 }} onClick={() => setItems((x) => [...x, blankItem()])}>+ Dodaj postavko</button>
+        <div className="inv-tot">
+          <div><span>Skupaj brez DDV</span><b>{eur(tot.net)}</b></div>
+          <div><span>DDV</span><b>{eur(tot.vat)}</b></div>
+          <div className="big"><span>Za plačilo</span><b>{eur(tot.total)}</b></div>
+        </div>
+      </div>
+
+      <div className="adm-card" style={{ padding: 16, marginTop: 12 }}>
+        <div className="inv-grid">
+          <div className="adm-field"><label>Način plačila</label><select value={payment} onChange={(e) => setPayment(e.target.value)}>{Object.entries(PAYL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+          {payment === "trr" && <div className="adm-field"><label>Rok plačila (dni)</label><input value={dueDays} onChange={(e) => setDueDays(e.target.value)} inputMode="numeric" /></div>}
+          <div className="adm-field"><label>Datum storitve / dobave</label><input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} /></div>
+          <div className="adm-field" style={{ gridColumn: "1 / -1" }}><label>Opomba na računu (neobvezno)</label><textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className="adm-input" style={{ width: "100%" }} placeholder="npr. Po pogodbi z dne … / Hvala za sodelovanje!" /></div>
+        </div>
+        {err && <div className="adm-note err">{err}</div>}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="adm-btn" disabled={busy} onClick={() => openPdf({ action: "preview", ...body() })}>👁 Predogled PDF</button>
+          <div className="grow" />
+          <button className="adm-btn" disabled={busy} onClick={() => issue(false)}>🧾 Izdaj račun</button>
+          <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>🧾 Izdaj in pošlji po e-mailu</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InvoiceSettings() {
+  const [s, setS] = useState(null);
+  const [msg, setMsg] = useState(null);
+  useEffect(() => { getJSON("/api/admin/invoices?settings=1").then((d) => setS(d?.settings || {})); }, []);
+  if (!s) return <div className="adm-card adm-empty">Nalagam …</div>;
+  const set = (k) => (e) => setS((x) => ({ ...x, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  async function save() { const d = await post("/api/admin/invoices", { action: "settings", settings: s }); setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." }); if (d?.settings) setS(d.settings); }
+  const sample = { action: "preview", customer: { name: "Primer kupca d.o.o.", address: "Slovenska cesta 1", zip_city: "1000 Ljubljana", vat: "SI12345678" },
+    items: [{ desc: "Storitev ali artikel", qty: 1, unit: "kos", price: 100, disc: 0, vat: 22 }], gross: false, payment: "trr", notes: "" };
+  return (
+    <div className="adm-card" style={{ padding: 18 }}>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      <div className="inv-grid">
+        <div className="adm-field"><label>Barva (glava tabele, črte)</label><div style={{ display: "flex", gap: 8 }}><input type="color" value={s.accent} onChange={set("accent")} style={{ width: 54, padding: 2 }} /><input value={s.accent} onChange={set("accent")} /></div></div>
+        <div className="adm-field"><label>Prva številka v letu</label><input value={s.start} onChange={set("start")} inputMode="numeric" /></div>
+        <div className="adm-field"><label>Privzeti rok plačila (dni)</label><input value={s.due_days} onChange={set("due_days")} inputMode="numeric" /></div>
+        <div className="adm-field"><label>Kraj izdaje</label><input value={s.place} onChange={set("place")} /></div>
+        <div className="adm-field"><label>Račun pripravil/a</label><input value={s.prepared_by} onChange={set("prepared_by")} /></div>
+        <div className="adm-field"><label>E-mail na računu</label><input value={s.email} onChange={set("email")} /></div>
+        <div className="adm-field"><label>Spletna stran</label><input value={s.web} onChange={set("web")} /></div>
+        <div className="adm-field" style={{ alignSelf: "end" }}><label className="adm-check"><input type="checkbox" checked={s.show_logo !== false} onChange={set("show_logo")} /> Logotip Freestyle Freak</label></div>
+        <div className="adm-field" style={{ gridColumn: "1 / -1" }}><label>Opomba na vsakem računu (neobvezno)</label><textarea className="adm-input" style={{ width: "100%" }} rows={2} value={s.note} onChange={set("note")} /></div>
+        <div className="adm-field" style={{ gridColumn: "1 / -1" }}><label>Besedilo v nogi</label><textarea className="adm-input" style={{ width: "100%" }} rows={2} value={s.footer} onChange={set("footer")} /></div>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button className="adm-btn pri" onClick={save}>💾 Shrani</button>
+        <button className="adm-btn" onClick={() => openPdf(sample)}>👁 Predogled oblike</button>
+      </div>
+    </div>
   );
 }
