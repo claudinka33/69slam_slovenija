@@ -2147,6 +2147,13 @@ const PREVIEWS = [["confirm", "✅ Potrditev (kartica)"], ["upn", "🧾 Potrdite
 function MailPreviews() {
   const [k, setK] = useState("confirm");
   const [lang, setLang] = useState("sl");
+  const [to, setTo] = useState("69slamslovenia@gmail.com");
+  const [msg, setMsg] = useState(null);
+  async function test() {
+    setMsg({ ok: true, t: "Pošiljam …" });
+    const d = await post(`/api/admin/mail/preview?kind=${k}&lang=${lang}`, { to });
+    setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." });
+  }
   return (
     <div className="adm-card" style={{ padding: 16, marginBottom: 18 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
@@ -2157,6 +2164,11 @@ function MailPreviews() {
       <div className="adm-chips" style={{ marginBottom: 12 }}>
         {PREVIEWS.map(([id, l]) => <button key={id} className={k === id ? "on" : ""} style={k === id ? { background: "var(--a-navy)", color: "#fff", borderColor: "var(--a-navy)" } : null} onClick={() => setK(id)}>{l}</button>)}
       </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        <input className="adm-input" style={{ flex: 1, minWidth: 220 }} value={to} onChange={(e) => setTo(e.target.value)} />
+        <button className="adm-btn" onClick={test}>✉️ Pošlji ta mail kot test</button>
+      </div>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
       <iframe title="Predogled maila" src={`/api/admin/mail/preview?kind=${k}&lang=${lang}`} style={{ width: "100%", maxWidth: 680, height: 760, border: "1px solid var(--a-line)", borderRadius: 14, background: "#f5f5f7", display: "block", margin: "0 auto" }} />
     </div>
   );
