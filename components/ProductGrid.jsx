@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { fmt } from "../lib/i18n";
 import { useCart } from "./CartContext";
@@ -37,6 +37,12 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   const [group, setGroup] = useState(mode === "men" ? "boksarice" : "all");
   const [gender, setGender] = useState("all");
   const [kind, setKind] = useState("all");
+  // ?model=BOARDSHORT ipd. (povezava s prve strani) → izbran model kopalk
+  useEffect(() => {
+    if (mode !== "swim") return;
+    const m = new URLSearchParams(window.location.search).get("model");
+    if (m) setKind(m.toUpperCase());
+  }, [mode]);
   const [filter, setFilter] = useState("all");
   const [cut, setCut] = useState("all");
 

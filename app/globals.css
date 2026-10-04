@@ -587,3 +587,5 @@ nav.main a.nav-out{color:var(--red);font-weight:800;}
 .ck69-ghost{background:#fff;color:var(--ink);}
 .ck69-main{background:var(--ink);color:#fff;}
 @media (max-width:520px){.ck69{left:10px;right:10px;bottom:10px}.ck69-card{max-width:none;padding:16px}.ck69-b{padding:11px 8px}}
+
+.sw-item small{display:block;padding:0 10px 10px;margin-top:-4px;font-size:.68rem;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}

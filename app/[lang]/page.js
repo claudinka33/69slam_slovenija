@@ -6,6 +6,17 @@ import BundleBar from "../../components/BundleBar";
 import Image from "next/image";
 import { IMG } from "../../lib/media";
 import DetailShots from "../../components/DetailShots";
+import { db, dbConfigured } from "../../lib/db";
+
+// Modeli moških kopalk na prvi strani (prve 3 črke šifre)
+const SWIM_MODELS = [
+  { pre: "SSM", kind: "VOLLEY", sl: "Volley short", en: "Volley short", sub: "4-way stretch" },
+  { pre: "SSB", kind: "ELASTIC", sl: "Elastic", en: "Elastic", sub: "4-way stretch" },
+  { pre: "SSN", kind: "BOARDSHORT", sl: "Boardshort", en: "Boardshort", sub: "4-way stretch" },
+  { pre: "SSC", kind: "CLASSIC", sl: "Classic", en: "Classic", sub: "" },
+  { pre: "SSL", kind: "MEDIUM", sl: "Medium length", en: "Medium length", sub: "" },
+  { pre: "SLL", kind: "LONG", sl: "Long length", en: "Long length", sub: "" },
+];
 
 export async function generateMetadata({ params }) {
   const { lang } = await params;
@@ -26,7 +37,20 @@ export default async function Home({ params }) {
   const t = getDict(lang);
   const products = getMenProducts({ withEmpty: true });
   const boxers = products.filter((p) => p.group === "boksarice" && p.totalStock > 0);
-  const swim = getSwimProducts().filter((p) => p.img).slice(0, 6);
+  // od vsakega modela kopalk dizajn z največ zaloge (živa zaloga iz baze, sicer iz kataloga)
+  const swimAll = getSwimProducts().filter((p) => p.img);
+  let live = {};
+  if (dbConfigured()) {
+    try {
+      const rows = await db()`SELECT code, SUM(GREATEST(stock,0))::int AS n FROM variants WHERE code LIKE 'SS%' OR code LIKE 'SLL%' GROUP BY code`;
+      live = Object.fromEntries(rows.map((r) => [r.code, r.n]));
+    } catch {}
+  }
+  const stockOf = (p) => live[p.code] ?? p.totalStock ?? 0;
+  const swim = SWIM_MODELS.map((m) => {
+    const list = swimAll.filter((p) => p.code.startsWith(m.pre) && stockOf(p) > 0).sort((a, b) => stockOf(b) - stockOf(a));
+    return list.length ? { ...m, p: list[0], n: list.length } : null;
+  }).filter(Boolean);
   const outlet = getOutletProducts();
 
   return (
@@ -87,10 +111,11 @@ export default async function Home({ params }) {
               <Link href={`/${lang}/kopalke`} className="cta">{t.swim_cta}</Link>
             </div>
             <div className="sw-grid">
-              {swim.map((p) => (
-                <Link key={p.code} href={`/${lang}/p/${p.slug}`} className="sw-item" title={p.name}>
-                  <span style={{ backgroundImage: `url('${p.img}')` }} />
-                  <b>{p.name}</b>
+              {swim.map((m) => (
+                <Link key={m.pre} href={`/${lang}/kopalke?model=${m.kind}`} className="sw-item" title={m[lang] || m.sl}>
+                  <span style={{ backgroundImage: `url('${m.p.img}')` }} />
+                  <b>{m[lang] || m.sl}</b>
+                  <small>{m.sub ? `${m.sub} · ` : ""}{m.n} {lang === "en" ? (m.n === 1 ? "design" : "designs") : m.n === 1 ? "dizajn" : m.n === 2 ? "dizajna" : m.n < 5 ? "dizajni" : "dizajnov"}</small>
                 </Link>
               ))}
             </div>
