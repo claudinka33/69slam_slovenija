@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProducts, getProductBySlug, getSharedDescription, primeCatalog } from "../../../../lib/catalog";
+import { getProducts, getProductBySlug, getSharedDescription, primeCatalog, getSetPartners } from "../../../../lib/catalog";
+import CompleteSet from "../../../../components/CompleteSet";
 import { getDict, LANGS, fmt } from "../../../../lib/i18n";
 import AddToCart from "../../../../components/AddToCart";
 import ProductGallery from "../../../../components/ProductGallery";
@@ -130,6 +131,7 @@ export default async function ProductPage({ params }) {
           </details>
           )}
           <AddToCart code={p.code} t={t} />
+          <CompleteSet codes={getSetPartners(p).map((x) => x.code)} lang={lang} t={t} />
           <ProductBundle code={p.code} lang={lang} />
           <p className="pdesc">{desc}</p>
           <div className="plabel">{micro ? t.other_prints : t.other_items}</div>

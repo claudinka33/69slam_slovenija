@@ -157,7 +157,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
             : null;
           return (
             <Link href={`/${lang}/p/${p.slug}`} className="pcard" key={p.code}>
-              <div className="pimg" style={{ backgroundImage: `url('${p.img}')` }}>{badge}</div>
+              <div className="pimg" style={{ backgroundImage: `url('${p.img}')` }}>{badge}{p.hasSet && <span className="badge set">{lang === "en" ? "Set" : "Komplet"}</span>}</div>
               <div className="pinfo">
                 <div className="pname">{p.name}</div>
                 <div className="pline">{cardLine(p, t)}</div>
