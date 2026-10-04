@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { put, del } from "@vercel/blob";
 import { db, dbConfigured, ensureSchema } from "../../../../../lib/db";
-import { primeCatalog, getAnyProduct } from "../../../../../lib/catalog";
+import { getRawProduct, imgSrcOf } from "../../../../../lib/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,10 +10,9 @@ export const dynamic = "force-dynamic";
 async function current(sql, code) {
   const rows = await sql`SELECT url FROM product_images WHERE code = ${code} ORDER BY pos`;
   if (rows.length) return rows.map((r) => r.url);
-  // prvič: slike iz kataloga (Shopify) prenesemo v bazo, da jih lahko urejaš
-  await primeCatalog();
-  const p = getAnyProduct(code);
-  return p ? p.images.map((i) => i.src) : [];
+  // prvič: slike iz kataloga (Shopify) prenesemo v bazo, da jih lahko urejaš (samo osnovne iz kataloga, ne predpomnjene iz baze)
+  const raw = getRawProduct(code);
+  return raw ? (raw.images || []).map(imgSrcOf).filter(Boolean) : [];
 }
 async function save(sql, code, urls) {
   await sql`DELETE FROM product_images WHERE code = ${code}`;
