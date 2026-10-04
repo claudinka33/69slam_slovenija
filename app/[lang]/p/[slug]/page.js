@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProducts, getProductBySlug, getSharedDescription, primeCatalog, getSetPartners } from "../../../../lib/catalog";
+import { getProducts, getProductBySlug, getSharedDescription, primeCatalog, getSetPartners, getPairings } from "../../../../lib/catalog";
+import { Pairings, RecentlyViewed } from "../../../../components/ProductRow";
 import CompleteSet from "../../../../components/CompleteSet";
 import { getDict, LANGS, fmt } from "../../../../lib/i18n";
 import AddToCart from "../../../../components/AddToCart";
@@ -178,6 +179,9 @@ export default async function ProductPage({ params }) {
       </section>
 
       )}
+
+      <Pairings codes={getPairings(p).map((x) => x.code)} lang={lang} t={t} />
+      <RecentlyViewed code={p.code} lang={lang} t={t} />
 
       {(
       <section className="previews" id="ocene">
