@@ -42,6 +42,7 @@ function codeOf(sku, bySku, codes) {
 /**
  * Čisti RVC od prodaje: ?from=YYYY-MM-DD&to=YYYY-MM-DD (vključno).
  * Prihodek = dejanske cene artiklov (popusti na naročilu razporejeni po artiklih), brez DDV in brez poštnine.
+ * + arhiv Metakocke (računi brez naročila v bazi in dobropisi).
  * Nabavna = shranjena ob naročilu, sicer današnja nabavna artikla.
  */
 export async function GET(req) {
@@ -100,6 +101,38 @@ export async function GET(req) {
       a.name = a.name || (code ? pname[code] : i.name); a.code = code || i.sku;
       const g = code ? (meta[code]?.gender === "moski" ? meta[code]?.group || "drugo" : meta[code]?.gender || "drugo") : "neznano";
       add(groups, g, { qty: i.qty, gross, net, cost: c, missQty: miss, missNet: mn });
+    }
+  }
+  // arhiv Metakocke: računi, ki niso povezani z naročilom v bazi (osebno, Instagram, B2B, starejši Shopify),
+  // in dobropisi (razen k naročilom, ki so v bazi že preklicana)
+  const mk = await sql`SELECT i.kind, i.items, to_char(i.issued_at AT TIME ZONE 'Europe/Ljubljana', 'YYYY-MM') AS ym
+    FROM invoices i LEFT JOIN orders o ON o.id = i.order_id
+    WHERE i.series = 'MK' AND i.status = 'arhiv'
+      AND (i.issued_at AT TIME ZONE 'Europe/Ljubljana')::date BETWEEN ${from}::date AND ${to}::date
+      AND (i.order_id IS NULL OR (i.kind = 'dobropis' AND o.status <> 'preklicano'))`;
+  T.mkDocs = mk.length;
+  for (const d of mk) {
+    if (d.kind === "racun") { T.orders += 1; add(months, d.ym, { orders: 1 }); }
+    for (const l of d.items || []) {
+      const qty = Number(l.qty) || 0;
+      const net = qty * (Number(l.price) || 0) * (1 - (Number(l.disc) || 0) / 100) * 100;
+      const gross = net * (1 + (Number(l.vat) || 0) / 100);
+      if (String(l.unit || "").toLowerCase().startsWith("stor") || /dostav|po[šs]tnin|povzet|odkupnin/i.test(String(l.desc || ""))) { T.shipping += gross; continue; }
+      const code = l.code ? codeOf(l.code, bySku, codes) : null;
+      let unit = code ? cost[code] : null;
+      let est = 0;
+      if (unit == null && l.code) { const m = mkCostOf(l.code); if (m) { unit = m.cents; if (m.est) est = Math.abs(qty); } }
+      T.estQty += est;
+      const c = unit != null ? unit * qty : 0;
+      const miss = unit == null ? qty : 0;
+      const mn = miss ? net : 0;
+      T.qty += qty; T.gross += gross; T.net += net; T.cost += c; T.missQty += miss; T.missNet += mn;
+      add(months, d.ym, { qty, gross, net, cost: c, missQty: miss, missNet: mn });
+      const key = code || `?${l.code || l.desc}`;
+      const a = add(arts, key, { qty, gross, net, cost: c, missQty: miss, missNet: mn });
+      a.name = a.name || (code ? pname[code] : l.desc); a.code = code || l.code || "—";
+      const g = code ? (meta[code]?.gender === "moski" ? meta[code]?.group || "drugo" : meta[code]?.gender || "drugo") : "neznano";
+      add(groups, g, { qty, gross, net, cost: c, missQty: miss, missNet: mn });
     }
   }
   const fin = (x) => ({ ...x, gross: Math.round(x.gross), net: Math.round(x.net), cost: Math.round(x.cost),

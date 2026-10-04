@@ -29,14 +29,20 @@ export async function GET(req) {
   }
   const order = u.searchParams.get("order");
   const q = `%${(u.searchParams.get("q") || "").toLowerCase()}%`;
-  const kinds = u.searchParams.get("kind") === "predracun" ? ["predracun"] : u.searchParams.get("kind") === "dobavnica" ? ["dobavnica"] : ["racun", "dobropis"];
+  const k = u.searchParams.get("kind");
+  const kinds = k === "predracun" ? ["predracun"] : k === "dobavnica" ? ["dobavnica"] : ["racun", "dobropis"];
+  const arhiv = k === "arhiv"; // arhiv Metakocke (serija MK)
   const rows = order
-    ? await sql`SELECT * FROM invoices WHERE order_id = ${order} ORDER BY id DESC`
+    ? await sql`SELECT * FROM invoices WHERE order_id = ${order} ORDER BY issued_at DESC, id DESC`
     : await sql`SELECT i.*, o.number AS order_number, o.status AS order_status FROM invoices i LEFT JOIN orders o ON o.id = i.order_id
-        WHERE i.kind = ANY(${kinds}) AND lower(i.number || ' ' || i.customer_name || ' ' || COALESCE(i.customer_email,'') || ' ' || COALESCE(o.number::text,'')) LIKE ${q}
-        ORDER BY i.id DESC LIMIT 300`;
-  const [sum] = await sql`SELECT COALESCE(SUM(total_cents),0)::int AS total, COUNT(*)::int AS n FROM invoices
-    WHERE status <> 'storniran' AND kind = 'racun' AND date_trunc('month', issued_at) = date_trunc('month', now())`;
+        WHERE i.kind = ANY(${kinds}) AND (i.series = 'MK') = ${arhiv}
+          AND lower(i.number || ' ' || i.customer_name || ' ' || COALESCE(i.customer_email,'') || ' ' || COALESCE(o.number::text,'') || ' ' || COALESCE(i.meta->>'shop','')) LIKE ${q}
+        ORDER BY i.issued_at DESC, i.id DESC LIMIT ${arhiv ? 1000 : 300}`;
+  const [sum] = arhiv
+    ? await sql`SELECT COALESCE(SUM(total_cents),0)::int AS total, COUNT(*)::int AS n,
+        COUNT(*) FILTER (WHERE kind = 'dobropis')::int AS dbp, COUNT(order_id)::int AS linked FROM invoices WHERE series = 'MK'`
+    : await sql`SELECT COALESCE(SUM(total_cents),0)::int AS total, COUNT(*)::int AS n FROM invoices
+    WHERE status <> 'storniran' AND kind = 'racun' AND series <> 'MK' AND date_trunc('month', issued_at) = date_trunc('month', now())`;
   return NextResponse.json({ ok: true, invoices: rows, month: sum });
 }
 
@@ -73,6 +79,8 @@ export async function POST(req) {
       return NextResponse.json({ ok: true, invoice: inv, message });
     }
     const [inv] = b.id ? await sql`SELECT * FROM invoices WHERE id = ${b.id}` : [null];
+    if (inv?.series === "MK" && ["paid", "storno", "convert"].includes(b.action))
+      return NextResponse.json({ ok: false, message: "Arhivski račun iz Metakocke je samo za branje." }, { status: 400 });
     if (b.action === "send") {
       if (!inv) return NextResponse.json({ ok: false, message: "Ni računa." }, { status: 404 });
       const to = String(b.to || inv.customer_email || "").trim();

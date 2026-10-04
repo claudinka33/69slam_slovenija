@@ -354,7 +354,7 @@ function OrderInvoice({ orderId, status }) {
   if (inv === undefined) return null;
   return (
     <div className="adm-note" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
-      🧾 {inv ? <>Račun <b>{inv.number}</b>{inv.sent_at ? " · ✉️ poslan" : ""}<div className="grow" /><button className="adm-btn" onClick={() => openPdfId(inv.id, pdfName(inv))}>PDF</button></>
+      🧾 {inv ? <>Račun <b>{inv.number}</b>{inv.series === "MK" ? " · arhiv Metakocka" : ""}{inv.sent_at ? " · ✉️ poslan" : ""}<div className="grow" /><button className="adm-btn" onClick={() => openPdfId(inv.id, pdfName(inv))}>PDF</button></>
         : <>Račun se naredi in pošlje sam, ko klikneš <b>Poslano</b>.<div className="grow" /><button className="adm-btn" onClick={async () => { await post("/api/admin/invoices", { action: "order", order_id: orderId }); load(); }}>Izdaj zdaj</button></>}
     </div>
   );
@@ -2351,9 +2351,9 @@ function Invoices() {
   const [msg, setMsg] = useState(null);
   const [send, setSend] = useState(null); // { inv, to }
   const [trk, setTrk] = useState({});
-  const listTab = ["racun", "predracun", "dobavnica"].includes(tab);
+  const listTab = ["racun", "predracun", "dobavnica", "arhiv"].includes(tab);
   const load = useCallback(async (qq = "", k = tab) => {
-    if (!["racun", "predracun", "dobavnica"].includes(k)) return;
+    if (!["racun", "predracun", "dobavnica", "arhiv"].includes(k)) return;
     setList(null);
     const d = await getJSON(`/api/admin/invoices?kind=${k}&q=${encodeURIComponent(qq)}`); setList(d?.invoices || []); setMonth(d?.month || null);
   }, [tab]);
@@ -2384,17 +2384,19 @@ function Invoices() {
         <div><h1>Računi & dokumenti</h1><div className="sub">Spletno naročilo → dobavnica → »Poslano« → račun (gre kupcu po e-mailu). Ročni predračun/dobavnica → »Ustvari račun«. 🌱 Samo e-mail, brez tiskanja.</div></div>
         <div className="grow" />
         <div className="adm-seg">
-          {[["racun", "Računi"], ["predracun", "Predračuni"], ["dobavnica", "Dobavnice"], ["nov", "+ Nov dokument"], ["oblika", "Oblika"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
+          {[["racun", "Računi"], ["predracun", "Predračuni"], ["dobavnica", "Dobavnice"], ["arhiv", "Arhiv Metakocka"], ["nov", "+ Nov dokument"], ["oblika", "Oblika"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
         </div>
       </div>
       <div className="adm-note">ℹ️ Davčno potrjevanje (FURS: ZOI/EOR) še ni vklopljeno — za gotovinske/kartične račune na licu mesta se najprej dogovori z računovodjo. Računi za nakazilo na TRR ga ne potrebujejo.</div>
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
       {tab === "nov" && <InvoiceForm onDone={(m, k) => { setMsg(m); setTab(k || "racun"); }} />}
       {tab === "oblika" && <InvoiceSettings />}
+      {tab === "arhiv" && <MkImport stats={month} onDone={() => load(q, "arhiv")} />}
       {listTab && (
         <>
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
             <input className="adm-input" style={{ flex: 1, minWidth: 220 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Išči po številki, kupcu, e-mailu, naročilu" />
+            {tab === "arhiv" && month && <span className="muted">V arhivu: <b>{month.n}</b> dokumentov ({month.dbp || 0} dobropisov) · <b>{eur(month.total)}</b> · povezanih z naročili: <b>{month.linked || 0}</b></span>}
             {tab === "racun" && month && <span className="muted">Ta mesec: <b>{month.n}</b> računov · <b>{eur(month.total)}</b></span>}
           </div>
           <div className="adm-card adm-scroll">
@@ -2402,28 +2404,29 @@ function Invoices() {
               <thead><tr><th>Številka</th><th>Datum</th><th>Kupec</th><th className="r">Znesek</th><th>{tab === "dobavnica" ? "Pošiljka" : "Plačilo"}</th><th>Stanje</th><th></th></tr></thead>
               <tbody>
                 {list === null ? <tr><td colSpan={7} className="adm-empty">Nalagam …</td></tr> :
-                 !list.length ? <tr><td colSpan={7} className="adm-empty">{tab === "dobavnica" ? "Dobavnice spletnih naročil se naredijo same ob novem naročilu." : tab === "predracun" ? "Predračuni se naredijo sami pri plačilu po predračunu — ali klikni »+ Nov dokument«." : "Še ni računov."}</td></tr> :
+                 !list.length ? <tr><td colSpan={7} className="adm-empty">{tab === "arhiv" ? "Arhiv je prazen — uvozi izvoze iz Metakocke zgoraj." : tab === "dobavnica" ? "Dobavnice spletnih naročil se naredijo same ob novem naročilu." : tab === "predracun" ? "Predračuni se naredijo sami pri plačilu po predračunu — ali klikni »+ Nov dokument«." : "Še ni računov."}</td></tr> :
                  list.map((r) => {
                   const open = r.status === "izdan" && !r.converted_to;
+                  const ark = r.series === "MK";
                   const canShip = r.kind === "dobavnica" && r.order_id && open && r.order_status !== "poslano" && r.order_status !== "preklicano";
                   return (
                   <tr key={r.id}>
-                    <td><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}` : r.order_number ? `Spletno naročilo #${r.order_number}` : "Ročni dokument"}</div></td>
+                    <td><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}${r.meta?.shop ? ` · ${/^\d+$/.test(r.meta.shop) ? "#" : ""}${r.meta.shop}` : ""}` : r.order_number ? `Spletno naročilo #${r.order_number}` : ark ? (r.meta?.shop ? (/^\d{4,5}$/.test(r.meta.shop) ? `Shopify #${r.meta.shop} (ni v CMS)` : `Naročilo: ${r.meta.shop}`) : "Brez naročila (osebno / B2B)") : "Ročni dokument"}</div></td>
                     <td className="muted">{dShort(r.issued_at)}</td>
                     <td><div>{r.customer_name}</div>{r.customer_email && <div className="muted">{r.customer_email}</div>}</td>
                     <td className="r num strong">{eur(r.total_cents)}</td>
                     <td className="muted">{tab === "dobavnica"
                       ? (canShip ? <input className="adm-input" style={{ width: 150, padding: "6px 8px" }} placeholder="Št. pošiljke" value={trk[r.id] ?? r.tracking ?? ""} onChange={(e) => setTrk((x) => ({ ...x, [r.id]: e.target.value }))} /> : (r.tracking || "—"))
                       : <>{PAYL[r.payment] || r.payment}{r.payment === "trr" && r.kind === "racun" ? <div>{r.paid_at ? <span className="adm-tag sub">✓ plačano</span> : <span className="adm-tag">rok {dShort(r.due_date)}</span>}</div> : null}</>}</td>
-                    <td>{r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
+                    <td>{ark ? <span className="adm-tag sub">{r.meta?.eor ? "🗄️ arhiv · FURS ✓" : "🗄️ arhiv"}</span> : r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
                       : r.converted_to ? <span className="adm-tag sub">→ račun {r.converted_to}</span> : r.sent_at ? <span className="adm-tag sub">✉️ poslan</span> : <span className="adm-tag">{r.kind === "dobavnica" ? "za pakiranje" : "ni poslan"}</span>}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       {canShip && <><button className="adm-btn pri" onClick={() => shipped(r)}>📦 Poslano</button>{" "}</>}
                       {!canShip && open && (r.kind === "predracun" || r.kind === "dobavnica") && <><button className="adm-btn pri" onClick={() => act(r, "convert")}>🧾 Ustvari račun</button>{" "}</>}
                       <button className="adm-btn" onClick={() => openPdfId(r.id, pdfName(r))}>📄 PDF</button>{" "}
                       <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "" })}>✉️</button>{" "}
-                      {r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
-                      {r.kind === "racun" && r.status !== "storniran" && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
+                      {!ark && r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
+                      {!ark && r.kind === "racun" && r.status !== "storniran" && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
                     </td>
                   </tr>); })}
               </tbody>
@@ -2547,6 +2550,65 @@ function InvoiceForm({ onDone }) {
           <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>✉️ Izdaj in pošlji po e-mailu</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------- Uvoz arhiva iz Metakocke ---------- */
+function MkImport({ stats, onDone }) {
+  const [files, setFiles] = useState({});
+  const [res, setRes] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+  useEffect(() => { if (stats && !stats.n) setOpen(true); }, [stats]);
+  async function run(action) {
+    setBusy(true); setRes(action === "uvozi" ? { ...res, msg: "Uvažam … (do 1 minute)" } : { msg: "Preverjam datoteke …" });
+    const fd = new FormData();
+    for (const k of ["seznam", "podrobno", "nabava"]) if (files[k]) fd.append(k, files[k]);
+    fd.append("action", action);
+    const d = await fetch("/api/admin/mk-import", { method: "POST", body: fd }).then((r) => r.json()).catch(() => ({ ok: false, message: "Povezava ni uspela." }));
+    setBusy(false);
+    setRes({ ...d, msg: d.message || (d.ok ? "" : "Napaka.") });
+    if (action === "uvozi" && d.ok) onDone?.();
+  }
+  const S = res?.summary;
+  const F = [["seznam", "1 · Seznam računov", "Prodaja → Računi → izvoz seznama (xlsx)"], ["podrobno", "2 · Računi podrobno (postavke)", "Poročila → Izpis prodajnih računov – podrobno (XLS)"], ["nabava", "3 · Nabavni računi podrobno", "Nabava → Poročila → nabavni računi – podrobno (dobavitelj PT Hartmattan)"]];
+  return (
+    <div className="adm-card" style={{ padding: 16, marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div><div className="strong">🗄️ Uvoz zgodovine iz Metakocke</div><div className="muted">Računi in dobropisi z originalnimi številkami (samo za branje), povezani s Shopify naročili. Nabava gre v Prevzeme — <b>zaloga se ne spremeni</b>.</div></div>
+        <div className="grow" />
+        <button className="adm-btn" onClick={() => setOpen(!open)}>{open ? "Skrij" : "Uvozi / posodobi"}</button>
+      </div>
+      {open && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 10 }}>
+            {F.map(([k, l, h]) => (
+              <label key={k} className="adm-field" style={{ margin: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: 13 }}>{l}</span>
+                <input id={`mk-${k}`} type="file" accept=".xlsx,.xls" onChange={(e) => { setFiles((x) => ({ ...x, [k]: e.target.files?.[0] || null })); setRes(null); }} />
+                <span className="muted" style={{ fontSize: 11.5 }}>{files[k] ? `✓ ${files[k].name}` : h}</span>
+              </label>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            <button className="adm-btn" disabled={busy || (!files.seznam && !files.nabava)} onClick={() => run("preveri")}>🔍 Preveri (nič ne zapiše)</button>
+            {S && res?.dry && <button className="adm-btn pri" disabled={busy} onClick={() => run("uvozi")}>✅ Uvozi v CMS</button>}
+          </div>
+          {res?.msg && <div className={`adm-note ${res.ok === false ? "err" : "ok"}`} style={{ marginTop: 12 }}>{res.msg}</div>}
+          {S && (
+            <div className="adm-note" style={{ marginTop: 12, lineHeight: 1.7 }}>
+              {(S.racuni + S.dobropisi) > 0 && <>
+                <b>{S.racuni}</b> računov + <b>{S.dobropisi}</b> dobropisov · skupaj <b>{eur(S.bruto)}</b><br />
+                🔗 povezanih s Shopify naročili v CMS: <b>{S.shopify_v_bazi}</b> · starejši Shopify (naročila niso v CMS): <b>{S.shopify_ni_v_bazi}</b> · ostali (osebno, Instagram, B2B, tujina): <b>{S.ostali}</b><br />
+                📦 postavk: <b>{S.postavk}</b>{S.brez_postavk ? <> · ⚠️ brez postavk: <b>{S.brez_postavk}</b> {res?.has && !res.has.podrobno ? "(dodaj datoteko 2)" : "(uvozijo se z enim zneskom)"}</> : null}{S.razlika ? <> · razlika v zaokroževanju pri {S.razlika}</> : null}<br />
+                📊 V »Čisti RVC« štejejo računi, ki niso povezani z naročilom v CMS, in dobropisi.<br />
+              </>}
+              {S.prevzemi > 0 && <>🚚 Prevzemi: <b>{S.prevzemi}</b> nabavnih računov · <b>{S.prevzemi_kosov}</b> kosov · <b>{eur(S.prevzemi_vrednost)}</b> brez DDV (zaloga ostane, kot je)</>}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
