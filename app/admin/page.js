@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useMemo, useState, useCallback } from "react";
+import { Fragment, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { LOGO_WHITE } from "../../lib/brand";
 import "./admin.css";
 
@@ -140,6 +140,7 @@ export default function Admin() {
       </main>
 
       {orderObj && <OrderPanel o={orderObj} onClose={() => setOpenOrder(null)} setStatus={setStatus} />}
+      <PdfViewer />
     </div>
   );
 }
@@ -353,7 +354,7 @@ function OrderInvoice({ orderId, status }) {
   if (inv === undefined) return null;
   return (
     <div className="adm-note" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
-      🧾 {inv ? <>Račun <b>{inv.number}</b>{inv.sent_at ? " · ✉️ poslan" : ""}<div className="grow" /><a className="adm-btn" href={`/api/admin/invoices?pdf=${inv.id}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>PDF</a></>
+      🧾 {inv ? <>Račun <b>{inv.number}</b>{inv.sent_at ? " · ✉️ poslan" : ""}<div className="grow" /><button className="adm-btn" onClick={() => openPdfId(inv.id, pdfName(inv))}>PDF</button></>
         : <>Račun se naredi in pošlje sam, ko klikneš <b>Poslano</b>.<div className="grow" /><button className="adm-btn" onClick={async () => { await post("/api/admin/invoices", { action: "order", order_id: orderId }); load(); }}>Izdaj zdaj</button></>}
     </div>
   );
@@ -2294,13 +2295,51 @@ function calcInv(items, gross) {
   }
   return { net, vat, total };
 }
-async function openPdf(body) {
-  const r = await fetch("/api/admin/invoices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!r.ok) { alertBox("Predogleda ni bilo mogoče narediti."); return; }
-  const url = URL.createObjectURL(await r.blob());
-  window.open(url, "_blank");
+/* PDF pregledovalnik v CMS: predogled + Natisni + Shrani PDF */
+function showPdf(promise, name) {
+  window.dispatchEvent(new CustomEvent("adm-pdf", { detail: { loading: true, name } }));
+  promise.then(async (r) => {
+    if (!r.ok) throw new Error(await r.text().catch(() => "Napaka"));
+    const blob = await r.blob();
+    window.dispatchEvent(new CustomEvent("adm-pdf", { detail: { url: URL.createObjectURL(blob), name } }));
+  }).catch((e) => window.dispatchEvent(new CustomEvent("adm-pdf", { detail: { error: String(e.message || e).slice(0, 200), name } })));
 }
-function alertBox(t) { console.warn(t); }
+function openPdf(body, name = "predogled.pdf") {
+  showPdf(fetch("/api/admin/invoices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }), name);
+}
+function openPdfId(id, name) { showPdf(fetch(`/api/admin/invoices?pdf=${id}`), name || `dokument-${id}.pdf`); }
+const pdfName = (r) => `${{ racun: "racun", dobropis: "dobropis", predracun: "predracun", dobavnica: "dobavnica" }[r.kind] || "racun"}-${r.number}.pdf`;
+
+function PdfViewer() {
+  const [v, setV] = useState(null);
+  const frame = useRef(null);
+  useEffect(() => {
+    const h = (e) => setV((old) => { if (old?.url && old.url !== e.detail.url) URL.revokeObjectURL(old.url); return e.detail; });
+    window.addEventListener("adm-pdf", h);
+    return () => window.removeEventListener("adm-pdf", h);
+  }, []);
+  useEffect(() => { const k = (e) => e.key === "Escape" && setV(null); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
+  if (!v) return null;
+  const print = () => { try { frame.current?.contentWindow?.focus(); frame.current?.contentWindow?.print(); } catch { window.open(v.url, "_blank"); } };
+  return (
+    <div className="adm-ov" style={{ zIndex: 300 }} onClick={(e) => e.target === e.currentTarget && setV(null)}>
+      <div className="pdfv">
+        <div className="pdfv-top">
+          <b>{v.name}</b><div className="grow" />
+          {v.url && <>
+            <button className="adm-btn" onClick={print}>🖨️ Natisni</button>
+            <a className="adm-btn pri" href={v.url} download={v.name} style={{ textDecoration: "none" }}>⬇️ Shrani PDF</a>
+            <a className="adm-btn" href={v.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>↗ Odpri v zavihku</a>
+          </>}
+          <button className="adm-btn" onClick={() => setV(null)}>✕</button>
+        </div>
+        {v.loading ? <div className="adm-empty">Pripravljam PDF …</div>
+          : v.error ? <div className="adm-note err" style={{ margin: 16 }}>PDF-ja ni bilo mogoče narediti: {v.error}</div>
+          : <iframe ref={frame} src={v.url} title={v.name} />}
+      </div>
+    </div>
+  );
+}
 
 const DOCK = { racun: "Računi", predracun: "Predračuni", dobavnica: "Dobavnice" };
 const DOC1 = { racun: "račun", predracun: "predračun", dobavnica: "dobavnico", dobropis: "dobropis" };
@@ -2381,7 +2420,7 @@ function Invoices() {
                     <td style={{ whiteSpace: "nowrap" }}>
                       {canShip && <><button className="adm-btn pri" onClick={() => shipped(r)}>📦 Poslano</button>{" "}</>}
                       {!canShip && open && (r.kind === "predracun" || r.kind === "dobavnica") && <><button className="adm-btn pri" onClick={() => act(r, "convert")}>🧾 Ustvari račun</button>{" "}</>}
-                      <a className="adm-btn" href={`/api/admin/invoices?pdf=${r.id}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>PDF</a>{" "}
+                      <button className="adm-btn" onClick={() => openPdfId(r.id, pdfName(r))}>📄 PDF</button>{" "}
                       <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "" })}>✉️</button>{" "}
                       {r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
                       {r.kind === "racun" && r.status !== "storniran" && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
@@ -2502,7 +2541,7 @@ function InvoiceForm({ onDone }) {
         </div>
         {err && <div className="adm-note err">{err}</div>}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button className="adm-btn" disabled={busy} onClick={() => openPdf({ action: "preview", ...body() })}>👁 Predogled PDF</button>
+          <button className="adm-btn" disabled={busy} onClick={() => openPdf({ action: "preview", ...body() }, `predogled-${kind}.pdf`)}>👁 Predogled PDF</button>
           <div className="grow" />
           <button className="adm-btn" disabled={busy} onClick={() => issue(false)}>🧾 Izdaj {DOC1[kind]}</button>
           <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>✉️ Izdaj in pošlji po e-mailu</button>
