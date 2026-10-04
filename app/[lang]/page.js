@@ -11,7 +11,7 @@ export async function generateMetadata({ params }) {
   const { lang } = await params;
   const t = getDict(lang);
   return {
-    title: `69SLAM.si — ${t.shop_title}`,
+    title: lang === "en" ? "69SLAM.si — Men's underwear & swimwear" : "69SLAM.si — Moško spodnje perilo in kopalke",
     description: t.sub,
     alternates: {
       canonical: `https://69slam.si/${lang}`,
@@ -32,19 +32,19 @@ export default async function Home({ params }) {
   return (
     <main>
       <section className="hero hero2">
-        <div className="heroimg"><Image src="/img/hero.jpg" alt="69SLAM box mikrofibra – spodnjice od blizu" fill priority sizes="100vw" /></div>
+        <div className="heroimg"><Image src="/img/hero.jpg" alt="69SLAM moške spodnjice z drznim printom" fill priority sizes="100vw" /></div>
         <div className="wrap">
           <div>
             <span className="kicker">{t.kicker}</span>
             <h1>{t.h1a}<br /><em>{t.h1b}</em></h1>
             <p className="sub">{t.sub}</p>
             <div className="specs">
-              <div className="spec"><b>{boxers.length}</b><span>{t.spec1}</span></div>
-              <div className="spec"><b>2×</b><span>{t.spec2}</span></div>
-              <div className="spec"><b>0</b><span>{t.spec3}</span></div>
+              <div className="spec"><b>{products.filter((p) => p.totalStock > 0).length}</b><span>{t.spec1}</span></div>
+              <div className="spec"><b>500+</b><span>{t.spec2}</span></div>
+              <div className="spec"><b>−15 %</b><span>{t.spec3}</span></div>
             </div>
             <a className="cta" href="#shop">{t.cta_shop}</a>
-            <a className="cta ghost" href="#tech">{t.cta_why}</a>
+            <Link className="cta ghost" href={`/${lang}/kopalke`}>{t.cta_why}</Link>
           </div>
         </div>
       </section>

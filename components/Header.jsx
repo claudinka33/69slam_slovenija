@@ -38,7 +38,6 @@ export default function Header({ lang, t }) {
         <nav className="main">
           <Link href={`/${lang}#shop`}>{t.nav_shop}</Link>
           <Link href={`/${lang}/kopalke`}>{t.nav_swim}</Link>
-          <Link href={`/${lang}#tech`}>{t.nav_why}</Link>
           <Link href={`/${lang}/zgodba`}>{t.nav_story}</Link>
           <Link href={`/${lang}/vse-more-ven`} className="nav-out">{t.nav_outlet}</Link>
         </nav>
@@ -58,8 +57,8 @@ export default function Header({ lang, t }) {
       <nav className="mnav">
         <Link href={`/${lang}#shop`}>{t.nav_shop}</Link>
         <Link href={`/${lang}/kopalke`}>{t.nav_swim}</Link>
-        <Link href={`/${lang}/vse-more-ven`} className="nav-out">{t.nav_outlet}</Link>
         <Link href={`/${lang}/zgodba`}>{t.nav_story}</Link>
+        <Link href={`/${lang}/vse-more-ven`} className="nav-out">{t.nav_outlet}</Link>
       </nav>
     </header>
   );
