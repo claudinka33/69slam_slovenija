@@ -360,7 +360,7 @@ function OrderInvoice({ orderId, status, shopify }) {
   }, [orderId]);
   useEffect(() => { load(); }, [load, status]);
   if (inv === undefined || (shopify && !inv && !crs.length)) return null;
-  const credited = inv ? crs.filter((c) => String(c.source_id) === String(inv.id)).reduce((a, c) => a - c.total_cents, 0) : 0;
+  const credited = inv ? crs.filter((c) => String(c.source_id) === String(inv.id) || c.ref_number === inv.number).reduce((a, c) => a - c.total_cents, 0) : 0;
   const canCredit = inv && inv.series !== "MK" && credited < inv.total_cents;
   return (
     <div style={{ marginBottom: 14 }}>
