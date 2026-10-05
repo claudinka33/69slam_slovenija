@@ -2414,7 +2414,6 @@ function Invoices() {
           {[["nov", "+ Nov vnos"], ["predracun", "Predračun"], ["dobavnica", "Dobavnica"], ["racun", "Račun"], ["dobropis", "Dobropis"], ["arhiv", "Arhiv Metakocka"], ["oblika", "Oblika"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
         </div>
       </div>
-      <div className="adm-note">ℹ️ Davčno potrjevanje (FURS: ZOI/EOR) še ni vklopljeno — za gotovinske/kartične račune na licu mesta se najprej dogovori z računovodjo. Računi za nakazilo na TRR ga ne potrebujejo.</div>
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
       {tab === "nov" && <DraftList key={`dl-${dKey}`} current={draft?.id} onOpen={(d) => { setDraft(d); setFormKey((k) => k + 1); }} onNew={() => { setDraft(null); setFormKey((k) => k + 1); }} />}
       {tab === "nov" && <InvoiceForm key={`f-${formKey}`} draft={draft} onDraft={() => setDKey((k) => k + 1)} onDone={(m, k) => { setDraft(null); setFormKey((x) => x + 1); setMsg(m); setTab(k || "racun"); }} />}
@@ -2448,11 +2447,13 @@ function Invoices() {
                     <td className="muted">{tab === "dobavnica"
                       ? (canShip ? <input className="adm-input" style={{ width: 150, padding: "6px 8px" }} placeholder="Št. pošiljke" value={trk[r.id] ?? r.tracking ?? ""} onChange={(e) => setTrk((x) => ({ ...x, [r.id]: e.target.value }))} /> : (r.tracking || "—"))
                       : <>{PAYL[r.payment] || r.payment}{r.payment === "trr" && r.kind === "racun" ? <div>{r.paid_at ? <span className="adm-tag sub">✓ plačano</span> : <span className="adm-tag">rok {dShort(r.due_date)}</span>}</div> : null}</>}</td>
-                    <td>{r.credited > 0 && r.kind === "racun" && !ark ? <span className="adm-tag">{r.credited >= r.total_cents ? "↩️ v celoti dobropisan" : `↩️ dobropis ${eur(r.credited)}`}</span> : ark ? <span className="adm-tag sub">{r.meta?.eor ? "🗄️ arhiv · FURS ✓" : "🗄️ arhiv"}</span> : r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
+                    <td>{!ark && r.furs_status && <div style={{ marginBottom: 4 }} title={r.eor ? `EOR ${r.eor}` : r.furs_error || ""}><span className="adm-tag sub" style={r.furs_status === "potrjen" ? {} : { background: "#fff8e1", color: "#5c4a00" }}>{r.furs_status === "potrjen" ? "FURS ✓" : r.furs_status === "caka" ? "⏳ FURS čaka" : "⚠️ FURS napaka"}</span></div>}
+                      {r.credited > 0 && r.kind === "racun" && !ark ? <span className="adm-tag">{r.credited >= r.total_cents ? "↩️ v celoti dobropisan" : `↩️ dobropis ${eur(r.credited)}`}</span> : ark ? <span className="adm-tag sub">{r.meta?.eor ? "🗄️ arhiv · FURS ✓" : "🗄️ arhiv"}</span> : r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
                       : r.converted_to ? <span className="adm-tag sub">→ račun {r.converted_to}</span> : r.sent_at ? <span className="adm-tag sub">✉️ poslan</span> : <span className="adm-tag">{r.kind === "dobavnica" ? "za pakiranje" : "ni poslan"}</span>}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       {canShip && <><button className="adm-btn pri" onClick={() => shipped(r)}>📦 Poslano</button>{" "}</>}
                       {!canShip && open && (r.kind === "predracun" || r.kind === "dobavnica") && <><button className="adm-btn pri" onClick={() => act(r, "convert")}>🧾 Ustvari račun</button>{" "}</>}
+                      {!ark && ["caka", "napaka"].includes(r.furs_status) && <><button className="adm-btn pri" title={r.furs_error || ""} onClick={async () => { const x = await post("/api/admin/furs", { action: "retry", id: r.id }); setMsg({ ok: !!x?.ok, t: x?.message || "Napaka." }); load(q, tab); }}>↻ FURS</button>{" "}</>}
                       <button className="adm-btn" onClick={() => openPdfId(r.id, pdfName(r))}>📄 PDF</button>{" "}
                       <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "" })}>✉️</button>{" "}
                       {!ark && r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
@@ -2720,53 +2721,96 @@ function MonthClose({ onClose }) {
   );
 }
 
-/* ---------- Davčno potrjevanje: potrdilo ---------- */
+/* ---------- Davčno potrjevanje: potrdilo + poslovni prostor ---------- */
 function FursSettings() {
   const [d, setD] = useState(null);
   const [file, setFile] = useState(null);
   const [pass, setPass] = useState("");
   const [msg, setMsg] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const load = useCallback(() => getJSON("/api/admin/furs").then(setD), []);
+  const [busy, setBusy] = useState("");
+  const [replace, setReplace] = useState(false);
+  const [f, setF] = useState(null);
+  const load = useCallback(() => getJSON("/api/admin/furs").then((x) => { setD(x); setF(x?.settings || null); }), []);
   useEffect(() => { load(); }, [load]);
   async function upload() {
-    setBusy(true); setMsg(null);
+    setBusy("up"); setMsg(null);
     const fd = new FormData(); fd.append("file", file); fd.append("password", pass);
     const r = await fetch("/api/admin/furs", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null);
-    setBusy(false); setMsg({ ok: !!r?.ok, t: r?.message || "Napaka." });
-    if (r?.ok) { setFile(null); setPass(""); load(); }
+    setBusy(""); setMsg({ ok: !!r?.ok, t: r?.message || "Napaka." });
+    if (r?.ok) { setFile(null); setPass(""); setReplace(false); load(); }
   }
-  async function remove() {
-    if (!confirm("Odstranim potrdilo iz CMS? (Na FURS ostane veljavno — za preklic uporabi DPR-PreklicDP v eDavkih.)")) return;
-    const r = await post("/api/admin/furs", { action: "remove" }); setMsg({ ok: !!r?.ok, t: r?.message }); load();
+  async function act(body, label) {
+    setBusy(label); setMsg(null);
+    const r = await post("/api/admin/furs", body);
+    setBusy(""); setMsg({ ok: !!r?.ok, t: r?.message || "Napaka." }); load();
+    return r;
   }
-  async function mode(v) { await post("/api/admin/furs", { settings: { mode: v } }); load(); }
+  async function register() {
+    const s = f || {};
+    if (!confirm(`Prijavim poslovni prostor pri FURS?\n\nPoslovni prostor: ${s.premise} (spletna trgovina, tip C)\nRačuni: ${s.premise}-${s.dev_racun}-1, ${s.premise}-${s.dev_racun}-2 …\nDobropisi: ${s.premise}-${s.dev_dobropis}-1 …\nVelja od: danes\n\nPo prijavi se vsak izdan račun samodejno potrdi pri FURS. Oznak potem ni več mogoče spreminjati.`)) return;
+    await act({ action: "register", settings: { premise: s.premise, dev_racun: s.dev_racun, dev_dobropis: s.dev_dobropis, operator: s.operator } }, "reg");
+  }
   const c = d?.cert;
+  const S = d?.settings || {};
+  const reg = !!S.registered_at;
   const days = c ? Math.round((new Date(c.valid_to) - Date.now()) / 86400000) : 0;
+  const setFv = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
   return (
     <div className="adm-card" style={{ padding: 16, marginTop: 14 }}>
       <div className="strong" style={{ fontSize: 16, marginBottom: 4 }}>🔐 Davčno potrjevanje (FURS)</div>
       <div className="muted" style={{ marginBottom: 12 }}>Namensko digitalno potrdilo iz eDavkov (DPR-PrevzemDP → datoteka .p12). Shranjeno je šifrirano — ne pošiljaj ga nikomur.</div>
-      {c ? (
+      {c && !replace ? (
         <div className="adm-note ok" style={{ lineHeight: 1.7 }}>
           ✅ Potrdilo naloženo: <b>{c.cn}</b> ({c.file})<br />
           Velja do <b>{new Date(c.valid_to).toLocaleDateString("sl-SI")}</b> ({days} dni) · naloženo {new Date(c.uploaded_at).toLocaleDateString("sl-SI")}
-          <div style={{ marginTop: 6 }}><button className="adm-btn" onClick={remove}>Odstrani / zamenjaj</button></div>
+          <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button className="adm-btn" disabled={!!busy} onClick={() => act({ action: "echo" }, "echo")}>{busy === "echo" ? "Preverjam …" : "🔌 Preveri povezavo s FURS"}</button>
+            <button className="adm-btn" onClick={() => setReplace(true)}>Zamenjaj potrdilo</button>
+            {!reg && <button className="adm-btn" onClick={() => confirm("Odstranim potrdilo iz CMS?") && act({ action: "remove" }, "rm")}>Odstrani</button>}
+          </div>
         </div>
       ) : (
         <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div className="adm-field" style={{ margin: 0 }}><label>Datoteka .p12</label><input type="file" accept=".p12,.pfx" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
           <div className="adm-field" style={{ margin: 0 }}><label>Geslo potrdila</label><input type="password" autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} /></div>
-          <button className="adm-btn pri" disabled={!file || !pass || busy} onClick={upload}>{busy ? "Preverjam …" : "⬆️ Naloži potrdilo"}</button>
+          <button className="adm-btn pri" disabled={!file || !pass || !!busy} onClick={upload}>{busy === "up" ? "Preverjam …" : "⬆️ Naloži potrdilo"}</button>
+          {replace && <button className="adm-btn" onClick={() => setReplace(false)}>Prekliči</button>}
         </div>
       )}
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`} style={{ marginTop: 10 }}>{msg.t}</div>}
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14, flexWrap: "wrap" }}>
-        <b>Katere račune potrjujem</b>
-        <div className="adm-seg">{[["vse", "Vse (kot v Metakocki)"], ["gotovina", "Kartica, gotovina, povzetje"], ["kartica", "Samo kartica + gotovina"]].map(([k, l]) =>
-          <button key={k} className={d?.settings?.mode === k ? "on" : ""} onClick={() => mode(k)}>{l}</button>)}</div>
-      </div>
-      <div className="adm-note" style={{ marginTop: 12 }}>⏳ Pošiljanje računov na FURS še <b>ni vklopljeno</b> — vklopiva ga skupaj, ko prijaviva poslovni prostor in preizkusiva na testnem strežniku FURS.</div>
+
+      {c && f && (
+        <div style={{ marginTop: 16, borderTop: "1px solid #e0e0e0", paddingTop: 14 }}>
+          <div className="strong" style={{ marginBottom: 8 }}>🏪 Poslovni prostor in številčenje</div>
+          {reg ? (
+            <div className="adm-note ok" style={{ lineHeight: 1.7 }}>
+              ✅ Poslovni prostor <b>{S.premise}</b> prijavljen pri FURS {new Date(S.registered_at).toLocaleString("sl-SI")} (velja od {S.validity}).<br />
+              Računi: <b>{S.premise}-{S.dev_racun}-1, -2 …</b> · Dobropisi: <b>{S.premise}-{S.dev_dobropis}-1 …</b><br />
+              Potrjevanje: <b>{S.enabled ? "vklopljeno" : "IZKLOPLJENO"}</b>{" "}
+              <button className="adm-btn" onClick={() => (S.enabled ? confirm("Izklopim pošiljanje računov na FURS? (Zakon zahteva potrjevanje gotovinskih računov!)") : true) && act({ settings: { enabled: !S.enabled } }, "en")}>{S.enabled ? "Izklopi" : "Vklopi"}</button>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10 }}>
+                <div className="adm-field" style={{ margin: 0 }}><label>Oznaka poslovnega prostora</label><input value={f.premise || ""} onChange={setFv("premise")} /></div>
+                <div className="adm-field" style={{ margin: 0 }}><label>Naprava — računi</label><input value={f.dev_racun || ""} onChange={setFv("dev_racun")} /></div>
+                <div className="adm-field" style={{ margin: 0 }}><label>Naprava — dobropisi</label><input value={f.dev_dobropis || ""} onChange={setFv("dev_dobropis")} /></div>
+              </div>
+              <div className="muted" style={{ margin: "8px 0" }}>Številke bodo: <b>{f.premise}-{f.dev_racun}-1</b>, {f.premise}-{f.dev_racun}-2 … in dobropisi <b>{f.premise}-{f.dev_dobropis}-1</b>. Oznaka je drugačna od Metakocke (»Slam-MK«), zato se ne prekriva.</div>
+              <button className="adm-btn pri" disabled={!!busy} onClick={register}>{busy === "reg" ? "Prijavljam …" : "✅ Prijavi poslovni prostor in vklopi potrjevanje"}</button>
+            </>
+          )}
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14, flexWrap: "wrap" }}>
+            <b>Katere račune potrjujem</b>
+            <div className="adm-seg">{[["vse", "Vse (kot v Metakocki)"], ["gotovina", "Kartica, gotovina, povzetje"], ["kartica", "Samo kartica + gotovina"]].map(([k, l]) =>
+              <button key={k} className={S.mode === k ? "on" : ""} onClick={() => act({ settings: { mode: k } }, "mode")}>{l}</button>)}</div>
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginTop: 12, flexWrap: "wrap" }}>
+            <div className="adm-field" style={{ margin: 0 }}><label>Osebna davčna št. izdajatelja (neobvezno, za ročne račune)</label><input value={f.operator || ""} onChange={setFv("operator")} inputMode="numeric" placeholder="8 številk" /></div>
+            <button className="adm-btn" onClick={() => act({ settings: { operator: f.operator || "" } }, "op")}>Shrani</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

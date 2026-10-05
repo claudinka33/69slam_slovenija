@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { dbConfigured, ensureSchema } from "../../../../lib/db";
-import { getFurs, saveCert, saveFursSettings, removeCert } from "../../../../lib/furs";
+import { getFurs, saveCert, saveFursSettings, removeCert, fursEcho, registerPremise, fiscalizeStored, ljTime } from "../../../../lib/furs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Podatki o naloženem potrdilu (brez ključa in gesla) + nastavitve potrjevanja. */
 export async function GET() {
@@ -28,8 +29,30 @@ export async function POST(req) {
       return NextResponse.json({ ok: true, info, message: `Potrdilo naloženo in varno shranjeno ✓ (velja do ${new Date(info.valid_to).toLocaleDateString("sl-SI")})` });
     }
     const b = await req.json().catch(() => ({}));
-    if (b.action === "remove") { await removeCert(); return NextResponse.json({ ok: true, message: "Potrdilo odstranjeno." }); }
-    return NextResponse.json({ ok: true, settings: await saveFursSettings(b.settings || {}), message: "Shranjeno ✓" });
+    if (b.action === "remove") {
+      if ((await getFurs()).settings.registered_at) return NextResponse.json({ ok: false, message: "Potrjevanje je vklopljeno — potrdilo lahko samo zamenjaš z novim (naloži novega)." }, { status: 400 });
+      await removeCert(); return NextResponse.json({ ok: true, message: "Potrdilo odstranjeno." });
+    }
+    if (b.action === "echo") {
+      const r = await fursEcho({ test: !!b.test });
+      return NextResponse.json({ ok: r.ok, peer: r.peer, status: r.status, message: r.ok ? "Povezava s FURS deluje ✓" : `FURS odgovor ${r.status}` });
+    }
+    if (b.action === "register") {
+      const cur = (await getFurs()).settings;
+      if (cur.registered_at && !b.again) return NextResponse.json({ ok: false, message: "Poslovni prostor je že prijavljen." }, { status: 400 });
+      if (b.settings) await saveFursSettings(b.settings);
+      const s = (await getFurs()).settings;
+      const validity = ljTime(new Date()).date;
+      await registerPremise({ premise: s.premise, validity });
+      await saveFursSettings({ _registered: new Date().toISOString(), _validity: validity });
+      return NextResponse.json({ ok: true, message: `Poslovni prostor ${s.premise} je prijavljen pri FURS ✓ — davčno potrjevanje je vklopljeno.` });
+    }
+    if (b.action === "retry" && b.id) {
+      const u = await fiscalizeStored(b.id, { subsequent: true });
+      return NextResponse.json({ ok: !!u?.eor, message: u?.eor ? `Potrjeno ✓ EOR ${u.eor}` : `Ni uspelo: ${u?.furs_error || "neznano"}` });
+    }
+    const clean = Object.fromEntries(Object.entries(b.settings || {}).filter(([k]) => !k.startsWith("_")));
+    return NextResponse.json({ ok: true, settings: await saveFursSettings(clean), message: "Shranjeno ✓" });
   } catch (e) {
     return NextResponse.json({ ok: false, message: String(e?.message || e).slice(0, 200) }, { status: 400 });
   }

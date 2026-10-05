@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConfigured, ensureSchema } from "../../../../lib/db";
 import { processJobs } from "../../../../lib/marketing";
+import { fursRetry } from "../../../../lib/furs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,5 +16,6 @@ export async function GET(req) {
   if (!dbConfigured()) return NextResponse.json({ ok: false, message: "Baza ni povezana." }, { status: 503 });
   await ensureSchema();
   const r = await processJobs(40);
-  return NextResponse.json({ ok: true, ...r });
+  const furs = await fursRetry(20).catch((e) => ({ error: String(e?.message || e) }));
+  return NextResponse.json({ ok: true, ...r, furs });
 }
