@@ -2486,13 +2486,43 @@ function InvoiceForm({ onDone }) {
   const [serviceDate, setServiceDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
   const [past, setPast] = useState([]);
+  const [ctype, setCtype] = useState("fizicna");
+  const [openS, setOpenS] = useState(false);
+  const [look, setLook] = useState(null);
+  const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const hits = (() => {
+    const q = norm(c.name).trim();
+    if (q.length < 2) return [];
+    const words = q.split(/\s+/);
+    return past.filter((p) => { const h = norm(`${p.name} ${p.email || ""} ${p.vat || ""}`); return words.every((w) => h.includes(w)); }).slice(0, 10);
+  })();
+  function pickPast(p) {
+    setC({ name: p.name || "", address: p.address || "", zip_city: p.zip_city || "", country: p.country || "Slovenija", vat: p.vat || "", email: p.email || "" });
+    if (p.vat) setCtype("podjetje");
+    setOpenS(false);
+  }
+  async function lookup() {
+    const v = String(c.vat || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!/\d{8}/.test(v)) { setLook({ ok: false, t: "Vpiši 8-mestno davčno številko." }); return; }
+    const num = v.replace(/^SI/, "");
+    const known = past.find((p) => String(p.vat || "").replace(/\D/g, "") === num && p.name);
+    setLook({ busy: true });
+    const d = await getJSON(`/api/admin/company?vat=${encodeURIComponent(v)}`);
+    if (d?.ok) {
+      const k = d.company;
+      setC((x) => ({ ...x, name: k.name, address: k.address, zip_city: k.zip_city, country: k.country, vat: k.vat, email: x.email || known?.email || "" }));
+      setLook({ ok: true, t: "✓ Podatki iz registra zavezancev za DDV" });
+    } else if (known) {
+      pickPast(known); setLook({ ok: true, t: "✓ Najdeno med preteklimi kupci (ni zavezanec za DDV)" });
+    } else setLook({ ok: false, t: d?.message || "Ni najdeno — vpiši ročno." });
+  }
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   useEffect(() => { getJSON("/api/admin/invoices?customers=1").then((d) => setPast(d?.customers || [])); getJSON("/api/admin/invoices?settings=1").then((d) => d?.settings && setDueDays(String(d.settings.due_days))); }, []);
   const setI = (i, k, v) => setItems((x) => x.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
   const sc = (k) => (e) => setC((x) => ({ ...x, [k]: e.target.value }));
   const tot = calcInv(items, gross);
-  const body = () => ({ kind, tracking, customer: c, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
+  const body = () => ({ kind, tracking, customer: ctype === "podjetje" ? c : { ...c, vat: "" }, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
   async function issue(send) {
     setErr("");
     if (send && !c.email.trim()) { setErr("Za pošiljanje vpiši e-mail kupca."); return; }
@@ -2511,20 +2541,36 @@ function InvoiceForm({ onDone }) {
         <span className="muted">{kind === "racun" ? "Uradni račun — številka 2026-…" : kind === "predracun" ? "PR-2026-… z UPN QR kodo; kasneje »Ustvari račun«." : "DOB-2026-… s cenami; kasneje »Ustvari račun«."}</span>
       </div>
       <div className="adm-card" style={{ padding: 16 }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
-          <b>Kupec</b><div className="grow" />
-          {past.length > 0 && <select className="adm-input" defaultValue="" onChange={(e) => { const p = past[e.target.value]; if (p) setC({ name: p.name || "", address: p.address || "", zip_city: p.zip_city || "", country: p.country || "Slovenija", vat: p.vat || "", email: p.email || "" }); }}>
-            <option value="" disabled>Izberi preteklega kupca …</option>
-            {past.map((p, i) => <option key={i} value={i}>{p.name}</option>)}
-          </select>}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+          <b>Kupec</b>
+          <div className="adm-seg">{[["fizicna", "👤 Fizična oseba"], ["podjetje", "🏢 Podjetje / s.p."]].map(([k, l]) => <button key={k} className={ctype === k ? "on" : ""} onClick={() => { setCtype(k); setLook(null); }}>{l}</button>)}</div>
         </div>
+        {ctype === "podjetje" && (
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 12, flexWrap: "wrap" }}>
+            <div className="adm-field" style={{ margin: 0, flex: "0 1 260px" }}><label>Davčna številka</label>
+              <input value={c.vat} onChange={sc("vat")} placeholder="12345678 ali SI12345678" inputMode="numeric" onKeyDown={(e) => e.key === "Enter" && lookup()} /></div>
+            <button className="adm-btn pri" disabled={look?.busy} onClick={lookup}>{look?.busy ? "Iščem …" : "🔍 Poišči podatke"}</button>
+            {look?.t && <span className={look.ok ? "muted" : ""} style={{ color: look.ok ? undefined : "#b45309", fontSize: 13 }}>{look.t}</span>}
+          </div>
+        )}
         <div className="inv-grid">
-          <div className="adm-field" style={{ gridColumn: "1 / -1" }}><label>Naziv / ime in priimek</label><input value={c.name} onChange={sc("name")} placeholder="npr. ALPSKA ŠOLA … s.p. ali Janez Novak" /></div>
+          <div className="adm-field" style={{ gridColumn: "1 / -1", position: "relative" }}><label>{ctype === "podjetje" ? "Naziv podjetja" : "Ime in priimek"} — začni tipkati za iskanje med preteklimi kupci</label>
+            <input value={c.name} onChange={(e) => { sc("name")(e); setOpenS(true); }} onFocus={() => setOpenS(true)} onBlur={() => setTimeout(() => setOpenS(false), 150)}
+              placeholder={ctype === "podjetje" ? "npr. ALPSKA ŠOLA … s.p." : "npr. Janez Novak"} autoComplete="off" />
+            {openS && hits.length > 0 && (
+              <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 20, background: "#fff", border: "1px solid #e0e0e0", borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,.12)", maxHeight: 280, overflowY: "auto", marginTop: 4 }}>
+                {hits.map((p, i) => (
+                  <div key={i} onMouseDown={() => pickPast(p)} style={{ padding: "9px 12px", cursor: "pointer", borderBottom: "1px solid #f0f0f0" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f7")} onMouseLeave={(e) => (e.currentTarget.style.background = "")}>
+                    <div className="strong" style={{ fontSize: 14 }}>{p.name}</div>
+                    <div className="muted" style={{ fontSize: 12 }}>{[p.address, p.zip_city, p.vat, p.email].filter(Boolean).join(" · ")}</div>
+                  </div>))}
+              </div>)}
+          </div>
           <div className="adm-field"><label>Naslov</label><input value={c.address} onChange={sc("address")} /></div>
           <div className="adm-field"><label>Pošta in kraj</label><input value={c.zip_city} onChange={sc("zip_city")} placeholder="3210 Slovenske Konjice" /></div>
           <div className="adm-field"><label>Država</label><input value={c.country} onChange={sc("country")} /></div>
-          <div className="adm-field"><label>ID za DDV (podjetja)</label><input value={c.vat} onChange={sc("vat")} placeholder="SI12345678" /></div>
-          <div className="adm-field" style={{ gridColumn: "1 / -1" }}><label>E-mail (za pošiljanje računa)</label><input value={c.email} onChange={sc("email")} /></div>
+          <div className="adm-field"><label>E-mail (za pošiljanje računa)</label><input value={c.email} onChange={sc("email")} /></div>
         </div>
       </div>
 
