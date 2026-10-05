@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProducts, getProductBySlug, getSharedDescription, primeCatalog, getSetPartners, getPairings } from "../../../../lib/catalog";
+import { getProducts, getProductBySlug, defaultDescription, primeCatalog, getSetPartners, getPairings } from "../../../../lib/catalog";
 import { Pairings, RecentlyViewed } from "../../../../components/ProductRow";
 import CompleteSet from "../../../../components/CompleteSet";
 import { getDict, LANGS, fmt } from "../../../../lib/i18n";
@@ -54,9 +54,7 @@ export default async function ProductPage({ params }) {
   const others = getProducts().filter((x) =>
     micro ? x.group === "boksarice" && x.material === "mikrofibra" && x.collection === p.collection && x.cut === p.cut
       : x.group === p.group && x.gender === p.gender && (!boxers || (x.cut === p.cut && x.material === p.material)));
-  const desc = p.description ? p.description : micro ? getSharedDescription()
-    : p.material === "bambus" && (boxers || p.group === "perilo") ? t.desc_bambus
-    : t[`desc_${p.group}`] || t.desc_perilo;
+  const desc = p.description ? p.description : defaultDescription(p, t, lang);
   const red = p.sale || p.outlet;
   const backHref = p.outlet ? `/${lang}/vse-more-ven` : p.group === "kopalke" ? `/${lang}/kopalke` : `/${lang}#shop`;
 
@@ -137,7 +135,7 @@ export default async function ProductPage({ params }) {
           <AddToCart code={p.code} t={t} />
           <CompleteSet codes={getSetPartners(p).map((x) => x.code)} lang={lang} t={t} />
           <ProductBundle code={p.code} lang={lang} />
-          <p className="pdesc">{desc}</p>
+          <p className="pdesc" style={{ whiteSpace: "pre-line" }}>{desc}</p>
           <div className="plabel">{micro ? t.other_prints : t.other_items}</div>
           <div className="othergrid">
             {others.slice(0, 14).map((x) => (

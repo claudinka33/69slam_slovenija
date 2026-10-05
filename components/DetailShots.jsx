@@ -51,15 +51,15 @@ const SWIM = [
   },
   {
     src: "/img/detail/kopalke-stretch.jpg",
-    sl: { t: "4-way stretch, hitro sušenje", p: "Material se razteza v vse 4 smeri in se hitro posuši — iz vode naravnost na plažo." },
-    hr: { t: "4-way stretch, brzo sušenje", p: "Materijal se rasteže u sva 4 smjera i brzo se suši — iz vode ravno na plažu." },
-    en: { t: "4-way stretch, quick-dry", p: "The fabric stretches in all four directions and dries fast — straight from the water to the beach." },
+    sl: { t: "Hitro sušenje", p: "Lahek material se hitro posuši — iz vode naravnost na plažo. Modeli 4-way stretch se raztezajo v vse smeri." },
+    hr: { t: "Brzo sušenje", p: "Lagani materijal brzo se suši — iz vode ravno na plažu. Modeli 4-way stretch rastežu se u svim smjerovima." },
+    en: { t: "Quick-dry", p: "The light fabric dries fast — straight from the water to the beach. 4-way stretch models move in every direction." },
   },
   {
     src: "/img/detail/kopalke-zep.jpg",
-    sl: { t: "Stranski žep z zadrgo", p: "Ključi in drobiž ostanejo na varnem. Brez mrežice — udobne tudi kot kratke hlače." },
-    hr: { t: "Bočni džep s patentom", p: "Ključevi i sitniš ostaju na sigurnom. Bez mrežice — udobne i kao kratke hlače." },
-    en: { t: "Zip side pocket", p: "Keys and change stay safe. No mesh lining — comfy as everyday shorts too." },
+    sl: { t: "Praktični žepi", p: "Stranski in zadnji žep — ključi in drobiž ostanejo na varnem." },
+    hr: { t: "Praktični džepovi", p: "Bočni i stražnji džep — ključevi i sitniš ostaju na sigurnom." },
+    en: { t: "Handy pockets", p: "Side and back pocket — keys and change stay safe." },
   },
 ];
 
