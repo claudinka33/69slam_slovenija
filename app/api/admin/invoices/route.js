@@ -20,6 +20,10 @@ export async function GET(req) {
     return new NextResponse(pdf, { headers: { "Content-Type": "application/pdf",
       "Content-Disposition": `${u.searchParams.get("dl") ? "attachment" : "inline"}; filename="${KIND_FILE[inv.kind] || "racun"}-${inv.number}.pdf"` } });
   }
+  if (u.searchParams.get("drafts")) {
+    const rows = await sql`SELECT id, kind, title, total_cents, data, updated_at FROM invoice_drafts ORDER BY updated_at DESC`;
+    return NextResponse.json({ ok: true, drafts: rows });
+  }
   if (u.searchParams.get("settings")) return NextResponse.json({ ok: true, settings: await getInvSettings() });
   if (u.searchParams.get("customers")) {
     const rows = await sql`SELECT DISTINCT ON (lower(customer_name)) customer_name AS name, customer_address AS address, customer_zip_city AS zip_city,
@@ -74,11 +78,26 @@ export async function POST(req) {
         prepared_by: s.prepared_by, total_cents: calc.total }, s);
       return new NextResponse(pdf, { headers: { "Content-Type": "application/pdf" } });
     }
+    if (b.action === "draft_save") {
+      const d = b.data || {};
+      const calc = computeInvoice((d.items || []).filter((i) => String(i.desc || "").trim()), !!d.gross);
+      const title = String(d.customer?.name || "").trim().slice(0, 200) || "(brez kupca)";
+      const [r] = b.draft_id
+        ? await sql`UPDATE invoice_drafts SET kind = ${d.kind || "racun"}, title = ${title}, total_cents = ${calc.total}, data = ${JSON.stringify(d)}::jsonb, updated_at = now()
+            WHERE id = ${b.draft_id} RETURNING id`
+        : await sql`INSERT INTO invoice_drafts (kind, title, total_cents, data) VALUES (${d.kind || "racun"}, ${title}, ${calc.total}, ${JSON.stringify(d)}::jsonb) RETURNING id`;
+      return NextResponse.json({ ok: !!r, draft_id: r?.id, message: r ? "Osnutek shranjen ✓ — še ni izdan, lahko ga spreminjaš." : "Osnutka ni več." });
+    }
+    if (b.action === "draft_delete") {
+      await sql`DELETE FROM invoice_drafts WHERE id = ${b.draft_id}`;
+      return NextResponse.json({ ok: true, message: "Osnutek izbrisan." });
+    }
     if (b.action === "issue") {
       if (!String(b.customer?.name || "").trim()) return NextResponse.json({ ok: false, message: "Vpiši kupca." }, { status: 400 });
       const items = (b.items || []).filter((i) => String(i.desc || "").trim());
       if (!items.length) return NextResponse.json({ ok: false, message: "Dodaj vsaj eno postavko." }, { status: 400 });
       const inv = await issueInvoice({ ...b, items });
+      if (b.draft_id) await sql`DELETE FROM invoice_drafts WHERE id = ${b.draft_id}`;
       let message = `${inv.number} je izdan ✓`;
       if (b.send && inv.customer_email) {
         const r = await emailInvoice(inv);

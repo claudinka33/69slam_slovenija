@@ -2374,6 +2374,10 @@ function Invoices() {
   const [send, setSend] = useState(null); // { inv, to }
   const [trk, setTrk] = useState({});
   const [credit, setCredit] = useState(null);
+  const [draft, setDraft] = useState(null);
+  const [formKey, setFormKey] = useState(0);
+  const [dKey, setDKey] = useState(0);
+  const [closeM, setCloseM] = useState(false);
   const listTab = ["racun", "dobropis", "predracun", "dobavnica", "arhiv"].includes(tab);
   const load = useCallback(async (qq = "", k = tab) => {
     if (!["racun", "dobropis", "predracun", "dobavnica", "arhiv"].includes(k)) return;
@@ -2412,14 +2416,17 @@ function Invoices() {
       </div>
       <div className="adm-note">ℹ️ Davčno potrjevanje (FURS: ZOI/EOR) še ni vklopljeno — za gotovinske/kartične račune na licu mesta se najprej dogovori z računovodjo. Računi za nakazilo na TRR ga ne potrebujejo.</div>
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
-      {tab === "nov" && <InvoiceForm onDone={(m, k) => { setMsg(m); setTab(k || "racun"); }} />}
+      {tab === "nov" && <DraftList key={`dl-${dKey}`} current={draft?.id} onOpen={(d) => { setDraft(d); setFormKey((k) => k + 1); }} onNew={() => { setDraft(null); setFormKey((k) => k + 1); }} />}
+      {tab === "nov" && <InvoiceForm key={`f-${formKey}`} draft={draft} onDraft={() => setDKey((k) => k + 1)} onDone={(m, k) => { setDraft(null); setFormKey((x) => x + 1); setMsg(m); setTab(k || "racun"); }} />}
       {tab === "oblika" && <InvoiceSettings />}
+      {tab === "oblika" && <FursSettings />}
       {tab === "arhiv" && <MkImport stats={month} onDone={() => load(q, "arhiv")} />}
       {listTab && (
         <>
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
             <input className="adm-input" style={{ flex: 1, minWidth: 220 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Išči po številki, kupcu, e-mailu, naročilu" />
             {tab === "arhiv" && month && <span className="muted">V arhivu: <b>{month.n}</b> dokumentov ({month.dbp || 0} dobropisov) · <b>{eur(month.total)}</b> · povezanih z naročili: <b>{month.linked || 0}</b></span>}
+            {tab === "racun" && <button className="adm-btn pri" onClick={() => setCloseM(true)}>📦 Zaključi mesec</button>}
             {tab === "racun" && month && <span className="muted">Ta mesec: <b>{month.n}</b> računov · <b>{eur(month.total)}</b></span>}
           </div>
           <div className="adm-card adm-scroll">
@@ -2458,6 +2465,7 @@ function Invoices() {
           </div>
         </>
       )}
+      {closeM && <MonthClose onClose={() => setCloseM(false)} />}
       {credit && <CreditModal inv={credit} onClose={() => setCredit(null)} onDone={(m) => { setCredit(null); setMsg(m); load(q, tab); }} />}
       {send && (
         <div className="adm-ov" onClick={(e) => e.target === e.currentTarget && setSend(null)}>
@@ -2474,19 +2482,22 @@ function Invoices() {
   );
 }
 
-function InvoiceForm({ onDone }) {
-  const [kind, setKind] = useState("racun");
-  const [tracking, setTracking] = useState("");
+function InvoiceForm({ onDone, draft, onDraft }) {
+  const D = draft?.data || {};
+  const [draftId, setDraftId] = useState(draft?.id || null);
+  const [kind, setKind] = useState(D.kind || "racun");
+  const [tracking, setTracking] = useState(D.tracking || "");
   const blankItem = () => ({ code: "", desc: "", qty: "1", unit: "kos", price: "", disc: "", vat: 22 });
-  const [c, setC] = useState({ name: "", address: "", zip_city: "", country: "Slovenija", vat: "", email: "" });
-  const [items, setItems] = useState([blankItem()]);
-  const [gross, setGross] = useState(false);
-  const [payment, setPayment] = useState("trr");
-  const [dueDays, setDueDays] = useState("8");
-  const [serviceDate, setServiceDate] = useState(new Date().toISOString().slice(0, 10));
-  const [notes, setNotes] = useState("");
+  const [c, setC] = useState({ name: "", address: "", zip_city: "", country: "Slovenija", vat: "", email: "", ...(D.customer || {}) });
+  const [items, setItems] = useState(D.items?.length ? D.items : [blankItem()]);
+  const [gross, setGross] = useState(!!D.gross);
+  const [payment, setPayment] = useState(D.payment || "trr");
+  const [dueDays, setDueDays] = useState(D.due_days != null ? String(D.due_days) : "8");
+  const [serviceDate, setServiceDate] = useState(D.service_date || new Date().toISOString().slice(0, 10));
+  const [notes, setNotes] = useState(D.notes || "");
+  const [info, setInfo] = useState("");
   const [past, setPast] = useState([]);
-  const [ctype, setCtype] = useState("fizicna");
+  const [ctype, setCtype] = useState(D.ctype || (D.customer?.vat ? "podjetje" : "fizicna"));
   const [openS, setOpenS] = useState(false);
   const [look, setLook] = useState(null);
   const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -2518,17 +2529,24 @@ function InvoiceForm({ onDone }) {
   }
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  useEffect(() => { getJSON("/api/admin/invoices?customers=1").then((d) => setPast(d?.customers || [])); getJSON("/api/admin/invoices?settings=1").then((d) => d?.settings && setDueDays(String(d.settings.due_days))); }, []);
+  useEffect(() => { getJSON("/api/admin/invoices?customers=1").then((d) => setPast(d?.customers || [])); !draft && getJSON("/api/admin/invoices?settings=1").then((d) => d?.settings && setDueDays(String(d.settings.due_days))); }, []);
   const setI = (i, k, v) => setItems((x) => x.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
   const sc = (k) => (e) => setC((x) => ({ ...x, [k]: e.target.value }));
   const tot = calcInv(items, gross);
   const body = () => ({ kind, tracking, customer: ctype === "podjetje" ? c : { ...c, vat: "" }, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
+  async function saveDraft() {
+    setErr(""); setBusy(true);
+    const d = await post("/api/admin/invoices", { action: "draft_save", draft_id: draftId, data: { ...body(), customer: c, ctype, due_days: dueDays } });
+    setBusy(false);
+    if (d?.ok) { setDraftId(d.draft_id); setInfo("✓ Osnutek shranjen " + new Date().toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" })); onDraft?.(); }
+    else setErr(d?.message || "Napaka.");
+  }
   async function issue(send) {
     setErr("");
     if (send && !c.email.trim()) { setErr("Za pošiljanje vpiši e-mail kupca."); return; }
     if (!confirm(`Izdam ${DOC1[kind]} za ${c.name || "kupca"} v znesku ${eur(tot.total)}?${send ? `\nPoslan bo na ${c.email}.` : ""}\n\nIzdanega dokumenta ni mogoče spreminjati.`)) return;
     setBusy(true);
-    const d = await post("/api/admin/invoices", { action: "issue", ...body(), send });
+    const d = await post("/api/admin/invoices", { action: "issue", ...body(), send, draft_id: draftId });
     setBusy(false);
     if (d?.ok) onDone({ ok: true, t: d.message }, kind); else setErr(d?.message || "Napaka.");
   }
@@ -2616,11 +2634,139 @@ function InvoiceForm({ onDone }) {
         {err && <div className="adm-note err">{err}</div>}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="adm-btn" disabled={busy} onClick={() => openPdf({ action: "preview", ...body() }, `predogled-${kind}.pdf`)}>👁 Predogled PDF</button>
+          <button className="adm-btn" disabled={busy} onClick={saveDraft}>💾 Shrani osnutek</button>
+          {info && <span className="muted" style={{ alignSelf: "center" }}>{info}</span>}
           <div className="grow" />
           <button className="adm-btn" disabled={busy} onClick={() => issue(false)}>🧾 Izdaj {DOC1[kind]}</button>
           <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>✉️ Izdaj in pošlji po e-mailu</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------- Osnutki dokumentov ---------- */
+function DraftList({ current, onOpen, onNew }) {
+  const [list, setList] = useState(null);
+  const load = useCallback(() => getJSON("/api/admin/invoices?drafts=1").then((d) => setList(d?.drafts || [])), []);
+  useEffect(() => { load(); }, [load]);
+  if (!list || (!list.length && !current)) return null;
+  async function del(d) {
+    if (!confirm(`Izbrišem osnutek »${d.title}«? To ni izdan dokument, zato ga lahko brez skrbi izbrišeš.`)) return;
+    await post("/api/admin/invoices", { action: "draft_delete", draft_id: d.id });
+    if (String(d.id) === String(current)) onNew(); load();
+  }
+  return (
+    <div className="adm-card" style={{ padding: 14, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: list.length ? 8 : 0 }}>
+        <b>📝 Osnutki ({list.length})</b><span className="muted">še niso izdani — lahko jih poljubno spreminjaš ali brišeš</span>
+        <div className="grow" />{current && <button className="adm-btn" onClick={onNew}>+ Prazen nov vnos</button>}
+      </div>
+      {list.map((d) => (
+        <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: String(d.id) === String(current) ? "#fff8e1" : "#f5f5f7", marginTop: 6, flexWrap: "wrap" }}>
+          <span className="adm-tag">{({ racun: "Račun", predracun: "Predračun", dobavnica: "Dobavnica" })[d.kind] || d.kind}</span>
+          <span className="strong">{d.title}</span><span className="muted">{eur(d.total_cents)} · {new Date(d.updated_at).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+          <div className="grow" />
+          {String(d.id) === String(current) ? <span className="muted">✏️ urejaš spodaj</span> : <button className="adm-btn" onClick={() => onOpen(d)}>✏️ Uredi</button>}
+          <button className="adm-btn" onClick={() => del(d)}>🗑</button>
+        </div>))}
+    </div>
+  );
+}
+
+/* ---------- Zaključi mesec (paket za računovodkinjo) ---------- */
+function MonthClose({ onClose }) {
+  const prev = (() => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; })();
+  const [m, setM] = useState(prev);
+  const [d, setD] = useState(null);
+  const [to, setTo] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  useEffect(() => { setD(null); getJSON(`/api/admin/month?m=${m}`).then((x) => { setD(x); if (x?.accountant_email) setTo((t) => t || x.accountant_email); }); }, [m]);
+  const S = d?.summary;
+  const label = new Date(Number(m.slice(0, 4)), Number(m.slice(5)) - 1, 1).toLocaleDateString("sl-SI", { month: "long", year: "numeric" });
+  async function sendIt() {
+    if (!confirm(`Pošljem dokumente za ${label} na ${to}?`)) return;
+    setBusy(true); setMsg({ ok: true, t: "Pripravljam PDF-je in pošiljam …" });
+    const r = await post("/api/admin/month", { m, to, note });
+    setBusy(false); setMsg({ ok: !!r?.ok, t: r?.message || "Napaka." });
+    if (r?.ok) getJSON(`/api/admin/month?m=${m}`).then(setD);
+  }
+  return (
+    <div className="adm-ov" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="adm-modal" style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 560 }}>
+        <div className="adm-mh"><h3>📦 Zaključi mesec</h3><button className="x" onClick={onClose}>✕</button></div>
+        <div className="adm-mb">
+          <div className="adm-field"><label>Mesec</label><input type="month" value={m} onChange={(e) => e.target.value && setM(e.target.value)} /></div>
+          {!S ? <div className="adm-empty">Nalagam …</div> : (
+            <div className="adm-note" style={{ lineHeight: 1.8 }}>
+              <b>{label}</b>: {S.racuni} računov · {S.dobropisi} dobropisov · {S.prevzemi} prevzemov<br />
+              Skupaj z DDV <b>{eur(S.total)}</b> · brez DDV {eur(S.net)} · DDV {eur(S.vat)}
+              {S.log && <><br />✅ Že poslano {new Date(S.log.sent_at).toLocaleDateString("sl-SI")} na {S.log.to}</>}
+            </div>)}
+          <div className="muted" style={{ margin: "10px 0" }}>V paketu (ZIP): PDF vseh računov in dobropisov + Excel seznam z osnovami in DDV + prevzemi.</div>
+          <div className="adm-field"><label>E-mail računovodkinje</label><input value={to} onChange={(e) => setTo(e.target.value)} placeholder="racunovodstvo@…" /></div>
+          <div className="adm-field"><label>Sporočilo (neobvezno)</label><textarea className="adm-input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} style={{ width: "100%" }} /></div>
+          {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            <a className="adm-btn" href={`/api/admin/month?m=${m}&zip=1`}>⬇️ Prenesi ZIP</a>
+            <div className="grow" />
+            <button className="adm-btn pri" disabled={busy || !S || !(S.racuni + S.dobropisi + S.prevzemi)} onClick={sendIt}>✉️ Pošlji računovodkinji</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Davčno potrjevanje: potrdilo ---------- */
+function FursSettings() {
+  const [d, setD] = useState(null);
+  const [file, setFile] = useState(null);
+  const [pass, setPass] = useState("");
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(() => getJSON("/api/admin/furs").then(setD), []);
+  useEffect(() => { load(); }, [load]);
+  async function upload() {
+    setBusy(true); setMsg(null);
+    const fd = new FormData(); fd.append("file", file); fd.append("password", pass);
+    const r = await fetch("/api/admin/furs", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null);
+    setBusy(false); setMsg({ ok: !!r?.ok, t: r?.message || "Napaka." });
+    if (r?.ok) { setFile(null); setPass(""); load(); }
+  }
+  async function remove() {
+    if (!confirm("Odstranim potrdilo iz CMS? (Na FURS ostane veljavno — za preklic uporabi DPR-PreklicDP v eDavkih.)")) return;
+    const r = await post("/api/admin/furs", { action: "remove" }); setMsg({ ok: !!r?.ok, t: r?.message }); load();
+  }
+  async function mode(v) { await post("/api/admin/furs", { settings: { mode: v } }); load(); }
+  const c = d?.cert;
+  const days = c ? Math.round((new Date(c.valid_to) - Date.now()) / 86400000) : 0;
+  return (
+    <div className="adm-card" style={{ padding: 16, marginTop: 14 }}>
+      <div className="strong" style={{ fontSize: 16, marginBottom: 4 }}>🔐 Davčno potrjevanje (FURS)</div>
+      <div className="muted" style={{ marginBottom: 12 }}>Namensko digitalno potrdilo iz eDavkov (DPR-PrevzemDP → datoteka .p12). Shranjeno je šifrirano — ne pošiljaj ga nikomur.</div>
+      {c ? (
+        <div className="adm-note ok" style={{ lineHeight: 1.7 }}>
+          ✅ Potrdilo naloženo: <b>{c.cn}</b> ({c.file})<br />
+          Velja do <b>{new Date(c.valid_to).toLocaleDateString("sl-SI")}</b> ({days} dni) · naloženo {new Date(c.uploaded_at).toLocaleDateString("sl-SI")}
+          <div style={{ marginTop: 6 }}><button className="adm-btn" onClick={remove}>Odstrani / zamenjaj</button></div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <div className="adm-field" style={{ margin: 0 }}><label>Datoteka .p12</label><input type="file" accept=".p12,.pfx" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
+          <div className="adm-field" style={{ margin: 0 }}><label>Geslo potrdila</label><input type="password" autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} /></div>
+          <button className="adm-btn pri" disabled={!file || !pass || busy} onClick={upload}>{busy ? "Preverjam …" : "⬆️ Naloži potrdilo"}</button>
+        </div>
+      )}
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`} style={{ marginTop: 10 }}>{msg.t}</div>}
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14, flexWrap: "wrap" }}>
+        <b>Katere račune potrjujem</b>
+        <div className="adm-seg">{[["vse", "Vse (kot v Metakocki)"], ["gotovina", "Kartica, gotovina, povzetje"], ["kartica", "Samo kartica + gotovina"]].map(([k, l]) =>
+          <button key={k} className={d?.settings?.mode === k ? "on" : ""} onClick={() => mode(k)}>{l}</button>)}</div>
+      </div>
+      <div className="adm-note" style={{ marginTop: 12 }}>⏳ Pošiljanje računov na FURS še <b>ni vklopljeno</b> — vklopiva ga skupaj, ko prijaviva poslovni prostor in preizkusiva na testnem strežniku FURS.</div>
     </div>
   );
 }
