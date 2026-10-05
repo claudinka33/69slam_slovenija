@@ -51,7 +51,7 @@ export async function GET(req) {
         COUNT(*) FILTER (WHERE kind = 'dobropis')::int AS dbp, COUNT(order_id)::int AS linked FROM invoices WHERE series = 'MK'`
     : await sql`SELECT COALESCE(SUM(total_cents),0)::int AS total, COUNT(*)::int AS n FROM invoices
     WHERE status <> 'storniran' AND kind = 'racun' AND series <> 'MK' AND date_trunc('month', issued_at) = date_trunc('month', now())`;
-  return NextResponse.json({ ok: true, invoices: rows, month: sum });
+  return NextResponse.json({ ok: true, invoices: order ? rows : rows.map(({ items, ...r }) => r), month: sum });
 }
 
 /** { action: "issue" | "preview" | "send" | "storno" | "paid" | "order" | "settings", ... } */
