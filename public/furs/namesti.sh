@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # 69SLAM — namestitev FURS posrednika na slovenski VPS (Ubuntu/Debian). Zaženi kot root.
 set -e
+export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a NEEDRESTART_SUSPEND=1
 PORT=8443
 echo "== 69SLAM FURS posrednik =="
 if ! command -v node >/dev/null 2>&1; then
-  apt-get update -qq && apt-get install -y -qq nodejs curl openssl >/dev/null
+  echo "Nameščam Node.js (1–2 min) …"; apt-get update -qq && apt-get install -y -qq -o Dpkg::Options::=--force-confdef nodejs curl openssl >/dev/null; echo "Node.js nameščen ✓"
 fi
 mkdir -p /opt/furs-relay
 curl -fsSL https://69slam-slovenija.vercel.app/furs/relay.js -o /opt/furs-relay/relay.js
