@@ -2729,6 +2729,7 @@ function FursSettings() {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
   const [replace, setReplace] = useState(false);
+  const [px, setPx] = useState("");
   const [f, setF] = useState(null);
   const load = useCallback(() => getJSON("/api/admin/furs").then((x) => { setD(x); setF(x?.settings || null); }), []);
   useEffect(() => { load(); }, [load]);
@@ -2778,6 +2779,22 @@ function FursSettings() {
         </div>
       )}
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`} style={{ marginTop: 10 }}>{msg.t}</div>}
+
+      {c && (
+        <div style={{ marginTop: 16, borderTop: "1px solid #e0e0e0", paddingTop: 14 }}>
+          <div className="strong" style={{ marginBottom: 4 }}>🇸🇮 FURS posrednik (strežnik v Sloveniji)</div>
+          <div className="muted" style={{ marginBottom: 8 }}>FURS sprejema samo zahteve s slovenskih IP naslovov. Posrednik samo preda šifrirano povezavo — vsebine ne vidi.</div>
+          {d?.proxy ? (
+            <div className="adm-note ok">✅ Posrednik: <b>{d.proxy.host}:{d.proxy.port}</b> · shranjen {new Date(d.proxy.saved_at).toLocaleDateString("sl-SI")}{" "}
+              <button className="adm-btn" onClick={() => confirm("Odstranim posrednika?") && act({ action: "proxy", value: "" }, "px")}>Odstrani</button></div>
+          ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+              <div className="adm-field" style={{ margin: 0, flex: "1 1 360px" }}><label>Vrstica »furs://…« iz strežnika</label><input type="password" autoComplete="off" value={px} onChange={(e) => setPx(e.target.value)} placeholder="furs://…@…:8443" /></div>
+              <button className="adm-btn pri" disabled={!px || !!busy} onClick={async () => { const r = await act({ action: "proxy", value: px }, "px"); if (r?.ok) setPx(""); }}>Shrani</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {c && f && (
         <div style={{ marginTop: 16, borderTop: "1px solid #e0e0e0", paddingTop: 14 }}>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConfigured, ensureSchema } from "../../../../lib/db";
-import { getFurs, saveCert, saveFursSettings, removeCert, fursEcho, registerPremise, fiscalizeStored, ljTime } from "../../../../lib/furs";
+import { getFurs, saveCert, saveFursSettings, removeCert, fursEcho, registerPremise, fiscalizeStored, ljTime, saveProxy, removeProxy, proxyInfo } from "../../../../lib/furs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export const preferredRegion = "fra1"; // FURS ne sprejema zahtev izven EU
 export async function GET() {
   if (!dbConfigured()) return NextResponse.json({ ok: false });
   await ensureSchema();
-  return NextResponse.json({ ok: true, ...(await getFurs()) });
+  return NextResponse.json({ ok: true, ...(await getFurs()), proxy: await proxyInfo() });
 }
 
 /** multipart: file (.p12) + password → shrani šifrirano | JSON { settings } → shrani nastavitve */
@@ -36,7 +36,12 @@ export async function POST(req) {
     }
     if (b.action === "echo") {
       const r = await fursEcho({ test: !!b.test });
-      return NextResponse.json({ ok: r.ok, peer: r.peer, chain: r.chain, body: r.body, status: r.status, message: r.ok ? "Povezava s FURS deluje ✓" : `FURS odgovor ${r.status}` });
+      return NextResponse.json({ ok: r.ok, chain: r.chain, via: r.via, status: r.status, message: r.ok ? `Povezava s FURS deluje ✓ (${r.via === "neposredno" ? "neposredno" : "preko posrednika " + r.via})` : `FURS odgovor ${r.status}` });
+    }
+    if (b.action === "proxy") {
+      if (!b.value) { await removeProxy(); return NextResponse.json({ ok: true, message: "Posrednik odstranjen." }); }
+      const p = await saveProxy(b.value);
+      return NextResponse.json({ ok: true, message: `Posrednik ${p.host}:${p.port} shranjen ✓ — zdaj klikni »Preveri povezavo s FURS«.` });
     }
     if (b.action === "register") {
       const cur = (await getFurs()).settings;
