@@ -105,18 +105,20 @@ export async function GET(req) {
   }
   // arhiv Metakocke: računi, ki niso povezani z naročilom v bazi (osebno, Instagram, B2B, starejši Shopify),
   // in dobropisi (razen k naročilom, ki so v bazi že preklicana)
-  const mk = await sql`SELECT i.kind, i.items, to_char(i.issued_at AT TIME ZONE 'Europe/Ljubljana', 'YYYY-MM') AS ym
+  // + dobropisi iz CMS (vračila) — zmanjšajo prodajo
+  const mk = await sql`SELECT i.kind, i.items, i.prices_gross, to_char(i.issued_at AT TIME ZONE 'Europe/Ljubljana', 'YYYY-MM') AS ym
     FROM invoices i LEFT JOIN orders o ON o.id = i.order_id
-    WHERE i.series = 'MK' AND i.status = 'arhiv'
-      AND (i.issued_at AT TIME ZONE 'Europe/Ljubljana')::date BETWEEN ${from}::date AND ${to}::date
-      AND (i.order_id IS NULL OR (i.kind = 'dobropis' AND o.status <> 'preklicano'))`;
+    WHERE (i.issued_at AT TIME ZONE 'Europe/Ljubljana')::date BETWEEN ${from}::date AND ${to}::date
+      AND ((i.series = 'MK' AND i.status = 'arhiv' AND (i.order_id IS NULL OR (i.kind = 'dobropis' AND o.status <> 'preklicano')))
+        OR (i.series = 'DBP' AND i.kind = 'dobropis' AND i.status <> 'storniran' AND i.order_id IS NOT NULL AND o.status <> 'preklicano'))`;
   T.mkDocs = mk.length;
   for (const d of mk) {
     if (d.kind === "racun") { T.orders += 1; add(months, d.ym, { orders: 1 }); }
     for (const l of d.items || []) {
       const qty = Number(l.qty) || 0;
-      const net = qty * (Number(l.price) || 0) * (1 - (Number(l.disc) || 0) / 100) * 100;
-      const gross = net * (1 + (Number(l.vat) || 0) / 100);
+      const amt = qty * (Number(l.price) || 0) * (1 - (Number(l.disc) || 0) / 100) * 100;
+      const net = d.prices_gross ? amt / (1 + (Number(l.vat) || 0) / 100) : amt;
+      const gross = d.prices_gross ? amt : amt * (1 + (Number(l.vat) || 0) / 100);
       if (String(l.unit || "").toLowerCase().startsWith("stor") || /dostav|po[šs]tnin|povzet|odkupnin/i.test(String(l.desc || ""))) { T.shipping += gross; continue; }
       const code = l.code ? codeOf(l.code, bySku, codes) : null;
       let unit = code ? cost[code] : null;

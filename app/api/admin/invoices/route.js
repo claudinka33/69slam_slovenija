@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, dbConfigured, ensureSchema } from "../../../../lib/db";
-import { issueInvoice, invoicePdf, emailInvoice, invoiceFromOrder, getInvSettings, saveInvSettings, computeInvoice, convertToInvoice, docsForNewOrder, KIND_FILE } from "../../../../lib/invoices";
+import { issueInvoice, invoicePdf, emailInvoice, invoiceFromOrder, getInvSettings, saveInvSettings, computeInvoice, convertToInvoice, docsForNewOrder, KIND_FILE, creditable, creditNote } from "../../../../lib/invoices";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,11 +30,19 @@ export async function GET(req) {
   const order = u.searchParams.get("order");
   const q = `%${(u.searchParams.get("q") || "").toLowerCase()}%`;
   const k = u.searchParams.get("kind");
-  const kinds = k === "predracun" ? ["predracun"] : k === "dobavnica" ? ["dobavnica"] : ["racun", "dobropis"];
+  const kinds = k === "predracun" ? ["predracun"] : k === "dobavnica" ? ["dobavnica"] : k === "dobropis" ? ["dobropis"] : k === "arhiv" ? ["racun", "dobropis"] : ["racun"];
+  const cid = u.searchParams.get("credit");
+  if (cid) {
+    const [inv] = await sql`SELECT * FROM invoices WHERE id = ${cid}`;
+    if (!inv) return NextResponse.json({ ok: false, message: "Ni računa." }, { status: 404 });
+    return NextResponse.json({ ok: true, invoice: inv, rest: await creditable(inv) });
+  }
   const arhiv = k === "arhiv"; // arhiv Metakocke (serija MK)
   const rows = order
     ? await sql`SELECT * FROM invoices WHERE order_id = ${order} ORDER BY issued_at DESC, id DESC`
-    : await sql`SELECT i.*, o.number AS order_number, o.status AS order_status FROM invoices i LEFT JOIN orders o ON o.id = i.order_id
+    : await sql`SELECT i.*, o.number AS order_number, o.status AS order_status,
+          (SELECT COALESCE(SUM(-d.total_cents), 0)::int FROM invoices d WHERE d.kind = 'dobropis' AND d.source_id = i.id AND d.status <> 'storniran') AS credited
+        FROM invoices i LEFT JOIN orders o ON o.id = i.order_id
         WHERE i.kind = ANY(${kinds}) AND (i.series = 'MK') = ${arhiv}
           AND lower(i.number || ' ' || i.customer_name || ' ' || COALESCE(i.customer_email,'') || ' ' || COALESCE(o.number::text,'') || ' ' || COALESCE(i.meta->>'shop','')) LIKE ${q}
         ORDER BY i.issued_at DESC, i.id DESC LIMIT ${arhiv ? 1000 : 300}`;
@@ -79,7 +87,7 @@ export async function POST(req) {
       return NextResponse.json({ ok: true, invoice: inv, message });
     }
     const [inv] = b.id ? await sql`SELECT * FROM invoices WHERE id = ${b.id}` : [null];
-    if (inv?.series === "MK" && ["paid", "storno", "convert"].includes(b.action))
+    if (inv?.series === "MK" && ["paid", "storno", "convert", "credit"].includes(b.action))
       return NextResponse.json({ ok: false, message: "Arhivski račun iz Metakocke je samo za branje." }, { status: 400 });
     if (b.action === "send") {
       if (!inv) return NextResponse.json({ ok: false, message: "Ni računa." }, { status: 404 });
@@ -94,12 +102,22 @@ export async function POST(req) {
     }
     if (b.action === "storno" && inv) {
       if (inv.status === "storniran" || inv.kind === "dobropis") return NextResponse.json({ ok: false, message: "Tega računa ni mogoče stornirati." }, { status: 400 });
-      const items = (inv.items || []).map((i) => ({ ...i, qty: -Math.abs(Number(i.qty) || 0) }));
-      const cr = await issueInvoice({ kind: "dobropis", ref: inv.number, order_id: inv.order_id, gross: inv.prices_gross, payment: inv.payment, due_days: 0,
+      const rest = await creditable(inv);
+      const items = (inv.items || []).map((i, k) => ({ ...i, qty: -rest[k], src: k })).filter((i) => i.qty);
+      if (!items.length) return NextResponse.json({ ok: false, message: "Račun je že v celoti dobropisan." }, { status: 400 });
+      const cr = await issueInvoice({ kind: "dobropis", ref: inv.number, source_id: inv.id, order_id: inv.order_id, gross: inv.prices_gross, payment: inv.payment, due_days: 0,
         customer: { name: inv.customer_name, address: inv.customer_address, zip_city: inv.customer_zip_city, country: inv.customer_country, vat: inv.customer_vat, email: inv.customer_email },
         items, notes: `Dobropis (storno) k računu št. ${inv.number}.` });
       await sql`UPDATE invoices SET status = 'storniran' WHERE id = ${inv.id}`;
       return NextResponse.json({ ok: true, invoice: cr, message: `Račun ${inv.number} storniran — izdan dobropis ${cr.number}.` });
+    }
+    if (b.action === "credit" && inv) {
+      const r = await creditNote(inv.id, b);
+      let message = `Dobropis ${r.invoice.number} izdan ✓`;
+      if (r.stock.ok.length) message += ` · na zalogo: ${r.stock.ok.join(", ")}`;
+      if (r.stock.unknown.length) message += ` · ⚠️ ni v zalogi (popravi ročno): ${r.stock.unknown.join(", ")}`;
+      if (r.mail) message += r.mail.error ? ` · pošiljanje ni uspelo` : r.mail.skipped ? " · (Resend ni nastavljen)" : ` · poslan na ${r.invoice.customer_email}`;
+      return NextResponse.json({ ok: true, invoice: r.invoice, message });
     }
     if (b.action === "convert" && inv) {
       const r = await convertToInvoice(inv.id);

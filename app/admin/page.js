@@ -2351,9 +2351,10 @@ function Invoices() {
   const [msg, setMsg] = useState(null);
   const [send, setSend] = useState(null); // { inv, to }
   const [trk, setTrk] = useState({});
-  const listTab = ["racun", "predracun", "dobavnica", "arhiv"].includes(tab);
+  const [credit, setCredit] = useState(null);
+  const listTab = ["racun", "dobropis", "predracun", "dobavnica", "arhiv"].includes(tab);
   const load = useCallback(async (qq = "", k = tab) => {
-    if (!["racun", "predracun", "dobavnica", "arhiv"].includes(k)) return;
+    if (!["racun", "dobropis", "predracun", "dobavnica", "arhiv"].includes(k)) return;
     setList(null);
     const d = await getJSON(`/api/admin/invoices?kind=${k}&q=${encodeURIComponent(qq)}`); setList(d?.invoices || []); setMonth(d?.month || null);
   }, [tab]);
@@ -2384,7 +2385,7 @@ function Invoices() {
         <div><h1>Računi & dokumenti</h1><div className="sub">Spletno naročilo → dobavnica → »Poslano« → račun (gre kupcu po e-mailu). Ročni predračun/dobavnica → »Ustvari račun«. 🌱 Samo e-mail, brez tiskanja.</div></div>
         <div className="grow" />
         <div className="adm-seg">
-          {[["racun", "Računi"], ["predracun", "Predračuni"], ["dobavnica", "Dobavnice"], ["arhiv", "Arhiv Metakocka"], ["nov", "+ Nov dokument"], ["oblika", "Oblika"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
+          {[["racun", "Računi"], ["dobropis", "Dobropisi"], ["predracun", "Predračuni"], ["dobavnica", "Dobavnice"], ["arhiv", "Arhiv Metakocka"], ["nov", "+ Nov dokument"], ["oblika", "Oblika"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
         </div>
       </div>
       <div className="adm-note">ℹ️ Davčno potrjevanje (FURS: ZOI/EOR) še ni vklopljeno — za gotovinske/kartične račune na licu mesta se najprej dogovori z računovodjo. Računi za nakazilo na TRR ga ne potrebujejo.</div>
@@ -2404,7 +2405,7 @@ function Invoices() {
               <thead><tr><th>Številka</th><th>Datum</th><th>Kupec</th><th className="r">Znesek</th><th>{tab === "dobavnica" ? "Pošiljka" : "Plačilo"}</th><th>Stanje</th><th></th></tr></thead>
               <tbody>
                 {list === null ? <tr><td colSpan={7} className="adm-empty">Nalagam …</td></tr> :
-                 !list.length ? <tr><td colSpan={7} className="adm-empty">{tab === "arhiv" ? "Arhiv je prazen — uvozi izvoze iz Metakocke zgoraj." : tab === "dobavnica" ? "Dobavnice spletnih naročil se naredijo same ob novem naročilu." : tab === "predracun" ? "Predračuni se naredijo sami pri plačilu po predračunu — ali klikni »+ Nov dokument«." : "Še ni računov."}</td></tr> :
+                 !list.length ? <tr><td colSpan={7} className="adm-empty">{tab === "arhiv" ? "Arhiv je prazen — uvozi izvoze iz Metakocke zgoraj." : tab === "dobropis" ? "Še ni dobropisov. Dobropis narediš pri računu z gumbom »↩️ Dobropis«." : tab === "dobavnica" ? "Dobavnice spletnih naročil se naredijo same ob novem naročilu." : tab === "predracun" ? "Predračuni se naredijo sami pri plačilu po predračunu — ali klikni »+ Nov dokument«." : "Še ni računov."}</td></tr> :
                  list.map((r) => {
                   const open = r.status === "izdan" && !r.converted_to;
                   const ark = r.series === "MK";
@@ -2418,7 +2419,7 @@ function Invoices() {
                     <td className="muted">{tab === "dobavnica"
                       ? (canShip ? <input className="adm-input" style={{ width: 150, padding: "6px 8px" }} placeholder="Št. pošiljke" value={trk[r.id] ?? r.tracking ?? ""} onChange={(e) => setTrk((x) => ({ ...x, [r.id]: e.target.value }))} /> : (r.tracking || "—"))
                       : <>{PAYL[r.payment] || r.payment}{r.payment === "trr" && r.kind === "racun" ? <div>{r.paid_at ? <span className="adm-tag sub">✓ plačano</span> : <span className="adm-tag">rok {dShort(r.due_date)}</span>}</div> : null}</>}</td>
-                    <td>{ark ? <span className="adm-tag sub">{r.meta?.eor ? "🗄️ arhiv · FURS ✓" : "🗄️ arhiv"}</span> : r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
+                    <td>{r.credited > 0 && r.kind === "racun" && !ark ? <span className="adm-tag">{r.credited >= r.total_cents ? "↩️ v celoti dobropisan" : `↩️ dobropis ${eur(r.credited)}`}</span> : ark ? <span className="adm-tag sub">{r.meta?.eor ? "🗄️ arhiv · FURS ✓" : "🗄️ arhiv"}</span> : r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
                       : r.converted_to ? <span className="adm-tag sub">→ račun {r.converted_to}</span> : r.sent_at ? <span className="adm-tag sub">✉️ poslan</span> : <span className="adm-tag">{r.kind === "dobavnica" ? "za pakiranje" : "ni poslan"}</span>}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       {canShip && <><button className="adm-btn pri" onClick={() => shipped(r)}>📦 Poslano</button>{" "}</>}
@@ -2426,7 +2427,8 @@ function Invoices() {
                       <button className="adm-btn" onClick={() => openPdfId(r.id, pdfName(r))}>📄 PDF</button>{" "}
                       <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "" })}>✉️</button>{" "}
                       {!ark && r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
-                      {!ark && r.kind === "racun" && r.status !== "storniran" && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
+                      {!ark && r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <><button className="adm-btn" onClick={() => setCredit(r)}>↩️ Dobropis</button>{" "}</>}
+                      {!ark && r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
                     </td>
                   </tr>); })}
               </tbody>
@@ -2434,6 +2436,7 @@ function Invoices() {
           </div>
         </>
       )}
+      {credit && <CreditModal inv={credit} onClose={() => setCredit(null)} onDone={(m) => { setCredit(null); setMsg(m); load(q, tab); }} />}
       {send && (
         <div className="adm-ov" onClick={(e) => e.target === e.currentTarget && setSend(null)}>
           <div className="adm-modal" style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 440 }}>
@@ -2548,6 +2551,84 @@ function InvoiceForm({ onDone }) {
           <div className="grow" />
           <button className="adm-btn" disabled={busy} onClick={() => issue(false)}>🧾 Izdaj {DOC1[kind]}</button>
           <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>✉️ Izdaj in pošlji po e-mailu</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Dobropis k računu (delni ali celoten) ---------- */
+function CreditModal({ inv, onClose, onDone }) {
+  const [d, setD] = useState(null);
+  const [qty, setQty] = useState({});
+  const [back, setBack] = useState({});
+  const [reason, setReason] = useState("");
+  const [refund, setRefund] = useState(inv.payment === "kartica" ? "kartica" : inv.payment === "gotovina" ? "gotovina" : "trr");
+  const [send, setSend] = useState(!!inv.customer_email);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(() => { getJSON(`/api/admin/invoices?credit=${inv.id}`).then(setD); }, [inv.id]);
+  const items = d?.invoice?.items || [];
+  const rest = d?.rest || [];
+  const gross = !!d?.invoice?.prices_gross;
+  const num = (v) => Math.max(0, Number(String(v ?? "").replace(",", ".")) || 0);
+  const total = items.reduce((a, it, i) => {
+    const q = Math.min(num(qty[i]), rest[i] || 0);
+    const amt = q * (Number(it.price) || 0) * (1 - (Number(it.disc) || 0) / 100);
+    return a + (gross ? amt : amt * (1 + (Number(it.vat) || 0) / 100));
+  }, 0);
+  const any = items.some((_, i) => num(qty[i]) > 0);
+  async function go() {
+    setBusy(true); setErr("");
+    const lines = items.map((_, i) => ({ i, qty: num(qty[i]), restock: !!back[i] })).filter((l) => l.qty > 0);
+    const r = await post("/api/admin/invoices", { action: "credit", id: inv.id, lines, reason, refund, send });
+    setBusy(false);
+    if (r?.ok) onDone({ ok: true, t: r.message }); else setErr(r?.message || "Napaka.");
+  }
+  return (
+    <div className="adm-ov" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="adm-modal" style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 720 }}>
+        <div className="adm-mh"><h3>↩️ Dobropis k računu {inv.number}</h3><button className="x" onClick={onClose}>✕</button></div>
+        <div className="adm-mb">
+          <div className="muted" style={{ marginBottom: 10 }}>{inv.customer_name}{inv.customer_email ? ` · ${inv.customer_email}` : ""} · račun {eur(inv.total_cents)}</div>
+          {!d ? <div className="adm-empty">Nalagam …</div> : (
+            <>
+              <div className="adm-scroll" style={{ border: "1px solid #e0e0e0", borderRadius: 12 }}>
+                <table className="adm-tbl">
+                  <thead><tr><th>Postavka</th><th className="r">Na računu</th><th className="r">Še možno</th><th className="r">Vrača</th><th>Na zalogo?</th></tr></thead>
+                  <tbody>{items.map((it, i) => (
+                    <tr key={i} style={{ opacity: rest[i] > 0 ? 1 : 0.45 }}>
+                      <td><div className="strong">{it.desc}</div>{it.code && <div className="muted">{it.code}</div>}</td>
+                      <td className="r num">{it.qty}</td>
+                      <td className="r num">{rest[i]}</td>
+                      <td className="r">{rest[i] > 0 ? <input className="adm-input" style={{ width: 70, padding: "6px 8px", textAlign: "right" }} inputMode="decimal" value={qty[i] ?? ""} placeholder="0"
+                        onChange={(e) => setQty((x) => ({ ...x, [i]: e.target.value }))} /> : "—"}</td>
+                      <td>{rest[i] > 0 && it.code ? <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13 }}><input type="checkbox" checked={!!back[i]} onChange={(e) => setBack((x) => ({ ...x, [i]: e.target.checked }))} /> vrni na zalogo</label> : <span className="muted">—</span>}</td>
+                    </tr>))}</tbody>
+                </table>
+              </div>
+              <div style={{ display: "flex", gap: 8, margin: "10px 0 14px", flexWrap: "wrap" }}>
+                <button className="adm-btn" onClick={() => setQty(Object.fromEntries(rest.map((r, i) => [i, r ? String(r) : ""])))}>Vse (celoten dobropis)</button>
+                <button className="adm-btn" onClick={() => setQty({})}>Počisti</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div className="adm-field" style={{ gridColumn: "1 / -1" }}><label>Razlog (izpiše se na dobropisu)</label><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="npr. vračilo — prevelika velikost" /></div>
+                <div className="adm-field"><label>Vračilo denarja</label>
+                  <select value={refund} onChange={(e) => setRefund(e.target.value)}>
+                    <option value="trr">Nakazilo na TRR kupca</option><option value="kartica">Na plačilno kartico</option><option value="gotovina">Gotovina</option>
+                  </select></div>
+                <div className="adm-field"><label>&nbsp;</label>
+                  <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}><input type="checkbox" checked={send} disabled={!inv.customer_email} onChange={(e) => setSend(e.target.checked)} /> pošlji dobropis kupcu po e-mailu</label></div>
+              </div>
+              {err && <div className="adm-note err" style={{ marginTop: 10 }}>{err}</div>}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
+                <div className="strong" style={{ fontSize: 18 }}>Za vračilo: {eur(Math.round(total * 100))}</div>
+                <div className="grow" />
+                <button className="adm-btn" onClick={onClose}>Prekliči</button>
+                <button className="adm-btn pri" disabled={!any || busy} onClick={go}>{busy ? "Izdajam …" : "↩️ Izdaj dobropis"}</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
