@@ -347,7 +347,7 @@ function Orders({ orders, onOpen }) {
   );
 }
 
-function OrderInvoice({ orderId, status }) {
+function OrderInvoice({ orderId, status, shopify }) {
   const [inv, setInv] = useState(undefined);
   const [crs, setCrs] = useState([]);
   const [credit, setCredit] = useState(false);
@@ -359,7 +359,7 @@ function OrderInvoice({ orderId, status }) {
     setCrs(all.filter((x) => x.kind === "dobropis" && x.status !== "storniran"));
   }, [orderId]);
   useEffect(() => { load(); }, [load, status]);
-  if (inv === undefined) return null;
+  if (inv === undefined || (shopify && !inv && !crs.length)) return null;
   const credited = inv ? crs.filter((c) => String(c.source_id) === String(inv.id)).reduce((a, c) => a - c.total_cents, 0) : 0;
   const canCredit = inv && inv.series !== "MK" && credited < inv.total_cents;
   return (
@@ -368,7 +368,7 @@ function OrderInvoice({ orderId, status }) {
         🧾 {inv ? <>Račun <b>{inv.number}</b>{inv.series === "MK" ? " · arhiv Metakocka" : ""}{inv.sent_at ? " · ✉️ poslan" : ""}{credited > 0 ? (credited >= inv.total_cents ? " · ↩️ v celoti dobropisan" : ` · ↩️ dobropis ${eur(credited)}`) : ""}<div className="grow" />
             {canCredit && <button className="adm-btn" onClick={() => setCredit(true)}>↩️ Dobropis</button>}
             <button className="adm-btn" onClick={() => openPdfId(inv.id, pdfName(inv))}>PDF</button></>
-          : <>Račun se naredi in pošlje sam, ko klikneš <b>Poslano</b>.<div className="grow" /><button className="adm-btn" onClick={async () => { await post("/api/admin/invoices", { action: "order", order_id: orderId }); load(); }}>Izdaj zdaj</button></>}
+          : shopify ? <>Račun za to naročilo ni v arhivu.</> : <>Račun se naredi in pošlje sam, ko klikneš <b>Poslano</b>.<div className="grow" /><button className="adm-btn" onClick={async () => { await post("/api/admin/invoices", { action: "order", order_id: orderId }); load(); }}>Izdaj zdaj</button></>}
       </div>
       {crs.map((c) => (
         <div key={c.id} className="adm-note" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6, background: "#fff8e1", color: "#5c4a00" }}>
@@ -411,7 +411,7 @@ function OrderPanel({ o, onClose, setStatus }) {
           <button className="x" onClick={onClose}>✕</button>
         </div>
         <div className="adm-mb">
-          {o.source !== "shopify" && <OrderInvoice orderId={o.id} status={o.status} />}
+          <OrderInvoice orderId={o.id} status={o.status} shopify={o.source === "shopify"} />
           <div className="adm-sec" style={{ marginTop: 0 }}>Spremeni status</div>
           <div className="adm-status">
             {STATUSES.map((s) => (
