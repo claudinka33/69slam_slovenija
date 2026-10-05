@@ -349,13 +349,35 @@ function Orders({ orders, onOpen }) {
 
 function OrderInvoice({ orderId, status }) {
   const [inv, setInv] = useState(undefined);
-  const load = useCallback(async () => { const d = await getJSON(`/api/admin/invoices?order=${orderId}`); setInv((d?.invoices || []).find((x) => x.kind === "racun" && x.status !== "storniran") || null); }, [orderId]);
+  const [crs, setCrs] = useState([]);
+  const [credit, setCredit] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const load = useCallback(async () => {
+    const d = await getJSON(`/api/admin/invoices?order=${orderId}`);
+    const all = d?.invoices || [];
+    setInv(all.find((x) => x.kind === "racun" && x.status !== "storniran") || null);
+    setCrs(all.filter((x) => x.kind === "dobropis" && x.status !== "storniran"));
+  }, [orderId]);
   useEffect(() => { load(); }, [load, status]);
   if (inv === undefined) return null;
+  const credited = inv ? crs.filter((c) => String(c.source_id) === String(inv.id)).reduce((a, c) => a - c.total_cents, 0) : 0;
+  const canCredit = inv && inv.series !== "MK" && credited < inv.total_cents;
   return (
-    <div className="adm-note" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
-      🧾 {inv ? <>Račun <b>{inv.number}</b>{inv.series === "MK" ? " · arhiv Metakocka" : ""}{inv.sent_at ? " · ✉️ poslan" : ""}<div className="grow" /><button className="adm-btn" onClick={() => openPdfId(inv.id, pdfName(inv))}>PDF</button></>
-        : <>Račun se naredi in pošlje sam, ko klikneš <b>Poslano</b>.<div className="grow" /><button className="adm-btn" onClick={async () => { await post("/api/admin/invoices", { action: "order", order_id: orderId }); load(); }}>Izdaj zdaj</button></>}
+    <div style={{ marginBottom: 14 }}>
+      <div className="adm-note" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: crs.length || msg ? 6 : 0 }}>
+        🧾 {inv ? <>Račun <b>{inv.number}</b>{inv.series === "MK" ? " · arhiv Metakocka" : ""}{inv.sent_at ? " · ✉️ poslan" : ""}{credited > 0 ? (credited >= inv.total_cents ? " · ↩️ v celoti dobropisan" : ` · ↩️ dobropis ${eur(credited)}`) : ""}<div className="grow" />
+            {canCredit && <button className="adm-btn" onClick={() => setCredit(true)}>↩️ Dobropis</button>}
+            <button className="adm-btn" onClick={() => openPdfId(inv.id, pdfName(inv))}>PDF</button></>
+          : <>Račun se naredi in pošlje sam, ko klikneš <b>Poslano</b>.<div className="grow" /><button className="adm-btn" onClick={async () => { await post("/api/admin/invoices", { action: "order", order_id: orderId }); load(); }}>Izdaj zdaj</button></>}
+      </div>
+      {crs.map((c) => (
+        <div key={c.id} className="adm-note" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6, background: "#fff8e1", color: "#5c4a00" }}>
+          ↩️ Dobropis <b>{c.number}</b> · {eur(c.total_cents)}{c.ref_number ? ` · k računu ${c.ref_number}` : ""}{c.sent_at ? " · ✉️ poslan" : ""}
+          <div className="grow" /><button className="adm-btn" onClick={() => openPdfId(c.id, pdfName(c))}>PDF</button>
+        </div>
+      ))}
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      {credit && inv && <CreditModal inv={inv} onClose={() => setCredit(false)} onDone={(m) => { setCredit(false); setMsg(m); load(); }} />}
     </div>
   );
 }
