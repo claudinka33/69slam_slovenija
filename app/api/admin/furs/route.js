@@ -35,7 +35,7 @@ export async function POST(req) {
     }
     if (b.action === "echo") {
       const r = await fursEcho({ test: !!b.test });
-      return NextResponse.json({ ok: r.ok, peer: r.peer, status: r.status, message: r.ok ? "Povezava s FURS deluje ✓" : `FURS odgovor ${r.status}` });
+      return NextResponse.json({ ok: r.ok, peer: r.peer, chain: r.chain, body: r.body, status: r.status, message: r.ok ? "Povezava s FURS deluje ✓" : `FURS odgovor ${r.status}` });
     }
     if (b.action === "register") {
       const cur = (await getFurs()).settings;
