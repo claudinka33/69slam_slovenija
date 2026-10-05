@@ -2407,7 +2407,7 @@ function Invoices() {
         <div><h1>Računi & dokumenti</h1><div className="sub">Spletno naročilo → dobavnica → »Poslano« → račun (gre kupcu po e-mailu). Ročni predračun/dobavnica → »Ustvari račun«. 🌱 Samo e-mail, brez tiskanja.</div></div>
         <div className="grow" />
         <div className="adm-seg">
-          {[["racun", "Računi"], ["dobropis", "Dobropisi"], ["predracun", "Predračuni"], ["dobavnica", "Dobavnice"], ["arhiv", "Arhiv Metakocka"], ["nov", "+ Nov dokument"], ["oblika", "Oblika"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
+          {[["nov", "+ Nov vnos"], ["predracun", "Predračun"], ["dobavnica", "Dobavnica"], ["racun", "Račun"], ["dobropis", "Dobropis"], ["arhiv", "Arhiv Metakocka"], ["oblika", "Oblika"]].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
         </div>
       </div>
       <div className="adm-note">ℹ️ Davčno potrjevanje (FURS: ZOI/EOR) še ni vklopljeno — za gotovinske/kartične račune na licu mesta se najprej dogovori z računovodjo. Računi za nakazilo na TRR ga ne potrebujejo.</div>
@@ -2427,7 +2427,7 @@ function Invoices() {
               <thead><tr><th>Številka</th><th>Datum</th><th>Kupec</th><th className="r">Znesek</th><th>{tab === "dobavnica" ? "Pošiljka" : "Plačilo"}</th><th>Stanje</th><th></th></tr></thead>
               <tbody>
                 {list === null ? <tr><td colSpan={7} className="adm-empty">Nalagam …</td></tr> :
-                 !list.length ? <tr><td colSpan={7} className="adm-empty">{tab === "arhiv" ? "Arhiv je prazen — uvozi izvoze iz Metakocke zgoraj." : tab === "dobropis" ? "Še ni dobropisov. Dobropis narediš pri računu z gumbom »↩️ Dobropis«." : tab === "dobavnica" ? "Dobavnice spletnih naročil se naredijo same ob novem naročilu." : tab === "predracun" ? "Predračuni se naredijo sami pri plačilu po predračunu — ali klikni »+ Nov dokument«." : "Še ni računov."}</td></tr> :
+                 !list.length ? <tr><td colSpan={7} className="adm-empty">{tab === "arhiv" ? "Arhiv je prazen — uvozi izvoze iz Metakocke zgoraj." : tab === "dobropis" ? "Še ni dobropisov. Dobropis narediš pri računu z gumbom »↩️ Dobropis«." : tab === "dobavnica" ? "Dobavnice spletnih naročil se naredijo same ob novem naročilu." : tab === "predracun" ? "Predračuni se naredijo sami pri plačilu po predračunu — ali klikni »+ Nov vnos«." : "Še ni računov."}</td></tr> :
                  list.map((r) => {
                   const open = r.status === "izdan" && !r.converted_to;
                   const ark = r.series === "MK";
@@ -2506,7 +2506,7 @@ function InvoiceForm({ onDone }) {
     <div className="inv-form">
       <div className="adm-card" style={{ padding: 14, marginBottom: 12, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <b>Vrsta dokumenta</b>
-        <div className="adm-seg">{[["racun", "Račun"], ["predracun", "Predračun"], ["dobavnica", "Dobavnica"]].map(([k, l]) => <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>)}</div>
+        <div className="adm-seg">{[["predracun", "Predračun"], ["dobavnica", "Dobavnica"], ["racun", "Račun"]].map(([k, l]) => <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>)}</div>
         {kind === "dobavnica" && <input className="adm-input" style={{ minWidth: 200 }} value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Št. pošiljke (neobvezno)" />}
         <span className="muted">{kind === "racun" ? "Uradni račun — številka 2026-…" : kind === "predracun" ? "PR-2026-… z UPN QR kodo; kasneje »Ustvari račun«." : "DOB-2026-… s cenami; kasneje »Ustvari račun«."}</span>
       </div>
