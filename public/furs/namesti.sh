@@ -9,6 +9,7 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 mkdir -p /opt/furs-relay
 curl -fsSL https://69slam-slovenija.vercel.app/furs/relay.js -o /opt/furs-relay/relay.js
+if [ "${1:-}" = "nov" ]; then rm -f /opt/furs-relay/token; echo "Ustvarjam nov ključ …"; fi
 if [ ! -f /opt/furs-relay/token ]; then openssl rand -hex 32 > /opt/furs-relay/token; chmod 600 /opt/furs-relay/token; fi
 TOKEN=$(cat /opt/furs-relay/token)
 cat > /etc/systemd/system/furs-relay.service <<UNIT
@@ -24,12 +25,13 @@ DynamicUser=yes
 [Install]
 WantedBy=multi-user.target
 UNIT
-systemctl daemon-reload
-systemctl enable --now furs-relay >/dev/null
-systemctl restart furs-relay
+timeout 30 systemctl daemon-reload || true
+timeout 30 systemctl enable furs-relay >/dev/null 2>&1 || true
+timeout 30 systemctl restart furs-relay || true
+echo "Posrednik: $(timeout 10 systemctl is-active furs-relay || echo neznano)"
 if command -v ufw >/dev/null 2>&1 && ufw status | grep -q active; then ufw allow ${PORT}/tcp >/dev/null; fi
 sleep 1
-IP=$(curl -fsS -4 https://api.ipify.org || hostname -I | awk '{print $1}')
+IP=$(curl -fsS -4 --max-time 8 https://api.ipify.org || hostname -I | awk '{print $1}')
 echo
 if curl -sk --max-time 10 https://blagajne.fu.gov.si:9003/v1/cash_registers/echo | grep -qi "Request Rejected"; then
   echo "⚠️  FURS zavrača ta IP (${IP}) — strežnik verjetno ni v Sloveniji. Javi Claudu."
