@@ -12,7 +12,7 @@ srv.on("connect", (req, client, head) => {
   const auth = String(req.headers["proxy-authorization"] || "");
   if (!eq(auth, `Bearer ${TOKEN}`) || !ALLOWED.has(req.url)) { client.end("HTTP/1.1 403 Forbidden\r\n\r\n"); return; }
   const [host, port] = req.url.split(":");
-  const up = net.connect(Number(port), host, () => {
+  const up = net.connect({ port: Number(port), host, family: 4 }, () => { // samo IPv4 (FURS odobri IPv4 naslov)
     client.write("HTTP/1.1 200 Connection Established\r\n\r\n");
     if (head && head.length) up.write(head);
     up.pipe(client); client.pipe(up);
