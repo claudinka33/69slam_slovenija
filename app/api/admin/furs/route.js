@@ -5,6 +5,7 @@ import { getFurs, saveCert, saveFursSettings, removeCert, fursEcho, registerPrem
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+export const preferredRegion = "fra1"; // FURS ne sprejema zahtev izven EU
 
 /** Podatki o naloženem potrdilu (brez ključa in gesla) + nastavitve potrjevanja. */
 export async function GET() {
