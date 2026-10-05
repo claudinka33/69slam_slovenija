@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConfigured, ensureSchema } from "../../../../lib/db";
-import { getFurs, saveCert, saveFursSettings, removeCert, fursEcho, registerPremise, fiscalizeStored, ljTime, saveProxy, removeProxy, proxyInfo } from "../../../../lib/furs";
+import { getFurs, saveCert, saveFursSettings, removeCert, fursEcho, registerPremise, fiscalizeStored, ljTime, saveProxy, removeProxy, proxyInfo, fursProbe } from "../../../../lib/furs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +38,7 @@ export async function POST(req) {
       const r = await fursEcho({ test: !!b.test });
       return NextResponse.json({ ok: r.ok, chain: r.chain, via: r.via, status: r.status, message: r.ok ? `Povezava s FURS deluje ✓ (${r.via === "neposredno" ? "neposredno" : "preko posrednika " + r.via})` : `FURS odgovor ${r.status}` });
     }
+    if (b.action === "probe") return NextResponse.json({ ok: true, probe: await fursProbe() });
     if (b.action === "proxy") {
       if (!b.value) { await removeProxy(); return NextResponse.json({ ok: true, message: "Posrednik odstranjen." }); }
       const p = await saveProxy(b.value);
