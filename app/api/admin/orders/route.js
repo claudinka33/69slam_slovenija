@@ -17,7 +17,9 @@ export async function GET(req) {
     const [seq] = await sql`SELECT last_value, is_called FROM order_number_seq`;
     const moves = await sql`SELECT sku, delta, reason, note, created_at FROM stock_moves WHERE created_at > now() - interval '2 days' ORDER BY id`;
     const docs = await sql`SELECT number, kind, order_id FROM invoices WHERE issued_at > now() - interval '2 days' ORDER BY id`;
-    return NextResponse.json({ ok: true, web, seq, moves, docs });
+    const k = process.env.STRIPE_SECRET_KEY || "";
+    const stripeInfo = { mode: k.startsWith("sk_live_") || k.startsWith("rk_live_") ? "live" : k ? "test" : "ni", webhook: Boolean(process.env.STRIPE_WEBHOOK_SECRET), site: process.env.SITE_URL || null };
+    return NextResponse.json({ ok: true, web, seq, moves, docs, stripe: stripeInfo });
   }
   const orders = await sql`SELECT id, number, status, payment, name, email, phone, address, zip, city,
       lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at, coupon_code, discount_cents
