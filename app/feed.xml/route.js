@@ -54,7 +54,7 @@ export async function GET(req) {
     const inStock = Object.entries(stock).filter(([, q]) => q > 0);
     const total = inStock.reduce((a, [, q]) => a + q, 0);
     // odprodaja zadnje velikosti po živi zalogi (samo moške boksarice)
-    const sale = !p0.outlet && p0.group === "boksarice" && inStock.length === 1;
+    const sale = !p0.outlet && (p0.group === "boksarice" || p0.group === "kopalke") && inStock.length === 1;
     const p = { ...p0, sale, effPrice: p0.outlet ? p0.effPrice : sale ? +(p0.price * 0.7).toFixed(2) : p0.price };
     const kids = p.gender === "otroci";
     const desc = strip(p.description || defaultDescription(p, t)) || title(p);

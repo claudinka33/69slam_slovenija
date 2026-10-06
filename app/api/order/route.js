@@ -64,9 +64,9 @@ export async function POST(req) {
     const live = await db()`SELECT code, COUNT(*) FILTER (WHERE stock > 0)::int AS n FROM variants WHERE code = ANY(${codes}) GROUP BY code`;
     for (const r of live) {
       const p = products[r.code];
-      if (!p || p.outlet || p.group !== "boksarice") continue;
+      if (!p || p.outlet || (p.group !== "boksarice" && p.group !== "kopalke")) continue;
       const sale = r.n === 1;
-      products[r.code] = { ...p, sale, effPrice: sale ? +(p.price * 0.7).toFixed(2) : p.price, bundleable: p.gender === "moski" && !sale };
+      products[r.code] = { ...p, sale, effPrice: sale ? +(p.price * 0.7).toFixed(2) : p.price, bundleable: p.gender === "moski" && p.group === "boksarice" && !sale };
     }
   }
   const items = []; // {sku,name,size,qty,price_cents,bundle_key}
