@@ -246,7 +246,7 @@ function Dashboard({ onOpenOrder, goOrders, toShip = 0, waiting = 0 }) {
           <table className="adm-tbl">
             <thead><tr><th>Št.</th><th>Kupec</th><th>Datum</th><th>Status</th><th className="r">Znesek</th></tr></thead>
             <tbody>
-              {!d ? <tr><td colSpan={5} className="adm-empty">Nalagam …</td></tr> :
+              {!d ? <tr><td colSpan={8} className="adm-empty">Nalagam …</td></tr> :
                !d.recent?.length ? <tr><td colSpan={5} className="adm-empty">Še ni naročil.</td></tr> :
                d.recent.map((o) => (
                 <tr key={o.id} className="click" onClick={() => onOpenOrder(o.id)}>
@@ -2014,6 +2014,7 @@ function Campaigns({ stock }) {
   const [subs, setSubs] = useState(0);
   const [ed, setEd] = useState(null);
   const [msg, setMsg] = useState(null);
+  const [st, setSt] = useState(null); // analiza izbrane kampanje
   const load = useCallback(async () => { const d = await getJSON("/api/admin/campaigns"); setList(d?.campaigns || []); setSubs(d?.subscribers || 0); }, []);
   useEffect(() => { load(); }, [load]);
   const blank = () => ({ subject: "", preheader: "", title: "", lang: "sl", blocks: [
@@ -2030,6 +2031,12 @@ function Campaigns({ stock }) {
     }
     load();
   }
+  async function openStats(c) {
+    setSt({ c, d: null });
+    const d = await getJSON(`/api/admin/campaigns?id=${c.id}&stats=1`);
+    setSt({ c, d });
+  }
+  const pct = (n, of) => (of ? ` (${Math.round((n / of) * 100)} %)` : "");
   if (ed) return <CampaignEditor init={ed} stock={stock} subs={subs} onClose={() => { setEd(null); load(); }} />;
   return (
     <>
@@ -2041,19 +2048,23 @@ function Campaigns({ stock }) {
       </div>
       <div className="adm-card adm-scroll">
         <table className="adm-tbl">
-          <thead><tr><th>Zadeva</th><th>Stanje</th><th className="r">Poslano</th><th>Datum</th><th></th></tr></thead>
+          <thead><tr><th>Zadeva</th><th>Stanje</th><th className="r">Poslano</th><th className="r">Odprlo</th><th className="r">Kliknilo</th><th className="r">Naročila</th><th>Datum</th><th></th></tr></thead>
           <tbody>
             {list === null ? <tr><td colSpan={5} className="adm-empty">Nalagam …</td></tr> :
-             !list.length ? <tr><td colSpan={5} className="adm-empty">Še ni kampanj — klikni »+ Nova kampanja«.</td></tr> :
+             !list.length ? <tr><td colSpan={8} className="adm-empty">Še ni kampanj — klikni »+ Nova kampanja«.</td></tr> :
              list.map((c) => (
               <tr key={c.id}>
                 <td><div className="strong">{c.subject || "(brez zadeve)"}</div>{c.preheader && <div className="muted">{c.preheader}</div>}{c.error && <div style={{ color: "#c0392b", fontSize: 12 }}>⚠️ {c.error}</div>}</td>
                 <td><span className={`adm-tag ${c.status === "poslano" ? "sub" : ""}`}>{CSTATUS[c.status] || c.status}</span>{c.left ? <div className="muted">še {c.left}</div> : null}</td>
                 <td className="r num">{c.sent_count || "—"}</td>
+                <td className="r num">{c.stats ? <>{c.stats.opens}<div className="muted">{pct(c.stats.opens, c.sent_count).trim()}</div></> : "—"}</td>
+                <td className="r num">{c.stats ? <>{c.stats.clicks}<div className="muted">{pct(c.stats.clicks, c.sent_count).trim()}</div></> : "—"}</td>
+                <td className="r num">{c.stats ? <>{c.stats.orders}{c.stats.revenue_cents ? <div className="muted">{(c.stats.revenue_cents / 100).toLocaleString("sl-SI", { style: "currency", currency: "EUR" })}</div> : null}</> : "—"}</td>
                 <td className="muted">{c.status === "načrtovano" && c.scheduled_at ? <b style={{ color: "#0a0a0a" }}>{new Date(c.scheduled_at).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</b> : dShort(c.sent_at || c.updated_at)}</td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   {(c.status === "osnutek" || c.status === "načrtovano") && <><button className="adm-btn" onClick={() => setEd(c)}>Uredi</button>{" "}</>}
                   {c.status === "v pošiljanju" && <><button className="adm-btn pri" onClick={() => act(c, "send")}>Nadaljuj</button>{" "}</>}
+                  {c.stats && <><button className="adm-btn" onClick={() => openStats(c)}>📊 Analiza</button>{" "}</>}
                   <a className="adm-btn" href={`/api/admin/campaigns?id=${c.id}&preview=1`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>👁</a>{" "}
                   <button className="adm-btn" onClick={() => act(c, "copy")}>Kopiraj</button>{" "}
                   {(c.status === "osnutek" || c.status === "načrtovano") && <button className="adm-btn" onClick={() => act(c, "delete")}>✕</button>}
@@ -2062,6 +2073,42 @@ function Campaigns({ stock }) {
           </tbody>
         </table>
       </div>
+      {st && (
+        <div className="adm-card" style={{ padding: 18, marginTop: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <h3 style={{ margin: 0 }}>📊 {st.c.subject}</h3>
+            <button className="adm-btn" onClick={() => setSt(null)}>Zapri</button>
+          </div>
+          {st.c.stats && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10, margin: "14px 0" }}>
+              {[["📨 Poslano", st.c.sent_count], ["👀 Odprlo", `${st.c.stats.opens}${pct(st.c.stats.opens, st.c.sent_count)}`],
+                ["👆 Kliknilo", `${st.c.stats.clicks}${pct(st.c.stats.clicks, st.c.sent_count)}`],
+                ["🛒 Naročila", `${st.c.stats.orders} · ${(st.c.stats.revenue_cents / 100).toLocaleString("sl-SI", { style: "currency", currency: "EUR" })}`],
+                ["🚫 Odjave", st.c.stats.unsubs]].map(([k, v]) => (
+                <div key={k} className="adm-card adm-stat" style={{ padding: 12 }}><div className="k">{k}</div><div className="v" style={{ fontSize: 20 }}>{v}</div></div>
+              ))}
+            </div>
+          )}
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>Odprtja so približna (iPhone Mail samodejno »odpre« vse maile). Kliki in naročila so natančni. Naročilo šteje, če je kupec v 7 dneh prišel iz maila.</div>
+          {!st.d ? <div className="muted">Nalagam …</div> : (
+            <>
+              <h4>Kdo je kliknil ({st.d.clicks.length})</h4>
+              {!st.d.clicks.length ? <div className="muted">Še nihče.</div> : (
+                <div className="adm-scroll"><table className="adm-tbl"><thead><tr><th>E-mail</th><th className="r">Klikov</th><th>Zadnji klik</th></tr></thead>
+                  <tbody>{st.d.clicks.map((r) => <tr key={r.email}><td>{r.email}</td><td className="r num">{r.n}</td><td className="muted">{new Date(r.last).toLocaleString("sl-SI")}</td></tr>)}</tbody></table></div>
+              )}
+              <h4>Najbolj klikane povezave</h4>
+              {!st.d.links.length ? <div className="muted">Še ni klikov.</div> : (
+                <table className="adm-tbl"><tbody>{st.d.links.map((r) => <tr key={r.url}><td style={{ wordBreak: "break-all" }}>{r.url.replace(/^https?:\/\//, "").replace(/\?utm_[^#]*/, "")}</td><td className="r num">{r.n}</td></tr>)}</tbody></table>
+              )}
+              <h4>Naročila iz maila ({st.d.orders.length})</h4>
+              {!st.d.orders.length ? <div className="muted">Še ni naročil.</div> : (
+                <table className="adm-tbl"><tbody>{st.d.orders.map((o) => <tr key={o.id}><td>#{o.number}</td><td>{o.name}</td><td className="muted">{o.email}</td><td className="r num">{(o.total_cents / 100).toLocaleString("sl-SI", { style: "currency", currency: "EUR" })}</td></tr>)}</tbody></table>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 }

@@ -137,11 +137,14 @@ export async function POST(req) {
   }
 
   // ---- Zapiši naročilo ----
+  // prišel iz maila kampanje (piškotek c69 ob kliku, velja 7 dni)
+  const c69 = String(req.cookies?.get?.("c69")?.value || "").split(".");
+  const campaignId = c69[0] && Date.now() - Number(c69[1] || 0) < 7 * 864e5 ? Number(c69[0]) || null : null;
   const [order] = await sql`INSERT INTO orders
     (status, payment, name, email, phone, address, zip, city, country, lang,
-     subtotal_cents, shipping_cents, cod_fee_cents, total_cents, coupon_code, discount_cents)
+     subtotal_cents, shipping_cents, cod_fee_cents, total_cents, coupon_code, discount_cents, campaign_id)
     VALUES ('novo', ${payment}, ${c.name}, ${c.email}, ${c.phone || null}, ${c.address},
-            ${c.zip}, ${c.city}, ${cc.code}, ${lang}, ${subtotal}, ${shipping}, ${codFee}, ${total}, ${couponCode}, ${discount})
+            ${c.zip}, ${c.city}, ${cc.code}, ${lang}, ${subtotal}, ${shipping}, ${codFee}, ${total}, ${couponCode}, ${discount}, ${campaignId})
     RETURNING id, number`;
 
   // podatki za merjenje oglasov (samo ob oglaševalski privolitvi v obvestilu o piškotkih)
