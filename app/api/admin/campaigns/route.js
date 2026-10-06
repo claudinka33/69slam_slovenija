@@ -34,7 +34,8 @@ export async function GET(req) {
         AND o.created_at >= ${c?.sent_at || null}::timestamptz - interval '1 day' AND o.created_at < ${c?.sent_at || null}::timestamptz + interval '7 days'
         AND lower(o.email) IN (SELECT email FROM campaign_events WHERE campaign_id = ${id} AND kind = 'click')))
       ORDER BY o.created_at DESC`;
-    return NextResponse.json({ ok: true, clicks, links, orders });
+    const raw = await sql`SELECT kind, COUNT(*)::int AS n FROM campaign_events WHERE campaign_id = ${id} GROUP BY kind`; // vključno s testnimi maili
+    return NextResponse.json({ ok: true, clicks, links, orders, raw });
   }
   if (id && u.searchParams.get("preview")) {
     const [c] = await sql`SELECT * FROM campaigns WHERE id = ${id}`;
