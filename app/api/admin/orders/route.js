@@ -4,10 +4,21 @@ import { db, dbConfigured, ensureSchema } from "../../../../lib/db";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req) {
   if (!dbConfigured()) return NextResponse.json({ ok: false, orders: [], nodb: true });
   const sql = db();
   await ensureSchema();
+  const qp = new URL(req.url).searchParams;
+  // diagnostika pred odprtjem: spletna naročila, števec, današnji premiki zaloge (?diag=1, ?diag=1&reset=1)
+  if (qp.get("diag")) {
+    if (qp.get("reset"))
+      await sql`SELECT setval('order_number_seq', GREATEST(1000, COALESCE((SELECT MAX(number) FROM orders WHERE source IS DISTINCT FROM 'shopify'), 1000)))`;
+    const web = await sql`SELECT id, number, status, created_at FROM orders WHERE source IS DISTINCT FROM 'shopify' ORDER BY id`;
+    const [seq] = await sql`SELECT last_value, is_called FROM order_number_seq`;
+    const moves = await sql`SELECT sku, delta, reason, note, created_at FROM stock_moves WHERE created_at > now() - interval '2 days' ORDER BY id`;
+    const docs = await sql`SELECT number, kind, order_id FROM invoices WHERE issued_at > now() - interval '2 days' ORDER BY id`;
+    return NextResponse.json({ ok: true, web, seq, moves, docs });
+  }
   const orders = await sql`SELECT id, number, status, payment, name, email, phone, address, zip, city,
       lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at, coupon_code, discount_cents
     FROM orders ORDER BY created_at DESC, id DESC LIMIT 2000`;
@@ -113,5 +124,7 @@ export async function DELETE(req) {
   await sql`DELETE FROM reviews WHERE order_id = ${id}`;
   await sql`DELETE FROM invoices WHERE order_id = ${id} AND kind IN ('dobavnica','predracun')`;
   await sql`DELETE FROM orders WHERE id = ${id}`;
+  // številčenje naročil nadaljuj za zadnjim pravim naročilom (prvo je #1001)
+  await sql`SELECT setval('order_number_seq', GREATEST(1000, COALESCE((SELECT MAX(number) FROM orders WHERE source IS DISTINCT FROM 'shopify'), 1000)))`;
   return NextResponse.json({ ok: true, message: `Testno naročilo #${o.number} je izbrisano, zaloga je vrnjena.` });
 }
