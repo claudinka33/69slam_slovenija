@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { tx } from "../lib/i18n";
+import { typeLabel } from "../lib/typeLabel";
 
 export default function ReviewForm({ lang, o, t, name, items }) {
   const [nm, setNm] = useState(name || "");
@@ -37,7 +38,7 @@ export default function ReviewForm({ lang, o, t, name, items }) {
         <div className="ckcard rv-item" key={p.code}>
           <div className="rv-top">
             {p.img && <img src={p.img} alt="" />}
-            <div><b>{p.name}</b><small>{p.type}</small>
+            <div><b>{p.name}</b><small>{typeLabel(p.type, lang)}</small>
               <div className="rv-stars" role="radiogroup">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button type="button" key={n} aria-label={`${n}`} className={n <= rv[p.code].rating ? "on" : ""} onClick={() => upd(p.code, "rating", n)}>★</button>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "./CartContext";
 import { fmt, tx } from "../lib/i18n";
+import { typeLabel } from "../lib/typeLabel";
 
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 // pogovorne besede → kaj iščemo v tipu artikla
@@ -71,7 +72,7 @@ export default function Search({ lang }) {
                     <span className="srch-img" style={{ backgroundImage: `url('${p.img}')` }} />
                     <span className="srch-txt">
                       <b>{p.name}</b>
-                      <small>{p.type} · {p.code}</small>
+                      <small>{typeLabel(p.type, lang)} · {p.code}</small>
                     </span>
                     <span className="srch-price">{red ? <><s>{fmt(p.price)}</s> <em>{fmt(p.effPrice)}</em></> : fmt(p.price)}</span>
                   </Link>

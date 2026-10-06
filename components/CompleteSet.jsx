@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "./CartContext";
 import { fmt, tx } from "../lib/i18n";
+import { typeLabel } from "../lib/typeLabel";
 
 /** »Dopolni komplet« — ujemajoči kosi istega dizajna z izbiro velikosti. */
 export default function CompleteSet({ codes, lang, t }) {
@@ -20,7 +21,7 @@ export default function CompleteSet({ codes, lang, t }) {
 function SetItem({ p, lang, t, addItem, usedInCart, showToast }) {
   const [size, setSize] = useState(null);
   const red = p.sale || p.outlet;
-  const seg = (p.type || "").split(" · ").filter(Boolean);
+  const seg = typeLabel(p.type, lang).split(" · ").filter(Boolean);
   return (
     <div className="cset-item">
       <Link href={`/${lang}/p/${p.slug}`} className="cset-img" style={{ backgroundImage: `url('${p.img}')` }} aria-label={p.name} />

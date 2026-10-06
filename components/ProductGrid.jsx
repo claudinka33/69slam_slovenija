@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { fmt, tx } from "../lib/i18n";
+import { typeLabel } from "../lib/typeLabel";
 import { useCart } from "./CartContext";
 
 const COLL = ["all", "core", "limited", "sale"];
@@ -9,11 +10,11 @@ const MEN_GROUPS = ["boksarice", "kopalke", "oblacila", "obutev", "dodatki"];
 const OUT_GROUPS = ["boksarice", "perilo", "kopalke", "oblacila", "obutev"];
 
 /** Kratka vrstica pod imenom na kartici. */
-function cardLine(p, t) {
+function cardLine(p, t, lang) {
   if (p.sale) return t.sale_line;
   if (p.group === "boksarice" && p.material === "mikrofibra")
     return p.collection === "limited" ? t.line_ltd : p.cut === "hip" ? t.line_hip : t.line_core;
-  const seg = (p.type || "").split(" · ").filter(Boolean);
+  const seg = typeLabel(p.type, lang).split(" · ").filter(Boolean);
   if (p.outlet) return seg.slice(0, 2).join(" · ");
   return seg.length > 1 ? seg.slice(1).join(" · ") : seg[0] || "";
 }
@@ -255,7 +256,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
               <div className="pimg" style={{ backgroundImage: `url('${p.img}')` }}>{badge}{p.hasSet && <span className="badge set">{tx(lang, "Komplet", "Set", "Komplet")}</span>}</div>
               <div className="pinfo">
                 <div className="pname">{p.name}</div>
-                <div className="pline">{cardLine(p, t)}</div>
+                <div className="pline">{cardLine(p, t, lang)}</div>
                 <div className="prow">
                   {red ? (
                     <span className="price red"><span className="old">{fmt(p.price)}</span>{fmt(p.effPrice)}</span>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "./CartContext";
 import { fmt, tx } from "../lib/i18n";
+import { typeLabel } from "../lib/typeLabel";
 
 /** Vrstica manjših kartic artiklov (Kaj paše zraven / Nazadnje ogledano). */
 function Row({ title, items, lang, t }) {
@@ -17,7 +18,7 @@ function Row({ title, items, lang, t }) {
             <Link key={p.code} href={`/${lang}/p/${p.slug}`} className="prow-card">
               <span className="prow-img" style={{ backgroundImage: `url('${p.img}')` }} />
               <b>{p.name}</b>
-              <small>{(p.type || "").split(" · ").slice(0, 2).join(" · ")}</small>
+              <small>{typeLabel(p.type, lang).split(" · ").slice(0, 2).join(" · ")}</small>
               <span className="prow-price">{red ? <><s>{fmt(p.price)}</s> <em>{fmt(p.effPrice)}</em></> : fmt(p.price)}</span>
               {red && <span className="pomni">{t.omni}: {fmt(p.low30 ?? p.price)}</span>}
             </Link>

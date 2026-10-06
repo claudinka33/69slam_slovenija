@@ -4,6 +4,7 @@ import { getProducts, getProductBySlug, defaultDescription, primeCatalog, getSet
 import { Pairings, RecentlyViewed } from "../../../../components/ProductRow";
 import CompleteSet from "../../../../components/CompleteSet";
 import { getDict, LANGS, fmt, tx } from "../../../../lib/i18n";
+import { typeLabel } from "../../../../lib/typeLabel";
 import AddToCart from "../../../../components/AddToCart";
 import ProductGallery from "../../../../components/ProductGallery";
 import ProductBundle from "../../../../components/ProductBundle";
@@ -26,8 +27,8 @@ export async function generateMetadata({ params }) {
   const t = getDict(lang);
   const micro = p.group === "boksarice" && p.material === "mikrofibra";
   return {
-    title: micro ? `${p.name} — ${t.shop_title} | 69SLAM.si` : `${p.name} — ${p.type} | 69SLAM.si`,
-    description: micro ? `69SLAM ${p.cut === "hip" ? t.line_hip : t.line_core} ${p.name}. ${t.sub}` : `69SLAM ${p.type} ${p.name}.${p.outlet ? " " + t.out_line + "." : ""}`,
+    title: micro ? `${p.name} — ${t.shop_title} | 69SLAM.si` : `${p.name} — ${typeLabel(p.type, lang)} | 69SLAM.si`,
+    description: micro ? `69SLAM ${p.cut === "hip" ? t.line_hip : t.line_core} ${p.name}. ${t.sub}` : `69SLAM ${typeLabel(p.type, lang)} ${p.name}.${p.outlet ? " " + t.out_line + "." : ""}`,
     alternates: {
       canonical: `https://69slam.si/${lang}/p/${p.slug}`,
       languages: Object.fromEntries(LANGS.map((l) => [l, `https://69slam.si/${l}/p/${p.slug}`])),
@@ -61,7 +62,7 @@ export default async function ProductPage({ params }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: micro ? `69SLAM ${p.cut === "hip" ? "Hip" : "Box"} mikrofibra — ${p.name}` : `69SLAM ${p.type} — ${p.name}`,
+    name: micro ? `69SLAM ${p.cut === "hip" ? "Hip" : "Box"} mikrofibra — ${p.name}` : `69SLAM ${typeLabel(p.type, lang)} — ${p.name}`,
     image: p.images.map((im) => im.src),
     description: desc,
     sku: p.code,
@@ -82,13 +83,13 @@ export default async function ProductPage({ params }) {
       <Link href={backHref} className="pback">{t.back}</Link>
       <div className="pgrid">
         <ProductGallery images={p.images.length ? p.images : (p.img ? [{ src: p.img }] : [])} name={p.name} lang={lang}
-          alt={micro ? `69SLAM ${p.cut} mikrofibra ${p.name}` : `69SLAM ${p.type} ${p.name}`} />
+          alt={micro ? `69SLAM ${p.cut} mikrofibra ${p.name}` : `69SLAM ${typeLabel(p.type, lang)} ${p.name}`} />
         <div className="pdet">
           <h1>{p.name}</h1>
           <div className="pcode">{tx(lang, "Šifra", "Code", "Šifra")}: {p.code}</div>
           {<a href="#ocene" className="pstars">★★★★★ <b>{SUM.rating}</b> · {SUM.count} {tx(lang, "ocen", "reviews", "recenzija")}</a>}
           <div className="mline">
-            {micro ? <>69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}</> : <>69SLAM · {p.type}</>}
+            {micro ? <>69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}</> : <>69SLAM · {typeLabel(p.type, lang)}</>}
             {p.sale ? ` · ${t.sale_line}` : ""}{p.outlet ? ` · ${t.out_line}` : ""}
           </div>
           <div className="mprice">
