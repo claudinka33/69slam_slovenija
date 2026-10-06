@@ -55,7 +55,7 @@ export async function GET(req) {
     const total = inStock.reduce((a, [, q]) => a + q, 0);
     // odprodaja zadnje velikosti po živi zalogi (samo moške boksarice)
     const sale = !p0.outlet && p0.group === "boksarice" && inStock.length === 1;
-    const p = { ...p0, sale, effPrice: p0.outlet ? p0.effPrice : sale ? +(p0.price * 0.5).toFixed(2) : p0.price };
+    const p = { ...p0, sale, effPrice: p0.outlet ? p0.effPrice : sale ? +(p0.price * 0.7).toFixed(2) : p0.price };
     const kids = p.gender === "otroci";
     const desc = strip(p.description || defaultDescription(p, t)) || title(p);
     const extra = p.images.slice(1, 10).map((im) => `<g:additional_image_link>${esc(im.src)}</g:additional_image_link>`).join("");

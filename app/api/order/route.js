@@ -66,7 +66,7 @@ export async function POST(req) {
       const p = products[r.code];
       if (!p || p.outlet || p.group !== "boksarice") continue;
       const sale = r.n === 1;
-      products[r.code] = { ...p, sale, effPrice: sale ? +(p.price * 0.5).toFixed(2) : p.price, bundleable: p.gender === "moski" && !sale };
+      products[r.code] = { ...p, sale, effPrice: sale ? +(p.price * 0.7).toFixed(2) : p.price, bundleable: p.gender === "moski" && !sale };
     }
   }
   const items = []; // {sku,name,size,qty,price_cents,bundle_key}
@@ -87,7 +87,7 @@ export async function POST(req) {
     } else if (line.id && line.size && line.qty > 0 && line.qty <= 20) {
       const p = products[line.id];
       if (!p) return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
-      const eff = p.effPrice; // odprodaja −50 % / VSE MORE VEN −50 % je že upoštevana
+      const eff = p.effPrice; // odprodaja −30 % / VSE MORE VEN −50 % je že upoštevana
       items.push({ code: line.id, sku: skuOf(line.id, line.size), name: p.name, size: line.size,
                    qty: line.qty, price_cents: Math.round(eff * 100), bundle_key: null, base_cents: Math.round(p.price * 100) });
     }

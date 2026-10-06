@@ -38,7 +38,7 @@ export function CartProvider({ children, products: initialProducts, lang = "sl" 
             // odprodaja zadnje velikosti (samo moške boksarice) po živi zalogi
             const inStock = Object.values(stock).filter((q) => q > 0).length;
             const sale = !p.outlet && p.group === "boksarice" && inStock === 1;
-            const effPrice = p.outlet ? p.effPrice : sale ? +(p.price * 0.5).toFixed(2) : p.price;
+            const effPrice = p.outlet ? p.effPrice : sale ? +(p.price * 0.7).toFixed(2) : p.price;
             return { ...p, stock, sizes: sortSizes(Object.keys(stock)), totalStock, sale, effPrice,
               bundleable: p.gender === "moski" && p.group === "boksarice" && !sale };
           })
