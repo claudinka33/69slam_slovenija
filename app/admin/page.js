@@ -1983,7 +1983,7 @@ function PriceList() {
 }
 
 /* =========================== E-MAILI =========================== */
-const CSTATUS = { osnutek: "Osnutek", "v pošiljanju": "Se pošilja", poslano: "Poslano" };
+const CSTATUS = { osnutek: "Osnutek", "načrtovano": "📅 Načrtovano", "v pošiljanju": "Se pošilja", poslano: "Poslano" };
 const JOBKIND = { review: "⭐ Prošnja za oceno", cart1: "🛒 Košarica – 1. opomnik", cart2: "🛒 Košarica – 2. opomnik" };
 const JOBST = { cakajoce: "Čaka", "v teku": "V teku", poslano: "Poslano", "preskočeno": "Preskočeno", preklicano: "Preklicano", napaka: "Napaka" };
 const post = (url, body) => getJSON(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -2035,6 +2035,7 @@ function Campaigns({ stock }) {
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
         <button className="adm-btn pri" onClick={() => setEd(blank())}>+ Nova kampanja</button>
+        <button className="adm-btn" onClick={() => setEd({ ...blank(), blocks: [], html: "" })}>{"</>"} Nova iz HTML kode</button>
         <span className="muted">Aktivnih naročnikov: <b>{subs}</b></span>
       </div>
       <div className="adm-card adm-scroll">
@@ -2048,13 +2049,13 @@ function Campaigns({ stock }) {
                 <td><div className="strong">{c.subject || "(brez zadeve)"}</div>{c.preheader && <div className="muted">{c.preheader}</div>}{c.error && <div style={{ color: "#c0392b", fontSize: 12 }}>⚠️ {c.error}</div>}</td>
                 <td><span className={`adm-tag ${c.status === "poslano" ? "sub" : ""}`}>{CSTATUS[c.status] || c.status}</span>{c.left ? <div className="muted">še {c.left}</div> : null}</td>
                 <td className="r num">{c.sent_count || "—"}</td>
-                <td className="muted">{dShort(c.sent_at || c.updated_at)}</td>
+                <td className="muted">{c.status === "načrtovano" && c.scheduled_at ? <b style={{ color: "#0a0a0a" }}>{new Date(c.scheduled_at).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</b> : dShort(c.sent_at || c.updated_at)}</td>
                 <td style={{ whiteSpace: "nowrap" }}>
-                  {c.status === "osnutek" && <><button className="adm-btn" onClick={() => setEd(c)}>Uredi</button>{" "}</>}
+                  {(c.status === "osnutek" || c.status === "načrtovano") && <><button className="adm-btn" onClick={() => setEd(c)}>Uredi</button>{" "}</>}
                   {c.status === "v pošiljanju" && <><button className="adm-btn pri" onClick={() => act(c, "send")}>Nadaljuj</button>{" "}</>}
                   <a className="adm-btn" href={`/api/admin/campaigns?id=${c.id}&preview=1`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>👁</a>{" "}
                   <button className="adm-btn" onClick={() => act(c, "copy")}>Kopiraj</button>{" "}
-                  {c.status === "osnutek" && <button className="adm-btn" onClick={() => act(c, "delete")}>✕</button>}
+                  {(c.status === "osnutek" || c.status === "načrtovano") && <button className="adm-btn" onClick={() => act(c, "delete")}>✕</button>}
                 </td>
               </tr>))}
           </tbody>
@@ -2070,6 +2071,9 @@ function CampaignEditor({ init, stock, subs, onClose }) {
   const [busy, setBusy] = useState(false);
   const [testTo, setTestTo] = useState("69slamslovenia@gmail.com");
   const [pv, setPv] = useState(0);
+  const [mode, setMode] = useState(typeof init.html === "string" ? "html" : "blocks");
+  const toLocal = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
+  const [when, setWhen] = useState(init.scheduled_at ? toLocal(init.scheduled_at) : toLocal(Date.now() + 3600 * 1000));
   const set = (k) => (e) => setC((x) => ({ ...x, [k]: e.target.value }));
   const setB = (i, patch) => setC((x) => ({ ...x, blocks: x.blocks.map((b, j) => (j === i ? { ...b, ...patch } : b)) }));
   const move = (i, d) => setC((x) => { const b = [...x.blocks]; const j = i + d; if (j < 0 || j >= b.length) return x; [b[i], b[j]] = [b[j], b[i]]; return { ...x, blocks: b }; });
@@ -2077,9 +2081,11 @@ function CampaignEditor({ init, stock, subs, onClose }) {
   const add = (type) => setC((x) => ({ ...x, blocks: [...x.blocks, type === "products" ? { type, codes: [] } : type === "button" ? { type, text: "Poglej", url: "https://69slam.si" } : type === "image" ? { type, url: "", link: "" } : { type, text: "" }] }));
   async function save(action) {
     setBusy(true); setMsg(null);
-    const d = await post("/api/admin/campaigns", { id: c.id, subject: c.subject, preheader: c.preheader, title: c.title, lang: c.lang, blocks: c.blocks, action, to: testTo });
+    const d = await post("/api/admin/campaigns", { id: c.id, subject: c.subject, preheader: c.preheader, title: c.title, lang: c.lang,
+      blocks: mode === "html" ? [] : c.blocks, html: mode === "html" ? (c.html || "") : null, action, to: testTo,
+      at: action === "schedule" ? new Date(when).toISOString() : undefined });
     setBusy(false);
-    if (d?.id) setC((x) => ({ ...x, id: d.id }));
+    if (d?.id) setC((x) => ({ ...x, id: d.id, ...(action === "schedule" && d?.ok ? { status: "načrtovano", scheduled_at: new Date(when).toISOString() } : {}), ...(action === "unschedule" ? { status: "osnutek", scheduled_at: null } : {}) }));
     setPv((n) => n + 1);
     setMsg({ ok: !!d?.ok, t: d?.message || (d?.ok ? "Shranjeno ✓" : "Napaka pri shranjevanju.") });
     return d;
@@ -2116,7 +2122,24 @@ function CampaignEditor({ init, stock, subs, onClose }) {
             <div className="adm-field"><label>Jezik</label><select value={c.lang || "sl"} onChange={set("lang")}><option value="sl">SL</option><option value="en">EN</option></select></div>
           </div>
         </div>
-        {c.blocks.map((b, i) => (
+        <div className="adm-seg" style={{ marginBottom: 12 }}>
+          <button className={mode === "blocks" ? "on" : ""} onClick={() => setMode("blocks")}>🧱 Sestavi z bloki</button>
+          <button className={mode === "html" ? "on" : ""} onClick={() => setMode("html")}>{"</>"} Prilepi HTML kodo</button>
+        </div>
+        {mode === "html" && (
+          <div className="adm-card" style={{ padding: 16, marginBottom: 12 }}>
+            <div className="adm-field">
+              <label>HTML koda maila (prilepi celotno kodo, ki ti jo da Claude)</label>
+              <textarea rows={16} value={c.html || ""} onChange={set("html")} spellCheck={false}
+                style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 12, lineHeight: 1.45 }} placeholder={"<!doctype html>\n<html>…</html>"} />
+            </div>
+            <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.5 }}>
+              Povezava za odjavo: kjer v kodi piše <b>{"{{odjava}}"}</b>, se vstavi osebna povezava za odjavo. Če je ni, jo dodam samodejno na dno maila.
+              Zadevo in predogled v inboxu vpiši zgoraj. Klikni »Shrani« za predogled na desni.
+            </div>
+          </div>
+        )}
+        {mode === "blocks" && c.blocks.map((b, i) => (
           <div className="adm-card mail-blk" key={i}>
             <div className="mail-blk-h"><b>{LBL[b.type]}</b><div className="grow" />
               <button className="adm-btn" onClick={() => move(i, -1)}>↑</button><button className="adm-btn" onClick={() => move(i, 1)}>↓</button><button className="adm-btn" onClick={() => del(i)}>✕</button></div>
@@ -2134,8 +2157,27 @@ function CampaignEditor({ init, stock, subs, onClose }) {
             {b.type === "products" && <ProductPicker stock={stock} codes={b.codes || []} onChange={(codes) => setB(i, { codes })} />}
           </div>
         ))}
-        <div className="adm-chips" style={{ margin: "4px 0 16px" }}>
+        {mode === "blocks" && <div className="adm-chips" style={{ margin: "4px 0 16px" }}>
           {Object.entries(LBL).map(([k, l]) => <button key={k} onClick={() => add(k)}>+ {l}</button>)}
+        </div>}
+        <div className="adm-card" style={{ padding: 16, marginBottom: 12 }}>
+          <div className="adm-field"><label>📅 Pošlji samodejno ob</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
+              <button className="adm-btn pri" disabled={busy} onClick={async () => {
+                if (!c.subject.trim()) { setMsg({ ok: false, t: "Vpiši zadevo maila." }); return; }
+                if (!confirm(`Kampanja »${c.subject}« gre vsem naročnikom (${subs}) ob ${new Date(when).toLocaleString("sl-SI")}. Potrdim?`)) return;
+                await save("schedule");
+              }}>📅 Načrtuj pošiljanje</button>
+            </div>
+          </div>
+          {c.status === "načrtovano" && c.scheduled_at && (
+            <div className="adm-note ok" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              Načrtovano za <b>{new Date(c.scheduled_at).toLocaleString("sl-SI")}</b>
+              <button className="adm-btn" disabled={busy} onClick={() => save("unschedule")}>Prekliči načrt</button>
+            </div>
+          )}
+          <div className="muted" style={{ fontSize: 12.5 }}>Mail gre samodejno najkasneje 15 minut po izbranem času. Do takrat ga lahko še urejaš.</div>
         </div>
         <div className="adm-card" style={{ padding: 16 }}>
           <div className="adm-field"><label>Testni mail na</label>

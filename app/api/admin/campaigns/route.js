@@ -52,17 +52,18 @@ export async function POST(req) {
     const subject = String(b.subject || "").slice(0, 200), pre = b.preheader ? String(b.preheader).slice(0, 200) : null;
     const title = b.title ? String(b.title).slice(0, 120) : null, lang = b.lang === "en" ? "en" : "sl";
     const blocks = JSON.stringify(clean(b.blocks));
+    const html = b.html && String(b.html).trim() ? String(b.html).slice(0, 400000) : null;
     if (id) {
       const [c] = await sql`SELECT status FROM campaigns WHERE id = ${id}`;
-      if (c && c.status !== "osnutek") return NextResponse.json({ ok: false, message: "Poslane kampanje ni več mogoče urejati — naredi kopijo." }, { status: 400 });
-      await sql`UPDATE campaigns SET subject = ${subject}, preheader = ${pre}, title = ${title}, lang = ${lang}, blocks = ${blocks}::jsonb, updated_at = now() WHERE id = ${id}`;
+      if (c && !["osnutek", "načrtovano"].includes(c.status)) return NextResponse.json({ ok: false, message: "Poslane kampanje ni več mogoče urejati — naredi kopijo." }, { status: 400 });
+      await sql`UPDATE campaigns SET subject = ${subject}, preheader = ${pre}, title = ${title}, lang = ${lang}, blocks = ${blocks}::jsonb, html = ${html}, updated_at = now() WHERE id = ${id}`;
     } else {
-      [{ id }] = await sql`INSERT INTO campaigns (subject, preheader, title, lang, blocks) VALUES (${subject}, ${pre}, ${title}, ${lang}, ${blocks}::jsonb) RETURNING id`;
+      [{ id }] = await sql`INSERT INTO campaigns (subject, preheader, title, lang, blocks, html) VALUES (${subject}, ${pre}, ${title}, ${lang}, ${blocks}::jsonb, ${html}) RETURNING id`;
     }
   }
   if (b.action === "copy" && id) {
-    const [n] = await sql`INSERT INTO campaigns (subject, preheader, title, lang, blocks)
-      SELECT subject || ' (kopija)', preheader, title, lang, blocks FROM campaigns WHERE id = ${id} RETURNING id`;
+    const [n] = await sql`INSERT INTO campaigns (subject, preheader, title, lang, blocks, html)
+      SELECT subject || ' (kopija)', preheader, title, lang, blocks, html FROM campaigns WHERE id = ${id} RETURNING id`;
     return NextResponse.json({ ok: true, id: n.id });
   }
   if (b.action === "test" && id) {
@@ -75,9 +76,23 @@ export async function POST(req) {
   }
   if (b.action === "send" && id) {
     const [c] = await sql`SELECT * FROM campaigns WHERE id = ${id}`;
-    if (!c.subject.trim() || !(c.blocks || []).length) return NextResponse.json({ ok: false, id, message: "Manjka zadeva ali vsebina." }, { status: 400 });
+    if (!c.subject.trim() || (!(c.blocks || []).length && !c.html)) return NextResponse.json({ ok: false, id, message: "Manjka zadeva ali vsebina." }, { status: 400 });
     const r = await sendCampaign(id, 1000);
     return NextResponse.json({ ok: r.ok, id, message: r.ok ? `Poslano: ${r.sent}${r.left ? `, še čaka: ${r.left}` : " — vsem naročnikom ✅"}` : `Poslano ${r.sent || 0}, nato napaka: ${r.error || r.message}` });
+  }
+  if (b.action === "schedule" && id) {
+    const at = new Date(b.at || "");
+    if (isNaN(at)) return NextResponse.json({ ok: false, id, message: "Izberi datum in uro." }, { status: 400 });
+    if (at.getTime() < Date.now() - 60000) return NextResponse.json({ ok: false, id, message: "Izbrani čas je že mimo." }, { status: 400 });
+    const [c] = await sql`SELECT * FROM campaigns WHERE id = ${id}`;
+    if (!c.subject.trim() || (!(c.blocks || []).length && !c.html)) return NextResponse.json({ ok: false, id, message: "Manjka zadeva ali vsebina." }, { status: 400 });
+    await sql`UPDATE campaigns SET status = 'načrtovano', scheduled_at = ${at.toISOString()} WHERE id = ${id} AND status IN ('osnutek','načrtovano')`;
+    const when = at.toLocaleString("sl-SI", { timeZone: "Europe/Ljubljana", day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return NextResponse.json({ ok: true, id, message: `📅 Načrtovano za ${when}. Pošlje se samodejno (v 15 minutah po tem času).` });
+  }
+  if (b.action === "unschedule" && id) {
+    await sql`UPDATE campaigns SET status = 'osnutek', scheduled_at = NULL WHERE id = ${id} AND status = 'načrtovano'`;
+    return NextResponse.json({ ok: true, id, message: "Načrt preklican — kampanja je spet osnutek." });
   }
   return NextResponse.json({ ok: true, id });
 }
@@ -85,6 +100,6 @@ export async function POST(req) {
 export async function DELETE(req) {
   const id = new URL(req.url).searchParams.get("id");
   const sql = db();
-  await sql`DELETE FROM campaigns WHERE id = ${id} AND status = 'osnutek'`;
+  await sql`DELETE FROM campaigns WHERE id = ${id} AND status IN ('osnutek','načrtovano')`;
   return NextResponse.json({ ok: true });
 }

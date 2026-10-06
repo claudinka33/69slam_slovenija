@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConfigured, ensureSchema } from "../../../../lib/db";
-import { processJobs } from "../../../../lib/marketing";
+import { processJobs, processCampaigns } from "../../../../lib/marketing";
 import { fursRetry } from "../../../../lib/furs";
 
 export const runtime = "nodejs";
@@ -17,5 +17,6 @@ export async function GET(req) {
   await ensureSchema();
   const r = await processJobs(40);
   const furs = await fursRetry(20).catch((e) => ({ error: String(e?.message || e) }));
-  return NextResponse.json({ ok: true, ...r, furs });
+  const campaign = await processCampaigns(400).catch((e) => ({ error: String(e?.message || e) }));
+  return NextResponse.json({ ok: true, ...r, furs, campaign });
 }
