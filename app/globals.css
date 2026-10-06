@@ -830,3 +830,7 @@ html,body{overflow-x:clip;}
 .ticker-in i{font-style:normal;color:var(--red);margin:0 18px;font-size:.6rem;vertical-align:middle;}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.ticker-in{animation:none}}
+
+/* oznaka »Komplet« spodaj na sliki, da ne prekrije popusta */
+.badge.set{top:auto;bottom:12px;left:12px;right:auto;}
+@media(max-width:640px){.badge{font-size:.6rem;padding:3px 9px;top:8px;left:8px;}.badge.set{top:auto;bottom:8px;left:8px;}}
