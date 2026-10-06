@@ -13,6 +13,7 @@ import { loadApprovedReviews, reviewsFor } from "../../../../lib/customerReviews
 import { GALLERY } from "../../../../lib/media";
 import DetailShots, { swimDetailKind } from "../../../../components/DetailShots";
 import { TrackView } from "../../../../components/Track";
+import { swimFeatures } from "../../../../lib/descriptions";
 
 export function generateStaticParams() {
   const products = getProducts({ withEmpty: true });
@@ -88,6 +89,11 @@ export default async function ProductPage({ params }) {
           <h1>{p.name}</h1>
           <div className="pcode">{tx(lang, "Šifra", "Code", "Šifra")}: {p.code}</div>
           {<a href="#ocene" className="pstars">★★★★★ <b>{SUM.rating}</b> · {SUM.count} {tx(lang, "ocen", "reviews", "recenzija")}</a>}
+          {(() => { const f = p.group === "kopalke" && swimFeatures(p.code, lang); return f ? (
+            <div className="swimfeat">
+              <span className={f.mesh ? "on" : "off"}>{f.mesh ? "✓" : "✕"} {f.meshLabel}</span>
+              <span className="on">✓ {f.pocketLabel}</span>
+            </div>) : null; })()}
           <div className="mline">
             {micro ? <>69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}</> : <>69SLAM · {typeLabel(p.type, lang)}</>}
             {p.sale ? ` · ${t.sale_line}` : ""}{p.outlet ? ` · ${t.out_line}` : ""}
