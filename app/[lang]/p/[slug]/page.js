@@ -10,7 +10,7 @@ import ProductBundle from "../../../../components/ProductBundle";
 import { REVIEWS, REVIEW_SUMMARY } from "../../../../lib/reviews";
 import { loadApprovedReviews, reviewsFor } from "../../../../lib/customerReviews";
 import { GALLERY } from "../../../../lib/media";
-import DetailShots from "../../../../components/DetailShots";
+import DetailShots, { swimDetailKind } from "../../../../components/DetailShots";
 import { TrackView } from "../../../../components/Track";
 
 export function generateStaticParams() {
@@ -163,7 +163,7 @@ export default async function ProductPage({ params }) {
 
       {micro && <DetailShots lang={lang} tone="light" />}
       {!micro && boxers && p.material === "bambus" && <DetailShots lang={lang} tone="light" kind="bambus" />}
-      {p.group === "kopalke" && /boardshort/i.test(p.type || "") && <DetailShots lang={lang} tone="light" kind="kopalke" />}
+      {p.group === "kopalke" && swimDetailKind(p.code) && <DetailShots lang={lang} tone="light" kind={swimDetailKind(p.code)} />}
 
       {boxers && (
       <section className="pgal">
