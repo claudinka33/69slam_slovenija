@@ -12,6 +12,22 @@ const dShort = (d) => new Date(d).toLocaleDateString("sl-SI", { day: "numeric", 
 const PAY = { card: "Kartica", proforma: "Predračun", cod: "Po povzetju", shopify: "Shopify" };
 const STATUSES = ["novo", "placano", "poslano", "zakljuceno", "preklicano"];
 const SLABEL = { novo: "Novo", placano: "Plačano", poslano: "Poslano", zakljuceno: "Zaključeno", preklicano: "Preklicano" };
+/** Kje v postopku je naročilo — kaj moramo narediti. */
+function stageOf(o) {
+  if (o.status === "preklicano") return "preklicano";
+  if (o.status === "zakljuceno") return "zakljuceno";
+  if (o.status === "poslano") return "poslano";
+  if (!o.paid_at && (o.payment === "proforma" || o.payment === "card")) return "caka";
+  return "posiljanje";
+}
+const STAGES = [
+  ["posiljanje", "📦 Za pošiljanje", "Plačano ali po povzetju — zapakiraj, vpiši sledilno številko in klikni »Poslano«."],
+  ["caka", "⏳ Čaka plačilo", "Predračun še ni plačan (ali kartično plačilo ni bilo dokončano). Ko denar prispe, klikni »Plačano«."],
+  ["poslano", "🚚 Poslano", "Na poti h kupcu. Račun je bil izdan in poslan ob odpremi."],
+  ["zakljuceno", "✅ Zaključeno", ""],
+  ["preklicano", "✖ Preklicano", ""],
+];
+const STAGE_LBL = Object.fromEntries(STAGES.map(([k, l]) => [k, l]));
 const STD = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const sortSizes = (list) => {
   const rank = (x) => { const i = STD.indexOf(x); if (i > -1) return i; const n = parseInt(x, 10); return Number.isFinite(n) ? 100 + n : 1000; };
@@ -60,7 +76,7 @@ export default function Admin() {
   useEffect(() => { loadOrders(); loadStock(); }, [loadOrders, loadStock]);
   useEffect(() => { getJSON("/api/admin/reviews").then((d) => setRevCount((d?.reviews || []).filter((r) => r.status === "caka").length)); }, []);
 
-  const newCount = (orders || []).filter((o) => o.status === "novo").length;
+  const newCount = (orders || []).filter((o) => o.source !== "shopify" && ["posiljanje", "caka"].includes(stageOf(o))).length;
   const lowCount = (stock || []).filter((p) => Object.values(p.sizes).some((v) => v.stock > 0 && v.stock <= 2)).length;
 
   function go(v) { setView(v); setMenu(false); window.scrollTo(0, 0); }
@@ -126,7 +142,9 @@ export default function Admin() {
             ⚠️ Baza ni povezana. V Vercelu: Storage → Neon (Postgres) → poveži s projektom in redeployaj.
           </div>
         )}
-        {view === "dashboard" && <Dashboard onOpenOrder={(id) => { setOpenOrder(id); }} goOrders={() => go("narocila")} />}
+        {view === "dashboard" && <Dashboard onOpenOrder={(id) => { setOpenOrder(id); }} goOrders={() => go("narocila")}
+          toShip={(orders || []).filter((o) => o.source !== "shopify" && stageOf(o) === "posiljanje").length}
+          waiting={(orders || []).filter((o) => o.source !== "shopify" && stageOf(o) === "caka").length} />}
         {view === "narocila" && <Orders orders={orders} onOpen={setOpenOrder} />}
         {view === "zaloga" && <Stock stock={stock} reload={loadStock} />}
         {view === "inventura" && <Inventory stock={stock} reload={loadStock} />}
@@ -147,7 +165,7 @@ export default function Admin() {
 }
 
 /* =========================== DASHBOARD =========================== */
-function Dashboard({ onOpenOrder, goOrders }) {
+function Dashboard({ onOpenOrder, goOrders, toShip = 0, waiting = 0 }) {
   const [days, setDays] = useState(30);
   const [d, setD] = useState(null);
   useEffect(() => {
@@ -174,6 +192,15 @@ function Dashboard({ onOpenOrder, goOrders }) {
           ))}
         </div>
       </div>
+
+      {(toShip > 0 || waiting > 0) && (
+        <button onClick={goOrders} className="adm-card" style={{ width: "100%", textAlign: "left", padding: "14px 18px", marginBottom: 14, cursor: "pointer",
+          background: toShip ? "#fff4f4" : "#fff8e1", border: `1px solid ${toShip ? "#f3c2c6" : "#f0e0a0"}` }}>
+          <b style={{ fontSize: 15 }}>{toShip ? `📦 ${toShip} ${toShip === 1 ? "naročilo čaka" : "naročil čaka"} na pošiljanje` : ""}
+          {toShip && waiting ? " · " : ""}{waiting ? `⏳ ${waiting} čaka plačilo` : ""}</b>
+          <span style={{ color: "var(--a-muted)", fontSize: 13 }}> — odpri naročila →</span>
+        </button>
+      )}
 
       <div className="adm-stats">
         <div className="adm-card adm-stat">
@@ -296,48 +323,61 @@ function Top5({ top }) {
 
 /* =========================== NAROČILA =========================== */
 function Orders({ orders, onOpen }) {
-  const [f, setF] = useState("vsa");
-  const [q, setQ] = useState("");
   const counts = useMemo(() => {
     const c = { vsa: (orders || []).length };
-    for (const s of STATUSES) c[s] = (orders || []).filter((o) => o.status === s).length;
+    for (const [k] of STAGES) c[k] = (orders || []).filter((o) => stageOf(o) === k).length;
     return c;
   }, [orders]);
+  const [f, setF] = useState(null);
+  const cur = f || (counts.posiljanje ? "posiljanje" : counts.caka ? "caka" : "vsa");
+  const [q, setQ] = useState("");
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
     return (orders || []).filter((o) =>
-      (f === "vsa" || o.status === f) &&
+      (cur === "vsa" || stageOf(o) === cur) &&
       (!t || `${o.number} ${o.name} ${o.email} ${o.city}`.toLowerCase().includes(t)));
-  }, [orders, f, q]);
+  }, [orders, cur, q]);
+  const hint = STAGES.find(([k]) => k === cur)?.[2];
+  const isNew = (o) => Date.now() - new Date(o.created_at).getTime() < 24 * 3600 * 1000;
 
   return (
     <>
       <div className="adm-top">
         <div><h1>Naročila</h1><div className="sub">Klikni naročilo za podrobnosti in spremembo statusa.</div></div>
       </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginBottom: 14 }}>
+        {STAGES.slice(0, 3).map(([k, l]) => (
+          <button key={k} onClick={() => setF(k)} className="adm-card" style={{ textAlign: "left", padding: "14px 16px", cursor: "pointer",
+            border: cur === k ? "2px solid #0a0a0a" : undefined, background: k === "posiljanje" && counts[k] ? "#fff4f4" : undefined }}>
+            <div style={{ fontSize: 13, color: "var(--a-muted)", fontWeight: 600 }}>{l}</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: k === "posiljanje" && counts[k] ? "#e63946" : undefined }}>{counts[k] || 0}</div>
+          </button>
+        ))}
+      </div>
       <div className="adm-bar">
         <div className="adm-chips">
-          {["vsa", ...STATUSES].map((s) => (
-            <button key={s} className={f === s ? "on" : ""} onClick={() => setF(s)}>
-              {s === "vsa" ? "Vsa" : SLABEL[s]} <span className="c">{counts[s] || 0}</span>
+          {[...STAGES.map(([k]) => k), "vsa"].map((s) => (
+            <button key={s} className={cur === s ? "on" : ""} onClick={() => setF(s)}>
+              {s === "vsa" ? "Vsa" : STAGE_LBL[s]} <span className="c">{counts[s] || 0}</span>
             </button>
           ))}
         </div>
         <div className="adm-search"><input placeholder="Išči: št., ime, e-mail …" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       </div>
+      {hint && <div className="adm-note" style={{ marginBottom: 12 }}>{hint}</div>}
       <div className="adm-card adm-scroll">
         <table className="adm-tbl">
-          <thead><tr><th>Št.</th><th>Datum</th><th>Kupec</th><th>Plačilo</th><th>Status</th><th className="r">Znesek</th></tr></thead>
+          <thead><tr><th>Št.</th><th>Datum</th><th>Kupec</th><th>Plačilo</th><th>Stanje</th><th className="r">Znesek</th></tr></thead>
           <tbody>
             {orders === null ? <tr><td colSpan={6} className="adm-empty">Nalagam …</td></tr> :
-             !list.length ? <tr><td colSpan={6} className="adm-empty">{orders.length ? "Ni zadetkov." : "Še ni naročil. Ko kupec odda naročilo, se pojavi tukaj."}</td></tr> :
+             !list.length ? <tr><td colSpan={6} className="adm-empty">{orders.length ? "Tukaj ni naročil." : "Še ni naročil. Ko kupec odda naročilo, se pojavi tukaj."}</td></tr> :
              list.map((o) => (
               <tr key={o.id} className="click" onClick={() => onOpen(o.id)}>
-                <td className="strong">{onum(o)}</td>
+                <td className="strong">{onum(o)}{isNew(o) && o.source !== "shopify" && <span style={{ marginLeft: 6, background: "#e63946", color: "#fff", borderRadius: 50, padding: "2px 7px", fontSize: 10, fontWeight: 800 }}>NOVO</span>}</td>
                 <td className="muted">{dt(o.created_at)}</td>
                 <td>{o.name}<div className="muted">{o.email}</div></td>
-                <td>{PAY[o.payment] || o.payment}</td>
-                <td><Pill s={o.status} /></td>
+                <td>{PAY[o.payment] || o.payment}{o.paid_at ? <div className="muted">✓ plačano</div> : null}</td>
+                <td><b style={{ fontSize: 13 }}>{STAGE_LBL[stageOf(o)]}</b></td>
                 <td className="r strong num">{eur(o.total_cents)}</td>
               </tr>
             ))}
@@ -456,6 +496,8 @@ function OrderPanel({ o, onClose, setStatus, onDeleted }) {
           <div className="adm-items">
             {items.length ? items.map((it, i) => (
               <div className="row" key={i}>
+                {it.img ? <img src={it.img} alt="" style={{ width: 54, height: 54, objectFit: "cover", borderRadius: 8, background: "#f5f5f7", flex: "none" }} />
+                  : <div style={{ width: 54, height: 54, borderRadius: 8, background: "#f5f5f7", flex: "none" }} />}
                 <div className="g">
                   <b>{it.name}</b>
                   <div style={{ color: "var(--a-muted)", fontSize: 12.5 }}>

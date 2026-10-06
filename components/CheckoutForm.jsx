@@ -136,9 +136,6 @@ export default function CheckoutForm({ lang, t }) {
         <input name="name" required />
         <label>{t.ck_email}</label>
         <input name="email" type="email" required onBlur={(e) => saveCart(e.target.value.trim())} />
-        <small style={{ display: "block", color: "var(--gray)", fontSize: ".75rem", margin: "-4px 0 8px", lineHeight: 1.4 }}>
-          {lang === "en" ? "If you don't finish your order, we'll save your cart and send you a reminder." : "Če nakupa ne zaključiš, ti košarico shranimo in te nanjo opomnimo po e-mailu."}
-        </small>
         <label>{t.ck_phone}</label>
         <input name="phone" />
         <label>{t.ck_addr}</label>

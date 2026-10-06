@@ -13,6 +13,17 @@ export async function GET() {
     FROM orders ORDER BY created_at DESC, id DESC LIMIT 2000`;
   const items = await sql`SELECT order_id, sku, name, size, qty, price_cents, bundle_key
     FROM order_items WHERE order_id = ANY(${orders.map((o) => o.id)})`;
+  // slike artiklov (prva slika iz kataloga)
+  const imgs = {};
+  try {
+    const { primeCatalog, getAnyProduct } = await import("../../../../lib/catalog");
+    await primeCatalog();
+    for (const it of items) {
+      const code = String(it.sku || "").replace(/-[^-]+$/, "");
+      if (!(code in imgs)) { try { imgs[code] = getAnyProduct(code)?.img || null; } catch { imgs[code] = null; } }
+      it.img = imgs[code];
+    }
+  } catch (e) { console.error("[slike naročil]", e); }
   const byOrder = {};
   for (const it of items) (byOrder[it.order_id] = byOrder[it.order_id] || []).push(it);
   return NextResponse.json({
