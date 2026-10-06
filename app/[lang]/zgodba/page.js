@@ -35,7 +35,7 @@ const STORY = {
     end_h: "Od Balija do tvojega predala",
     end_p: [
       "Več kot 20 let pozneje se 69SLAM nosi po vsem svetu. V Sloveniji ga dobiš pri nas – 100 % original, neposredno od znamke.",
-      "Pri nas smo se osredotočili na tisto, kar 69SLAM dela najbolje: spodnjice iz mikrofibre. Se ne rolajo, se hitro sušijo in ostanejo sveže ves dan. Izgledajo glasno, nosijo se tiho.",
+      "Pri nas smo se osredotočili na tisto, kar 69SLAM dela najbolje: spodnjice iz mikrofibre. Ne lezejo navzgor, ostanejo na mestu ves dan in se hitro sušijo. Izgledajo glasno, nosijo se tiho.",
     ],
     cta: "Izberi svoj print →",
     quote: "Življenje je že dovolj resno.",
