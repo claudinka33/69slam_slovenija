@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { PIXEL_ID, GA_ID, getConsent, saveConsent, currentConsent, flushPending } from "../lib/track";
+import { PIXEL_ID, GA_ID, GA_IDS, getConsent, saveConsent, currentConsent, flushPending } from "../lib/track";
 
 const TXT = {
   sl: {
@@ -87,7 +87,7 @@ function loadGa() {
   s.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
   document.head.appendChild(s);
   window.gtag("js", new Date());
-  window.gtag("config", GA_ID, { send_page_view: false });
+  for (const id of GA_IDS) window.gtag("config", id, { send_page_view: false });
 }
 
 function apply(c) {
