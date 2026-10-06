@@ -314,7 +314,6 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
           const red = p.sale || p.outlet;
           const badge = p.outlet ? <span className="badge sale">{t.out_badge}</span>
             : p.sale ? <span className="badge sale">{t.badge_sale}</span>
-            : p.totalStock <= 2 ? <span className="badge low">{t.badge_low}</span>
             : p.collection === "limited" ? <span className="badge ltd">{t.badge_ltd}</span>
             : null;
           return (
