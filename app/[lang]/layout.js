@@ -22,7 +22,7 @@ export default async function LangLayout({ children, params }) {
   const products = getProducts({ withEmpty: true }).map(slimProduct);
 
   return (
-    <CartProvider products={products}>
+    <CartProvider products={products} lang={lang}>
       <Header lang={lang} t={t} />
       {children}
       <footer className="site" id="faq">

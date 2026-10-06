@@ -2,16 +2,18 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { sortSizes } from "../lib/sizes";
 import { track } from "../lib/track";
+import { shipFor, defaultCountry } from "../lib/shipping";
 
 const CartCtx = createContext(null);
 export const useCart = () => useContext(CartCtx);
 
 const BUNDLE_N = 3;
 const BUNDLE_OFF = 0.15;
-const FREE_FROM = 50;
-const SHIP = 5;
 
-export function CartProvider({ children, products: initialProducts }) {
+export function CartProvider({ children, products: initialProducts, lang = "sl" }) {
+  const [shipCountry, setShipCountryS] = useState(defaultCountry(lang));
+  useEffect(() => { try { const s = localStorage.getItem("ship69"); if (s) setShipCountryS(s); } catch {} }, []);
+  const setShipCountry = (c) => { setShipCountryS(c); try { localStorage.setItem("ship69", c); } catch {} };
   const [products, setProducts] = useState(initialProducts);
   const [liveLoaded, setLiveLoaded] = useState(false);
   const [cart, setCart] = useState([]); // {id(code), size, qty} | {bundle:true, items:[{id,size}], qty:1}
@@ -156,13 +158,13 @@ export function CartProvider({ children, products: initialProducts }) {
     (a, c) => a + (c.bundle ? bundlePrice(c.items) : (byId(c.id)?.effPrice || 0) * c.qty),
     0
   );
-  const shipping = subtotal >= FREE_FROM || subtotal === 0 ? 0 : SHIP;
+  const shipping = shipFor(shipCountry, subtotal); // null = država še ni izbrana
   const singles = cart.filter((c) => !c.bundle && byId(c.id)?.bundleable).reduce((a, c) => a + c.qty, 0);
 
   return (
     <CartCtx.Provider
       value={{
-        products, liveLoaded, cart, byId, addItem, chQty, clearCart, count, subtotal, shipping,
+        products, liveLoaded, cart, byId, addItem, chQty, clearCart, count, subtotal, shipping, shipCountry, setShipCountry,
         bundlePrice, singles, usedInCart,
         drawerOpen, setDrawerOpen,
         bundleOpen, setBundleOpen, openBundle, bundlePrefill, addBundle,

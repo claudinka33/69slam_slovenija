@@ -5,12 +5,14 @@ import { fmt, tx } from "../lib/i18n";
 import { track, adCookies } from "../lib/track";
 import { TrackPurchase } from "./Track";
 import PromoHint from "./PromoHint";
+import { COD_FEE, country as countryOf, countryOptions, shipFor } from "../lib/shipping";
 import { storedPromo } from "./usePromo";
 
-const COD_FEE = 1.5;
 
 export default function CheckoutForm({ lang, t }) {
-  const { cart, byId, subtotal, shipping, bundlePrice, clearCart } = useCart();
+  const { cart, byId, subtotal, shipping, shipCountry, setShipCountry, bundlePrice, clearCart } = useCart();
+  const cInfo = countryOf(shipCountry);
+  const codOk = !!cInfo?.cod;
   const [pay, setPay] = useState("card");
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
@@ -38,7 +40,8 @@ export default function CheckoutForm({ lang, t }) {
   };
   const sub2 = coupon ? +cart.reduce((a, c) => a + lineTotal(c), 0).toFixed(2) : subtotal;
   const discount = +(subtotal - sub2).toFixed(2);
-  const ship2 = coupon ? (sub2 >= 50 || sub2 === 0 ? 0 : 5) : shipping;
+  const ship2 = (coupon ? shipFor(shipCountry, sub2) : shipping) || 0;
+  useEffect(() => { if (!codOk && pay === "cod") setPay("card"); }, [codOk]);
   const codFee = pay === "cod" ? COD_FEE : 0;
   const total = sub2 + ship2 + codFee;
   async function applyCode(c0, quiet) {
@@ -166,12 +169,20 @@ export default function CheckoutForm({ lang, t }) {
             <input name="city" required />
           </div>
         </div>
+        <label>{tx(lang, "Država", "Country", "Država")}</label>
+        <select name="country" required value={shipCountry || ""} onChange={(e) => setShipCountry(e.target.value)}>
+          {!shipCountry && <option value="">{tx(lang, "Izberi državo …", "Choose country …", "Odaberi državu …")}</option>}
+          {countryOptions(lang).map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+        </select>
+        {cInfo && <div style={{ fontSize: ".78rem", color: "var(--gray)", marginTop: 6 }}>
+          🚚 {tx(lang, `Poštnina ${fmt(cInfo.ship)} · brezplačno nad ${cInfo.free} € · dostava ${cInfo.days} delovnih dni`, `Shipping ${fmt(cInfo.ship)} · free over €${cInfo.free} · delivery ${cInfo.days} working days`, `Poštarina ${fmt(cInfo.ship)} · besplatno iznad ${cInfo.free} € · dostava ${cInfo.days} radna dana`)}
+        </div>}
 
         <h3 style={{ marginTop: 22 }}>{t.ck_pay}</h3>
         {[
           ["card", "💳", t.pay_card, t.pay_card_d],
           ["proforma", "🧾", t.pay_pro, t.pay_pro_d],
-          ["cod", "📦", t.pay_cod, t.pay_cod_d],
+          ...(codOk ? [["cod", "📦", t.pay_cod, t.pay_cod_d]] : []),
         ].map(([val, ico, title, d]) => (
           <label className="pay" key={val}>
             <input type="radio" name="pay" checked={pay === val} onChange={() => setPay(val)} />
@@ -228,7 +239,7 @@ export default function CheckoutForm({ lang, t }) {
           {discount <= 0 && <span> — {tx(lang, "trenutni popust (paket/akcija) je že boljši.", "your current discount is already better.", "trenutni popust (paket/akcija) već je bolji.")}</span>}</div>}
         <div className="trow"><span>{t.subtotal}</span><b>{fmt(subtotal)}</b></div>
         {coupon && discount > 0 && <div className="trow" style={{ color: "var(--red)" }}><span>{tx(lang, "Popust", "Discount", "Popust")} ({coupon.code})</span><b>−{fmt(discount)}</b></div>}
-        <div className="trow"><span>{t.shipping}</span><b>{ship2 === 0 ? t.ship_free : fmt(ship2)}</b></div>
+        <div className="trow"><span>{t.shipping}</span><b>{!cInfo ? "—" : ship2 === 0 ? t.ship_free : fmt(ship2)}</b></div>
         {codFee > 0 && <div className="trow"><span>{t.cod_fee}</span><b>{fmt(codFee)}</b></div>}
         <div className="trow total"><span>{t.total}</span><span>{fmt(total)}</span></div>
       </div>

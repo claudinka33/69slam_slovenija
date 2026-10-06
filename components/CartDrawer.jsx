@@ -3,10 +3,12 @@ import Link from "next/link";
 import { useCart } from "./CartContext";
 import { fmt } from "../lib/i18n";
 import PromoHint from "./PromoHint";
+import { countryName } from "../lib/shipping";
+import { tx } from "../lib/i18n";
 
 export default function CartDrawer({ lang, t }) {
   const {
-    cart, byId, chQty, subtotal, shipping, bundlePrice, singles,
+    cart, byId, chQty, subtotal, shipping, shipCountry, bundlePrice, singles,
     drawerOpen, setDrawerOpen, openBundle, BUNDLE_N,
   } = useCart();
 
@@ -66,8 +68,8 @@ export default function CartDrawer({ lang, t }) {
             )}
             <PromoHint lang={lang} />
             <div className="trow"><span>{t.subtotal}</span><b>{fmt(subtotal)}</b></div>
-            <div className="trow"><span>{t.shipping}</span><b>{shipping === 0 ? t.ship_free : fmt(shipping)}</b></div>
-            <div className="trow total"><span>{t.total}</span><span>{fmt(subtotal + shipping)}</span></div>
+            <div className="trow"><span>{t.shipping}{shipCountry ? ` (${countryName(shipCountry, lang)})` : ""}</span><b>{shipping == null ? tx(lang, "na blagajni", "at checkout", "na blagajni") : shipping === 0 ? t.ship_free : fmt(shipping)}</b></div>
+            <div className="trow total"><span>{t.total}</span><span>{fmt(subtotal + (shipping || 0))}</span></div>
             <Link href={`/${lang}/blagajna`} className="checkout-btn" onClick={() => setDrawerOpen(false)}>
               {t.checkout}
             </Link>

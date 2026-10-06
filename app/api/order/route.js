@@ -3,14 +3,13 @@ import { db, dbConfigured, ensureSchema } from "../../../lib/db";
 import { getProducts, skuOf, primeCatalog } from "../../../lib/catalog";
 import { stripe } from "../../../lib/payments";
 import { requestMeta, sendPurchase } from "../../../lib/capi";
+import { country as countryOf, shipFor, COD_FEE as COD_EUR } from "../../../lib/shipping";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const BUNDLE_OFF = 0.15;
-const FREE_FROM = 5000; // v centih
-const SHIP = 500; // 5,00 € (enako kot v pogojih in košarici)
-const COD_FEE = 150;
+const COD_FEE = Math.round(COD_EUR * 100);
 
 const MSG = {
   sl: {
@@ -49,7 +48,10 @@ export async function POST(req) {
   for (const f of ["name", "email", "address", "zip", "city"])
     if (!c[f] || String(c[f]).trim().length < 2)
       return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
-  const payment = ["card", "proforma", "cod"].includes(body.payment) ? body.payment : "proforma";
+  const cc = countryOf(c.country || (lang === "hr" ? "HR" : lang === "en" ? "" : "SI"));
+  if (!cc) return NextResponse.json({ ok: false, message: t.invalid }, { status: 400 });
+  let payment = ["card", "proforma", "cod"].includes(body.payment) ? body.payment : "proforma";
+  if (payment === "cod" && !cc.cod) payment = "card";
 
   if (!dbConfigured())
     return NextResponse.json({ ok: false, message: t.nodb }, { status: 503 });
@@ -111,7 +113,7 @@ export async function POST(req) {
   }
 
   const subtotal = items.reduce((a, x) => a + x.price_cents * x.qty, 0);
-  const shipping = subtotal >= FREE_FROM ? 0 : SHIP;
+  const shipping = Math.round((shipFor(cc.code, subtotal / 100) || 0) * 100);
   const codFee = payment === "cod" ? COD_FEE : 0;
   const total = subtotal + shipping + codFee;
 
@@ -139,7 +141,7 @@ export async function POST(req) {
     (status, payment, name, email, phone, address, zip, city, country, lang,
      subtotal_cents, shipping_cents, cod_fee_cents, total_cents, coupon_code, discount_cents)
     VALUES ('novo', ${payment}, ${c.name}, ${c.email}, ${c.phone || null}, ${c.address},
-            ${c.zip}, ${c.city}, 'SI', ${lang}, ${subtotal}, ${shipping}, ${codFee}, ${total}, ${couponCode}, ${discount})
+            ${c.zip}, ${c.city}, ${cc.code}, ${lang}, ${subtotal}, ${shipping}, ${codFee}, ${total}, ${couponCode}, ${discount})
     RETURNING id, number`;
 
   // podatki za merjenje oglasov (samo ob oglaševalski privolitvi v obvestilu o piškotkih)
