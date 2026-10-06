@@ -59,6 +59,8 @@ export async function GET(req) {
     const un = await sql`SELECT x.campaign_id, COUNT(*)::int AS n FROM campaign_sends x JOIN subscribers s ON lower(s.email) = x.email
       WHERE x.campaign_id = ANY(${sentIds}) AND s.unsubscribed_at >= x.sent_at AND s.unsubscribed_at < x.sent_at + interval '7 days' GROUP BY 1`;
     for (const r of rows) {
+      if (!(r.sent_count > 0)) continue;
+      r.tracked = !r.sent_at || new Date(r.sent_at) >= new Date("2026-10-06T19:40:00Z"); // merjenje odprtij/klikov od te verzije naprej
       const k = (kind) => ev.find((e) => String(e.campaign_id) === String(r.id) && e.kind === kind)?.n || 0;
       const o = od.find((e) => String(e.id) === String(r.id));
       r.stats = { opens: k("open"), clicks: k("click"), orders: o?.n || 0, revenue_cents: o?.cents || 0,

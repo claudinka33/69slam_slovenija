@@ -2057,8 +2057,8 @@ function Campaigns({ stock }) {
                 <td><div className="strong">{c.subject || "(brez zadeve)"}</div>{c.preheader && <div className="muted">{c.preheader}</div>}{c.error && <div style={{ color: "#c0392b", fontSize: 12 }}>⚠️ {c.error}</div>}</td>
                 <td><span className={`adm-tag ${c.status === "poslano" ? "sub" : ""}`}>{CSTATUS[c.status] || c.status}</span>{c.left ? <div className="muted">še {c.left}</div> : null}</td>
                 <td className="r num">{c.sent_count || "—"}</td>
-                <td className="r num">{c.stats ? <>{c.stats.opens}<div className="muted">{pct(c.stats.opens, c.sent_count).trim()}</div></> : "—"}</td>
-                <td className="r num">{c.stats ? <>{c.stats.clicks}<div className="muted">{pct(c.stats.clicks, c.sent_count).trim()}</div></> : "—"}</td>
+                <td className="r num">{c.stats && c.tracked === false ? <span className="muted" title="Poslano pred uvedbo merjenja">ni merjeno</span> : c.stats ? <>{c.stats.opens}<div className="muted">{pct(c.stats.opens, c.sent_count).trim()}</div></> : "—"}</td>
+                <td className="r num">{c.stats && c.tracked === false ? <span className="muted">—</span> : c.stats ? <>{c.stats.clicks}<div className="muted">{pct(c.stats.clicks, c.sent_count).trim()}</div></> : "—"}</td>
                 <td className="r num">{c.stats ? <>{c.stats.orders}{c.stats.revenue_cents ? <div className="muted">{(c.stats.revenue_cents / 100).toLocaleString("sl-SI", { style: "currency", currency: "EUR" })}</div> : null}</> : "—"}</td>
                 <td className="muted">{c.status === "načrtovano" && c.scheduled_at ? <b style={{ color: "#0a0a0a" }}>{new Date(c.scheduled_at).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</b> : dShort(c.sent_at || c.updated_at)}</td>
                 <td style={{ whiteSpace: "nowrap" }}>
