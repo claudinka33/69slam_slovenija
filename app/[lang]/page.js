@@ -10,12 +10,12 @@ import { db, dbConfigured } from "../../lib/db";
 
 // Modeli moških kopalk na prvi strani (prve 3 črke šifre)
 const SWIM_MODELS = [
-  { pre: "SSM", kind: "VOLLEY", sl: "Volley short", en: "Volley short", sub: "4-way stretch" },
-  { pre: "SSB", kind: "ELASTIC", sl: "Elastic", en: "Elastic", sub: "4-way stretch" },
-  { pre: "SSN", kind: "BOARDSHORT", sl: "Boardshort", en: "Boardshort", sub: "4-way stretch" },
-  { pre: "SSC", kind: "CLASSIC", sl: "Classic", en: "Classic", sub: "" },
-  { pre: "SSL", kind: "MEDIUM", sl: "Medium length", en: "Medium length", sub: "" },
-  { pre: "SLL", kind: "LONG", sl: "Long length", en: "Long length", sub: "" },
+  { pre: ["SSB", "SEB"], kind: "ELASTIC", sl: "Elastic", en: "Elastic", sub: "" },
+  { pre: ["SSN", "SSW", "SSZ"], kind: "BOARDSHORT", sl: "Boardshort", en: "Boardshort", sub: "4-way stretch" },
+  { pre: ["SSM"], kind: "VOLLEY", sl: "Volley short", en: "Volley short", sub: "4-way stretch" },
+  { pre: ["SSC"], kind: "CLASSIC", sl: "Classic", en: "Classic", sub: "" },
+  { pre: ["SSL", "SSX"], kind: "MEDIUM", sl: "Medium length", en: "Medium length", sub: "" },
+  { pre: ["SLL", "SLX"], kind: "LONG", sl: "Long length", en: "Long length", sub: "" },
 ];
 
 export async function generateMetadata({ params }) {
@@ -42,7 +42,7 @@ export default async function Home({ params }) {
   let live = {};
   if (dbConfigured()) {
     try {
-      const rows = await db()`SELECT code, SUM(GREATEST(stock,0))::int AS n FROM variants WHERE code LIKE 'SS%' OR code LIKE 'SLL%' GROUP BY code`;
+      const rows = await db()`SELECT code, SUM(GREATEST(stock,0))::int AS n FROM variants WHERE code LIKE 'SS%' OR code LIKE 'SL%' OR code LIKE 'SEB%' GROUP BY code`;
       live = Object.fromEntries(rows.map((r) => [r.code, r.n]));
     } catch {}
   }
@@ -51,7 +51,7 @@ export default async function Home({ params }) {
   const isZoom = (p) => /zoom/i.test(p.img || "");
   const usedNames = new Set();
   const swim = SWIM_MODELS.map((m) => {
-    const list = swimAll.filter((p) => p.code.startsWith(m.pre) && stockOf(p) > 0)
+    const list = swimAll.filter((p) => m.pre.some((x) => p.code.startsWith(x)) && stockOf(p) > 0)
       .sort((a, b) => (isZoom(b) - isZoom(a)) || (stockOf(b) - stockOf(a)));
     const pick = list.find((p) => !usedNames.has(p.name.toUpperCase())) || list[0];
     if (pick) usedNames.add(pick.name.toUpperCase());
@@ -118,7 +118,7 @@ export default async function Home({ params }) {
             </div>
             <div className="sw-grid">
               {swim.map((m) => (
-                <Link key={m.pre} href={`/${lang}/kopalke?model=${m.kind}`} className="sw-item" title={m[lang] || m.sl}>
+                <Link key={m.kind} href={`/${lang}/kopalke?model=${m.kind}`} className="sw-item" title={m[lang] || m.sl}>
                   <span style={{ backgroundImage: `url('${m.p.img}')` }} />
                   <b>{m[lang] || m.sl}</b>
                   <small>{m.sub ? `${m.sub} · ` : ""}{m.n} {lang === "en" ? (m.n === 1 ? "design" : "designs") : m.n === 1 ? "dizajn" : m.n === 2 ? "dizajna" : m.n < 5 ? "dizajni" : "dizajnov"}</small>

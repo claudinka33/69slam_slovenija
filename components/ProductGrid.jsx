@@ -19,7 +19,11 @@ function cardLine(p, t) {
 }
 
 /** Podvrsta kopalk iz tipa (BOARDSHORT, ELASTIC, …) */
+const SWIM_PRE = { SSM: "VOLLEY", SSB: "ELASTIC", SEB: "ELASTIC", SSN: "BOARDSHORT", SSW: "BOARDSHORT", SSZ: "BOARDSHORT",
+  SSC: "CLASSIC", SSL: "MEDIUM", SSX: "MEDIUM", SLL: "LONG", SLX: "LONG" };
 function swimKind(p) {
+  const pre = String(p.code || "").slice(0, 3).toUpperCase();
+  if (SWIM_PRE[pre]) return SWIM_PRE[pre];
   const tp = (p.type || "").toUpperCase();
   if (tp.includes("MAJICA")) return "MAJICE";
   for (const k of ["BOARDSHORT", "VOLLEY", "ELASTIC", "MEDIUM", "LONG", "CLASSIC"]) if (tp.includes(k)) return k;
@@ -39,19 +43,20 @@ function accKind(p) {
 const ACC_ORDER = ["KAPE", "NOGAVICE", "OBESKI", "TORBE", "OBUTEV", "OBLACILA", "DRUGO"];
 const ACC_LABEL = { sl: { KAPE: "Kape", NOGAVICE: "Nogavice", OBESKI: "Obeski za ključe", TORBE: "Torbe", OBUTEV: "Japonke & natikači", OBLACILA: "Oblačila", DRUGO: "Ostalo" },
   en: { KAPE: "Caps", NOGAVICE: "Socks", OBESKI: "Keychains", TORBE: "Bags", OBUTEV: "Flip-flops & slides", OBLACILA: "Clothing", DRUGO: "Other" } };
-const SWIM_ORDER = ["VOLLEY", "ELASTIC", "BOARDSHORT", "CLASSIC", "MEDIUM", "LONG", "MAJICE", "DRUGO"];
+const SWIM_ORDER = ["ELASTIC", "BOARDSHORT", "VOLLEY", "CLASSIC", "MEDIUM", "LONG", "MAJICE", "DRUGO"];
+const SWIM_TOP = new Set(["ELASTIC", "BOARDSHORT"]);
 const SWIM_DESC = {
   sl: { VOLLEY: "Kratke (~28 cm), 4-way stretch – za maksimalno gibanje na plaži in v vodi.",
-    ELASTIC: "Elastičen pas – obuješ in greš. Ležerne za cel dan na plaži (~38 cm).",
-    BOARDSHORT: "Za poležavanje in vodne športe, raztegljiv 4-way stretch (~38 cm).",
+    ELASTIC: "Elastičen pas – obuješ in greš. V 4-way stretch in klasični elastic različici (~38 cm).",
+    BOARDSHORT: "Raztegljiv 4-way stretch se giblje s tabo – za vodne športe in aktivne dni na plaži (~38 cm).",
     CLASSIC: "Klasične kopalne hlače z vrvico in ježkom, živahni printi (~36 cm).",
     MEDIUM: "Srednja dolžina do kolena – več pokritosti, sproščen videz (~46 cm).",
     LONG: "Za tiste, ki imate radi daljše kopalke (~52 cm).",
     MAJICE: "Kopalne majice z UV zaščito – za sonce in vodo.",
     DRUGO: "Ostale kopalke." },
   en: { VOLLEY: "Short (~28 cm), 4-way stretch – built for maximum movement.",
-    ELASTIC: "Elastic waist – pull on and go. Easy all-day beach shorts (~38 cm).",
-    BOARDSHORT: "For lounging and water sports, stretchy 4-way fabric (~38 cm).",
+    ELASTIC: "Elastic waist – pull on and go. In 4-way stretch and classic elastic versions (~38 cm).",
+    BOARDSHORT: "Stretchy 4-way fabric that moves with you – for water sports and active beach days (~38 cm).",
     CLASSIC: "Classic swim shorts with drawstring and velcro, bold prints (~36 cm).",
     MEDIUM: "Knee length – more coverage, relaxed look (~46 cm).",
     LONG: "For those who like their swim shorts longer (~52 cm).",
@@ -148,7 +153,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
                 <button key={k} className={`cutcard ${kind === k ? "active" : ""}`} onClick={() => setKind(kind === k ? "all" : k)}>
                   <span className="cutimg" style={{ backgroundImage: `url('${smp?.img || ""}')` }} />
                   <span className="cuttxt">
-                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}</b>
+                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{lang === "en" ? "Best seller" : "Najbolj prodajane"}</em>}</b>
                     <span>{(SWIM_DESC[lang] || SWIM_DESC.sl)[k]}</span>
                     <small>{inK.length} {lang === "en" ? "designs" : inK.length === 1 ? "dizajn" : inK.length === 2 ? "dizajna" : inK.length < 5 ? "dizajni" : "dizajnov"}</small>
                   </span>
