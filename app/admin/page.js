@@ -93,15 +93,16 @@ export default function Admin() {
     { id: "dashboard", ico: "📊", lbl: "Dashboard" },
     { id: "narocila", ico: "📦", lbl: "Naročila", bdg: newCount || null },
     { id: "zaloga", ico: "👕", lbl: "Artikli" },
+    { id: "stranke", ico: "👤", lbl: "Stranke" },
+    { id: "kode", ico: "🏷️", lbl: "Kode za popust" },
+    { sep: 1 },
+    { id: "racuni", ico: "🧾", lbl: "Računi & dokumenti" },
     { id: "prevzemi", ico: "📥", lbl: "Prevzemi" },
     { id: "inventura", ico: "📋", lbl: "Inventura" },
     { id: "cenik", ico: "💶", lbl: "Cenik & RVC" },
-    { id: "kode", ico: "🏷️", lbl: "Kode za popust" },
-    { id: "stranke", ico: "👤", lbl: "Stranke" },
-    { id: "racuni", ico: "🧾", lbl: "Računi & dokumenti" },
+    { sep: 2 },
     { id: "maili", ico: "✉️", lbl: "E-maili" },
     { id: "ocene", ico: "⭐", lbl: "Ocene", bdg: revCount || null },
-    { id: "nastavitve", ico: "⚙️", lbl: "Nastavitve", soon: true },
   ];
   const orderObj = openOrder ? (orders || []).find((o) => o.id === openOrder) : null;
 
@@ -118,7 +119,7 @@ export default function Admin() {
           <small>ADMIN · CMS</small>
         </div>
         <nav className="adm-nav">
-          {NAV.map((n) => (
+          {NAV.map((n) => n.sep ? <div key={"sep" + n.sep} className="adm-nav-sep" /> : (
             <button key={n.id} className={view === n.id ? "on" : ""} disabled={n.soon} onClick={() => go(n.id)}>
               <span className="ico">{n.ico}</span>
               <span className="lbl">{n.lbl}</span>
