@@ -707,4 +707,4 @@ html,body{overflow-x:clip;}
 @media(max-width:640px){.swimcuts .cutimg{width:100px;}}
 
 /* interna šifra artikla pod naslovom */
-.pdet .pcode{font-size:11px;color:#9a9a9a;letter-spacing:.06em;margin:-4px 0 8px;font-weight:500}
+.pdet .pcode{font-size:11px;color:#9a9a9a;letter-spacing:.06em;margin:6px 0 10px;font-weight:500}
