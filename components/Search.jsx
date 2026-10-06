@@ -66,7 +66,7 @@ export default function Search({ lang }) {
             {!q.trim() && <div className="srch-hint">{tx(lang, "npr. flamingo · MBYABT · boardshort · bambus hip · kapa", "e.g. flamingo · MBYABT · boardshort · bamboo hip · cap", "npr. flamingo · MBYABT · boardshort · bambus hip · kapa")}</div>}
             <div className="srch-res">
               {res.map((p) => {
-                const red = p.sale || p.outlet;
+                const red = p.effPrice < p.price;
                 return (
                   <Link key={p.code} href={`/${lang}/p/${p.slug}`} className="srch-item" onClick={() => setOpen(false)}>
                     <span className="srch-img" style={{ backgroundImage: `url('${p.img}')` }} />

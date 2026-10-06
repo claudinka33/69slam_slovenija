@@ -20,7 +20,7 @@ export default function CompleteSet({ codes, lang, t }) {
 
 function SetItem({ p, lang, t, addItem, usedInCart, showToast }) {
   const [size, setSize] = useState(null);
-  const red = p.sale || p.outlet;
+  const red = p.effPrice < p.price;
   const seg = typeLabel(p.type, lang).split(" · ").filter(Boolean);
   return (
     <div className="cset-item">

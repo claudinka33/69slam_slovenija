@@ -57,7 +57,7 @@ export default async function ProductPage({ params }) {
     micro ? x.group === "boksarice" && x.material === "mikrofibra" && x.collection === p.collection && x.cut === p.cut
       : x.group === p.group && x.gender === p.gender && (!boxers || (x.cut === p.cut && x.material === p.material)));
   const desc = p.description ? p.description : defaultDescription(p, t, lang);
-  const red = p.sale || p.outlet;
+  const red = p.effPrice < p.price;
   const backHref = p.outlet ? `/${lang}/vse-more-ven` : p.group === "kopalke" ? `/${lang}/kopalke` : `/${lang}#shop`;
 
   const jsonLd = {
@@ -96,7 +96,7 @@ export default async function ProductPage({ params }) {
             </div>) : null; })()}
           <div className="mline">
             {micro ? <>69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}</> : <>69SLAM · {typeLabel(p.type, lang)}</>}
-            {p.sale ? ` · ${t.sale_line}` : ""}{p.outlet ? ` · ${t.out_line}` : ""}
+            {p.sale ? ` · ${t.sale_line}` : ""}{p.swim15 ? ` · ${tx(lang, "Akcija −15 %", "Sale −15%", "Akcija −15 %")}` : ""}{p.outlet ? ` · ${t.out_line}` : ""}
           </div>
           <div className="mprice">
             {red ? (

@@ -311,9 +311,10 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
       <div className="rescount">{list.length} {boxers ? t.rescount : t.items}</div>
       <div className="grid">
         {list.slice(0, limit).map((p) => {
-          const red = p.sale || p.outlet;
+          const red = p.effPrice < p.price;
           const badge = p.outlet ? <span className="badge sale">{t.out_badge}</span>
             : p.sale ? <span className="badge sale">{t.badge_sale}</span>
+            : p.swim15 ? <span className="badge sale">{p.totalStock <= 2 ? `${t.badge_low} · ` : ""}−15 %</span>
             : p.collection === "limited" ? <span className="badge ltd">{t.badge_ltd}</span>
             : null;
           return (

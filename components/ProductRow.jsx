@@ -13,7 +13,7 @@ function Row({ title, items, lang, t }) {
       <h2>{title}</h2>
       <div className="prow-list">
         {items.map((p) => {
-          const red = p.sale || p.outlet;
+          const red = p.effPrice < p.price;
           return (
             <Link key={p.code} href={`/${lang}/p/${p.slug}`} className="prow-card">
               <span className="prow-img" style={{ backgroundImage: `url('${p.img}')` }} />
