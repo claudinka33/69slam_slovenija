@@ -1,8 +1,12 @@
 import { LOGO_WHITE } from "../../lib/brand";
 import Signup from "./Signup";
+import { Countdown, TeamLogin } from "./Extras";
+import { MAINTENANCE_UNTIL, OPEN_LABEL } from "../../lib/maintenance";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "69SLAM.si — urejamo novo spletno trgovino",
+  title: "69SLAM.si — odpiramo danes ob 18:30",
   description: "Nova 69SLAM spletna trgovina prihaja zelo kmalu.",
   robots: { index: false, follow: false },
 };
@@ -26,6 +30,13 @@ const CSS = `
 .mt-msg.err{color:#ff8a8a;}
 .mt-small{margin-top:34px;font-size:.82rem;color:#777;}
 .mt-small a{color:#bdbdbd;}
+.mt-cd{display:flex;gap:10px;justify-content:center;margin:0 0 30px;min-height:76px;}
+.mt-cd>div{background:#151515;border:1px solid #2a2a2a;border-radius:12px;padding:10px 0;width:82px;}
+.mt-cd b{display:block;font-size:2rem;font-weight:900;line-height:1.1;}
+.mt-cd span{font-size:.68rem;color:#888;text-transform:uppercase;letter-spacing:.1em;}
+.mt-team{margin-top:26px;background:none;border:0;color:#666;font-size:.8rem;cursor:pointer;text-decoration:underline;}
+.mt-pass{margin-top:26px;flex-wrap:wrap;}
+.mt-pass button{background:#06d6a0;color:#0a0a0a;}
 @media (max-width:480px){.mt-form{flex-direction:column}.mt-form button{padding:14px}}
 `;
 
@@ -36,13 +47,15 @@ export default function Maintenance() {
       <div className="mt-box">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="mt-logo" src={LOGO_WHITE} alt="69SLAM" />
-        <div className="mt-tag">Kmalu</div>
-        <h1>Urejamo <span>novo</span> spletno trgovino za vas</h1>
-        <p>Nova 69SLAM trgovina bo odprta zelo kmalu. Pusti svoj e-mail in te obvestimo prvega, ko odpremo — s posebnim popustom za otvoritev.</p>
+        <div className="mt-tag">Otvoritev</div>
+        <h1>Odpiramo <span>{OPEN_LABEL}</span></h1>
+        <p>Nova 69SLAM spletna trgovina se odpre {OPEN_LABEL}. Pusti svoj e-mail in te obvestimo takoj, ko odpremo — s posebnim popustom za otvoritev.</p>
+        {MAINTENANCE_UNTIL && <Countdown until={MAINTENANCE_UNTIL} />}
         <Signup />
         <div className="mt-small">
           Vprašanja ali naročila: <a href="mailto:69slamslovenia@gmail.com">69slamslovenia@gmail.com</a>
         </div>
+        <TeamLogin />
       </div>
     </main>
   );

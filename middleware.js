@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, isValidAdminCookie } from "./lib/adminAuth";
-import { MAINTENANCE, PREVIEW_COOKIE, PREVIEW_KEY } from "./lib/maintenance";
+import { lockedNow, MAINTENANCE_UNTIL, PREVIEW_COOKIE, PREVIEW_KEY } from "./lib/maintenance";
 
 export async function middleware(req) {
   const { pathname, searchParams } = req.nextUrl;
@@ -20,7 +20,7 @@ export async function middleware(req) {
   }
 
   // trgovina v pripravi
-  if (!MAINTENANCE || pathname === "/vzdrzevanje") return NextResponse.next();
+  if (!lockedNow() || pathname === "/vzdrzevanje") return NextResponse.next();
   if (searchParams.get("predogled") === PREVIEW_KEY) {
     const url = req.nextUrl.clone();
     url.searchParams.delete("predogled");
@@ -34,7 +34,9 @@ export async function middleware(req) {
   url.pathname = "/vzdrzevanje";
   url.search = "";
   const res = NextResponse.rewrite(url, { status: 503 });
-  res.headers.set("Retry-After", "86400");
+  const left = MAINTENANCE_UNTIL ? Math.ceil((Date.parse(MAINTENANCE_UNTIL) - Date.now()) / 1000) : 0;
+  res.headers.set("Retry-After", String(left > 0 ? left : 86400));
+  res.headers.set("Cache-Control", "no-store");
   return res;
 }
 
