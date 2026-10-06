@@ -235,7 +235,7 @@ export default async function StoryPage({ params }) {
       </div>
 
       <section className="s2-split rev">
-        <div className="pic"><Image src="/img/zgodba/kovcek.jpg" alt={pack.h} fill sizes="(max-width:860px) 100vw, 50vw" /></div>
+        <div className="pic"><Image src="/img/zgodba/kovcek-v2.jpg" alt={pack.h} fill sizes="(max-width:860px) 100vw, 50vw" /></div>
         <div className="txt"><Block b={pack} /></div>
       </section>
 
