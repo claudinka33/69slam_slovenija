@@ -95,7 +95,13 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
     if (m) setKind(m.toUpperCase());
   }, [mode]);
   const [filter, setFilter] = useState("all");
+  // krajše strani: najprej 12 (telefon) / 24 (računalnik), nato »Pokaži več«
+  const [step, setStep] = useState(24);
+  const [limit, setLimit] = useState(24);
+  useEffect(() => { const n = window.innerWidth < 700 ? 12 : 24; setStep(n); setLimit(n); }, []);
   const [cut, setCut] = useState("all");
+
+  useEffect(() => { setLimit(step); }, [group, gender, kind, filter, cut, step]);
 
   // ---------- osnovni nabor ----------
   let base = products;
@@ -237,7 +243,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
 
       <div className="rescount">{list.length} {boxers ? t.rescount : t.items}</div>
       <div className="grid">
-        {list.map((p) => {
+        {list.slice(0, limit).map((p) => {
           const red = p.sale || p.outlet;
           const badge = p.outlet ? <span className="badge sale">{t.out_badge}</span>
             : p.sale ? <span className="badge sale">{t.badge_sale}</span>
@@ -264,6 +270,13 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
           );
         })}
       </div>
+      {list.length > limit && (
+        <div className="morewrap">
+          <button className="morebtn" onClick={() => setLimit(limit + step * 2)}>
+            {tx(lang, "Pokaži več", "Show more", "Prikaži više")} <small>({limit} / {list.length})</small>
+          </button>
+        </div>
+      )}
     </>
   );
 }
