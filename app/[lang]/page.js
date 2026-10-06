@@ -11,7 +11,7 @@ import { db, dbConfigured } from "../../lib/db";
 // Modeli moških kopalk na prvi strani (prve 3 črke šifre)
 const SWIM_MODELS = [
   { pre: ["SSB", "SEB"], kind: "ELASTIC", sl: "Elastic", en: "Elastic", sub: "" },
-  { pre: ["SSN", "SSW", "SSZ"], kind: "BOARDSHORT", sl: "Boardshort", en: "Boardshort", sub: "4-way stretch" },
+  { pre: ["SSN", "SSW", "SSZ", "SDW"], kind: "BOARDSHORT", sl: "Boardshort", en: "Boardshort", sub: "4-way stretch" },
   { pre: ["SSM"], kind: "VOLLEY", sl: "Volley short", en: "Volley short", sub: "4-way stretch" },
   { pre: ["SSC"], kind: "CLASSIC", sl: "Classic", en: "Classic", sub: "" },
   { pre: ["SSL", "SSX"], kind: "MEDIUM", sl: "Medium length", en: "Medium length", sub: "" },
@@ -42,7 +42,7 @@ export default async function Home({ params }) {
   let live = {};
   if (dbConfigured()) {
     try {
-      const rows = await db()`SELECT code, SUM(GREATEST(stock,0))::int AS n FROM variants WHERE code LIKE 'SS%' OR code LIKE 'SL%' OR code LIKE 'SEB%' GROUP BY code`;
+      const rows = await db()`SELECT code, SUM(GREATEST(stock,0))::int AS n FROM variants WHERE code LIKE 'SS%' OR code LIKE 'SL%' OR code LIKE 'SEB%' OR code LIKE 'SDW%' GROUP BY code`;
       live = Object.fromEntries(rows.map((r) => [r.code, r.n]));
     } catch {}
   }

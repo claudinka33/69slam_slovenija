@@ -703,3 +703,5 @@ html,body{overflow-x:clip;}
   .swimcuts{grid-template-columns:1fr;}
   .specs{gap:14px;}
 }
+.swimcuts .cutimg{background-size:contain;background-repeat:no-repeat;background-color:#f5f5f7;width:120px;}
+@media(max-width:640px){.swimcuts .cutimg{width:100px;}}

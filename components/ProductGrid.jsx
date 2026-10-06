@@ -19,7 +19,7 @@ function cardLine(p, t) {
 }
 
 /** Podvrsta kopalk iz tipa (BOARDSHORT, ELASTIC, …) */
-const SWIM_PRE = { SSM: "VOLLEY", SSB: "ELASTIC", SEB: "ELASTIC", SSN: "BOARDSHORT", SSW: "BOARDSHORT", SSZ: "BOARDSHORT",
+const SWIM_PRE = { SSM: "VOLLEY", SSB: "ELASTIC", SEB: "ELASTIC", SSN: "BOARDSHORT", SSW: "BOARDSHORT", SSZ: "BOARDSHORT", SDW: "BOARDSHORT",
   SSC: "CLASSIC", SSL: "MEDIUM", SSX: "MEDIUM", SLL: "LONG", SLX: "LONG" };
 function swimKind(p) {
   const pre = String(p.code || "").slice(0, 3).toUpperCase();
@@ -47,7 +47,7 @@ const SWIM_ORDER = ["ELASTIC", "BOARDSHORT", "VOLLEY", "CLASSIC", "MEDIUM", "LON
 const SWIM_TOP = new Set(["ELASTIC", "BOARDSHORT"]);
 const SWIM_DESC = {
   sl: { VOLLEY: "Kratke (~28 cm), 4-way stretch – za maksimalno gibanje na plaži in v vodi.",
-    ELASTIC: "Elastičen pas – obuješ in greš. V 4-way stretch in klasični elastic različici (~38 cm).",
+    ELASTIC: "Elastičen pas – oblečeš in greš. V 4-way stretch in klasični elastic različici (~38 cm).",
     BOARDSHORT: "Raztegljiv 4-way stretch se giblje s tabo – za vodne športe in aktivne dni na plaži (~38 cm).",
     CLASSIC: "Klasične kopalne hlače z vrvico in ježkom, živahni printi (~36 cm).",
     MEDIUM: "Srednja dolžina do kolena – več pokritosti, sproščen videz (~46 cm).",
@@ -146,20 +146,23 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
         <>
           <div className="flabel">{lang === "en" ? "Pick your model" : "Izberi model"}</div>
           <div className="cuts swimcuts">
-            {kinds.map((k) => {
+            {(() => { const used = new Set(); return kinds.map((k) => {
               const inK = products.filter((p) => swimKind(p) === k);
-              const smp = inK.find((p) => p.img && /zoom/i.test(p.img)) || inK.find((p) => p.img) || inK[0];
+              // cela slika kopalk (ne detajl od blizu), vsak model drug dizajn
+              const full = inK.filter((p) => p.img && !/zoom/i.test(p.img));
+              const smp = full.find((p) => !used.has(String(p.name).toUpperCase())) || full[0] || inK.find((p) => p.img) || inK[0];
+              if (smp) used.add(String(smp.name).toUpperCase());
               return (
                 <button key={k} className={`cutcard ${kind === k ? "active" : ""}`} onClick={() => setKind(kind === k ? "all" : k)}>
                   <span className="cutimg" style={{ backgroundImage: `url('${smp?.img || ""}')` }} />
                   <span className="cuttxt">
-                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{lang === "en" ? "Best seller" : "Najbolj prodajane"}</em>}</b>
+                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{lang === "en" ? "Best seller" : "Najbolj prodajan"}</em>}</b>
                     <span>{(SWIM_DESC[lang] || SWIM_DESC.sl)[k]}</span>
                     <small>{inK.length} {lang === "en" ? "designs" : inK.length === 1 ? "dizajn" : inK.length === 2 ? "dizajna" : inK.length < 5 ? "dizajni" : "dizajnov"}</small>
                   </span>
                 </button>
               );
-            })}
+            }); })()}
           </div>
           {kind !== "all" && (
             <div className="filters" style={{ marginTop: 12 }}>
