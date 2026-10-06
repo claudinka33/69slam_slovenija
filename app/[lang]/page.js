@@ -73,7 +73,7 @@ export default async function Home({ params }) {
               <div className="spec"><b>500+</b><span>{t.spec2}</span></div>
               <div className="spec"><b>−15 %</b><span>{t.spec3}</span></div>
             </div>
-            <a className="cta" href="#shop">{t.cta_shop}</a>
+            <Link className="cta" href={`/${lang}/spodnjice`}>{t.cta_shop}</Link>
             <Link className="cta ghost" href={`/${lang}/kopalke`}>{t.cta_why}</Link>
           </div>
         </div>

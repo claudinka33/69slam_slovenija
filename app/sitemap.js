@@ -7,6 +7,7 @@ export default async function sitemap() {
   const now = new Date();
   const urls = LANGS.map((l) => ({ url: `${base}/${l}`, lastModified: now, priority: 1 }));
   for (const l of LANGS) urls.push({ url: `${base}/${l}/zgodba`, lastModified: now, priority: 0.7 });
+  for (const l of LANGS) urls.push({ url: `${base}/${l}/spodnjice`, lastModified: now, priority: 0.9 });
   for (const l of LANGS) urls.push({ url: `${base}/${l}/kopalke`, lastModified: now, priority: 0.9 });
   for (const l of LANGS) urls.push({ url: `${base}/${l}/vse-more-ven`, lastModified: now, priority: 0.6 });
   for (const d of ["splosni-pogoji", "dostava-in-placilo", "vracila-in-odstop", "reklamacije", "zasebnost", "piskotki"])

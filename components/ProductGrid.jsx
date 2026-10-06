@@ -39,6 +39,25 @@ function accKind(p) {
 const ACC_ORDER = ["KAPE", "NOGAVICE", "OBESKI", "TORBE", "OBUTEV", "OBLACILA", "DRUGO"];
 const ACC_LABEL = { sl: { KAPE: "Kape", NOGAVICE: "Nogavice", OBESKI: "Obeski za ključe", TORBE: "Torbe", OBUTEV: "Japonke & natikači", OBLACILA: "Oblačila", DRUGO: "Ostalo" },
   en: { KAPE: "Caps", NOGAVICE: "Socks", OBESKI: "Keychains", TORBE: "Bags", OBUTEV: "Flip-flops & slides", OBLACILA: "Clothing", DRUGO: "Other" } };
+const SWIM_ORDER = ["VOLLEY", "ELASTIC", "BOARDSHORT", "CLASSIC", "MEDIUM", "LONG", "MAJICE", "DRUGO"];
+const SWIM_DESC = {
+  sl: { VOLLEY: "Kratke (~28 cm), 4-way stretch – za maksimalno gibanje na plaži in v vodi.",
+    ELASTIC: "Elastičen pas – obuješ in greš. Ležerne za cel dan na plaži (~38 cm).",
+    BOARDSHORT: "Za poležavanje in vodne športe, raztegljiv 4-way stretch (~38 cm).",
+    CLASSIC: "Klasične kopalne hlače z vrvico in ježkom, živahni printi (~36 cm).",
+    MEDIUM: "Srednja dolžina do kolena – več pokritosti, sproščen videz (~46 cm).",
+    LONG: "Za tiste, ki imate radi daljše kopalke (~52 cm).",
+    MAJICE: "Kopalne majice z UV zaščito – za sonce in vodo.",
+    DRUGO: "Ostale kopalke." },
+  en: { VOLLEY: "Short (~28 cm), 4-way stretch – built for maximum movement.",
+    ELASTIC: "Elastic waist – pull on and go. Easy all-day beach shorts (~38 cm).",
+    BOARDSHORT: "For lounging and water sports, stretchy 4-way fabric (~38 cm).",
+    CLASSIC: "Classic swim shorts with drawstring and velcro, bold prints (~36 cm).",
+    MEDIUM: "Knee length – more coverage, relaxed look (~46 cm).",
+    LONG: "For those who like their swim shorts longer (~52 cm).",
+    MAJICE: "Swim shirts with UV protection – for sun and water.",
+    DRUGO: "Other swimwear." },
+};
 const KIND_LABEL = { BOARDSHORT: "Boardshort", VOLLEY: "Volley", ELASTIC: "Elastic", MEDIUM: "Medium length", LONG: "Long length", CLASSIC: "Classic", MAJICE: "Kopalne majice", DRUGO: "Ostalo" };
 
 /**
@@ -69,7 +88,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   if (groups.length && group !== "all") base = base.filter((p) => p.group === group);
 
   const kindOf = mode === "extra" ? accKind : swimKind;
-  const kinds = mode === "swim" ? [...new Set(products.map(swimKind))]
+  const kinds = mode === "swim" ? SWIM_ORDER.filter((k) => products.some((p) => swimKind(p) === k))
     : mode === "extra" ? ACC_ORDER.filter((k) => products.some((p) => accKind(p) === k)) : [];
   if ((mode === "swim" || mode === "extra") && kind !== "all") base = base.filter((p) => kindOf(p) === kind);
 
@@ -102,7 +121,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
         </div>
       )}
 
-      {groups.length > 0 && (
+      {groups.filter((g) => gCount(g) > 0).length > 1 && (
         <>
           <div className="flabel">{t.cat_label}</div>
           <div className="filters catrow">
@@ -118,7 +137,34 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
         </>
       )}
 
-      {kinds.length > 1 && (
+      {mode === "swim" && kinds.length > 1 && (
+        <>
+          <div className="flabel">{lang === "en" ? "Pick your model" : "Izberi model"}</div>
+          <div className="cuts swimcuts">
+            {kinds.map((k) => {
+              const inK = products.filter((p) => swimKind(p) === k);
+              const smp = inK.find((p) => p.img && /zoom/i.test(p.img)) || inK.find((p) => p.img) || inK[0];
+              return (
+                <button key={k} className={`cutcard ${kind === k ? "active" : ""}`} onClick={() => setKind(kind === k ? "all" : k)}>
+                  <span className="cutimg" style={{ backgroundImage: `url('${smp?.img || ""}')` }} />
+                  <span className="cuttxt">
+                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}</b>
+                    <span>{(SWIM_DESC[lang] || SWIM_DESC.sl)[k]}</span>
+                    <small>{inK.length} {lang === "en" ? "designs" : inK.length === 1 ? "dizajn" : inK.length === 2 ? "dizajna" : inK.length < 5 ? "dizajni" : "dizajnov"}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {kind !== "all" && (
+            <div className="filters" style={{ marginTop: 12 }}>
+              <button className="chip" onClick={() => setKind("all")}>✕ {t.swim_all}</button>
+            </div>
+          )}
+        </>
+      )}
+
+      {mode !== "swim" && kinds.length > 1 && (
         <div className="filters">
           <button className={`chip ${kind === "all" ? "active" : ""}`} onClick={() => setKind("all")}>{mode === "extra" ? t.grp_all : t.swim_all}</button>
           {kinds.map((k) => (

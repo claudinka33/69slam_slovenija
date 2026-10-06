@@ -37,7 +37,7 @@ export default function Header({ lang, t }) {
           )}
         </Link>
         <nav className="main">
-          <Link href={`/${lang}#shop`}>{t.nav_shop}</Link>
+          <Link href={`/${lang}/spodnjice`}>{t.nav_shop}</Link>
           <Link href={`/${lang}/kopalke`}>{t.nav_swim}</Link>
           <Link href={`/${lang}/dodatki`}>{t.nav_acc}</Link>
           <Link href={`/${lang}/zgodba`}>{t.nav_story}</Link>
@@ -58,7 +58,7 @@ export default function Header({ lang, t }) {
         </button>
       </div>
       <nav className="mnav">
-        <Link href={`/${lang}#shop`}>{t.nav_shop}</Link>
+        <Link href={`/${lang}/spodnjice`}>{t.nav_shop}</Link>
         <Link href={`/${lang}/kopalke`}>{t.nav_swim}</Link>
         <Link href={`/${lang}/dodatki`}>{t.nav_acc}</Link>
         <Link href={`/${lang}/zgodba`}>{t.nav_story}</Link>

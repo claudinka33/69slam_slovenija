@@ -666,3 +666,40 @@ main > section:last-child{margin-bottom:clamp(32px,5vw,64px);}
 .srch-price s{color:var(--gray);font-weight:500;font-size:.74rem;}
 .srch-price em{font-style:normal;color:var(--red);}
 @media(max-width:640px){.srchbtn{width:38px;height:38px;}.srch-ov{padding-top:12px;}}
+
+/* ===== Mobilna prenova (okt 2026): nič vodoravnega drsenja, vse eno pod drugim ===== */
+html,body{overflow-x:clip;}
+.swimcuts{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
+.underhead{background:#f5f5f7;padding-bottom:30px;}
+@media(max-width:900px){
+  /* glava: vse v eni vrsti, brez rezanja */
+  .hrow{gap:8px;padding-top:10px;padding-bottom:10px;flex-wrap:nowrap;}
+  .logo img{height:24px !important;}
+  .langs a{padding:6px 9px;font-size:.72rem;}
+  .cartbtn{padding:6px 10px;gap:6px;}
+  /* meni: v več vrstic namesto drsenja */
+  .mnav{flex-wrap:wrap;justify-content:center;overflow:visible;gap:8px 16px;padding:10px 12px;}
+  .mnav a{font-size:.72rem;}
+}
+@media(max-width:640px){
+  .hrow{gap:6px;}
+  .logo img{height:21px !important;}
+  .srchbtn{width:36px;height:36px;}
+  .langs a{padding:5px 8px;}
+  /* detajli od blizu: ena pod drugo */
+  .detail-grid{display:grid;grid-template-columns:1fr;gap:14px;overflow:visible;}
+  .detail-card{flex:none;}
+  .detail-card img{aspect-ratio:4/3;}
+  /* Kaj paše zraven / nazadnje ogledano: mreža 2 × */
+  .prow-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;overflow:visible;}
+  .prow-card{flex:none;}
+  /* paket / galerija: v vrstice namesto drsenja */
+  .pb-strip{flex-wrap:wrap;overflow:visible;}
+  .pgal-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow:visible;}
+  /* kopalke na prvi strani: 2 v vrsti, večje */
+  .sw-grid{grid-template-columns:repeat(2,1fr);}
+  /* gumbi v hero: drug ob drugem čez celo širino */
+  .hero2 .cta{padding:14px 18px;}
+  .swimcuts{grid-template-columns:1fr;}
+  .specs{gap:14px;}
+}
