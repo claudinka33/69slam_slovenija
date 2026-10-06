@@ -53,7 +53,8 @@ export default async function Home({ params }) {
   const swim = SWIM_MODELS.map((m) => {
     const list = swimAll.filter((p) => m.pre.some((x) => p.code.startsWith(x)) && stockOf(p) > 0)
       .sort((a, b) => (isZoom(b) - isZoom(a)) || (stockOf(b) - stockOf(a)));
-    const pick = list.find((p) => !usedNames.has(p.name.toUpperCase())) || list[0];
+    const want = { ELASTIC: "PLAIN AQUA GREEN", BOARDSHORT: "VICE", CLASSIC: "BALI", MEDIUM: "CANDY SPLASH" }[m.kind];
+    const pick = (want && list.find((p) => p.name.toUpperCase().trim() === want)) || list.find((p) => !usedNames.has(p.name.toUpperCase())) || list[0];
     if (pick) usedNames.add(pick.name.toUpperCase());
     return pick ? { ...m, p: pick, n: list.length } : null;
   }).filter(Boolean);

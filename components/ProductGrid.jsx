@@ -45,6 +45,10 @@ const ACC_LABEL = { sl: { KAPE: "Kape", NOGAVICE: "Nogavice", OBESKI: "Obeski za
   en: { KAPE: "Caps", NOGAVICE: "Socks", OBESKI: "Keychains", TORBE: "Bags", OBUTEV: "Flip-flops & slides", OBLACILA: "Clothing", DRUGO: "Other" } };
 const SWIM_ORDER = ["ELASTIC", "BOARDSHORT", "VOLLEY", "CLASSIC", "MEDIUM", "LONG", "MAJICE", "DRUGO"];
 const SWIM_TOP = new Set(["ELASTIC", "BOARDSHORT"]);
+/** Izbrani dizajn za sliko modela (po imenu). */
+export const SWIM_PICK = { ELASTIC: "PLAIN AQUA GREEN", BOARDSHORT: "VICE", CLASSIC: "BALI", MEDIUM: "CANDY SPLASH" };
+/** Cela slika izdelka (ne detajl od blizu). */
+const fullImg = (p) => (p?.images || []).map((i) => i.src).find((u) => u && !/zoom/i.test(u)) || p?.img;
 const SWIM_DESC = {
   sl: { VOLLEY: "Kratke (~28 cm), 4-way stretch – za maksimalno gibanje na plaži in v vodi.",
     ELASTIC: "Elastičen pas – oblečeš in greš. V 4-way stretch in klasični elastic različici (~38 cm).",
@@ -149,12 +153,17 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
             {(() => { const used = new Set(); return kinds.map((k) => {
               const inK = products.filter((p) => swimKind(p) === k);
               // cela slika kopalk (ne detajl od blizu), vsak model drug dizajn
+              const orig = (p) => all.find((x) => x.code === p.code) || p;
+              const want = SWIM_PICK[k];
+              const picked = want && inK.find((p) => String(p.name).toUpperCase().trim() === want)
+                || want && inK.find((p) => String(p.name).toUpperCase().includes(want));
               const full = inK.filter((p) => p.img && !/zoom/i.test(p.img));
-              const smp = full.find((p) => !used.has(String(p.name).toUpperCase())) || full[0] || inK.find((p) => p.img) || inK[0];
+              const smp = picked || full.find((p) => !used.has(String(p.name).toUpperCase())) || full[0] || inK.find((p) => p.img) || inK[0];
               if (smp) used.add(String(smp.name).toUpperCase());
+              const smpImg = smp ? fullImg(orig(smp)) : "";
               return (
                 <button key={k} className={`cutcard ${kind === k ? "active" : ""}`} onClick={() => setKind(kind === k ? "all" : k)}>
-                  <span className="cutimg" style={{ backgroundImage: `url('${smp?.img || ""}')` }} />
+                  <span className="cutimg" style={{ backgroundImage: `url('${smpImg || ""}')` }} />
                   <span className="cuttxt">
                     <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{lang === "en" ? "Best seller" : "Najbolj prodajan"}</em>}</b>
                     <span>{(SWIM_DESC[lang] || SWIM_DESC.sl)[k]}</span>
