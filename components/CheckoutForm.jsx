@@ -4,6 +4,8 @@ import { useCart } from "./CartContext";
 import { fmt } from "../lib/i18n";
 import { track, adCookies } from "../lib/track";
 import { TrackPurchase } from "./Track";
+import PromoHint from "./PromoHint";
+import { storedPromo } from "./usePromo";
 
 const COD_FEE = 1.5;
 
@@ -39,15 +41,26 @@ export default function CheckoutForm({ lang, t }) {
   const ship2 = coupon ? (sub2 >= 50 || sub2 === 0 ? 0 : 5) : shipping;
   const codFee = pay === "cod" ? COD_FEE : 0;
   const total = sub2 + ship2 + codFee;
-  async function applyCode() {
+  async function applyCode(c0, quiet) {
+    const c = typeof c0 === "string" ? c0 : code;
     setCmsg("");
-    if (!code.trim()) return;
+    if (!c.trim()) return;
     const email = document.querySelector('input[name="email"]')?.value || "";
     const r = await fetch("/api/coupon", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, email, subtotal, lang }) }).then((x) => x.json()).catch(() => null);
+      body: JSON.stringify({ code: c, email, subtotal, lang }) }).then((x) => x.json()).catch(() => null);
     if (r?.ok) { setCoupon({ code: r.code, percent: r.percent }); setCode(r.code); }
-    else { setCoupon(null); setCmsg(r?.message || "Koda ni veljavna."); }
+    else { setCoupon(null); if (!quiet) setCmsg(r?.message || "Koda ni veljavna."); }
   }
+  // koda iz drsnika/košarice se uveljavi sama
+  const autoTried = useRef(false);
+  useEffect(() => {
+    if (autoTried.current || !cart.length || coupon) return;
+    const c = storedPromo();
+    if (!c) return;
+    autoTried.current = true;
+    setCode(c);
+    applyCode(c, true);
+  }, [cart.length]);
 
   // shrani košarico z e-mailom (opomnik, če nakup ne bo zaključen)
   async function saveCart(email) {
@@ -210,6 +223,7 @@ export default function CheckoutForm({ lang, t }) {
           <button type="button" onClick={applyCode}>{lang === "en" ? "Apply" : "Uporabi"}</button>
         </div>
         {cmsg && <div className="ckcode-msg err">{cmsg}</div>}
+        <PromoHint lang={lang} active={!!coupon} onApply={(c) => { setCode(c); applyCode(c); }} />
         {coupon && <div className="ckcode-msg ok">✓ {lang === "en" ? `Code ${coupon.code}: −${coupon.percent} %` : `Koda ${coupon.code}: −${coupon.percent} %`}
           {discount <= 0 && <span> — {lang === "en" ? "your current discount is already better." : "trenutni popust (paket/akcija) je že boljši."}</span>}</div>}
         <div className="trow"><span>{t.subtotal}</span><b>{fmt(subtotal)}</b></div>

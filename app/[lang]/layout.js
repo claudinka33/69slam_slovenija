@@ -8,6 +8,7 @@ import Header from "../../components/Header";
 import CartDrawer from "../../components/CartDrawer";
 import BundleBuilder from "../../components/BundleBuilder";
 import Consent, { ConsentLink } from "../../components/Consent";
+import PromoSlide from "../../components/PromoSlide";
 
 export function generateStaticParams() {
   return LANGS.map((lang) => ({ lang }));
@@ -64,6 +65,7 @@ export default async function LangLayout({ children, params }) {
       <CartDrawer lang={lang} t={t} />
       <BundleBuilder t={t} />
       <Consent lang={lang} />
+      <PromoSlide lang={lang} />
     </CartProvider>
   );
 }

@@ -708,3 +708,16 @@ html,body{overflow-x:clip;}
 
 /* interna šifra artikla pod naslovom */
 .pdet .pcode{font-size:11px;color:#9a9a9a;letter-spacing:.06em;margin:6px 0 10px;font-weight:500}
+
+/* NOVA15 — drsnik v kotu + namig v košarici */
+.promoslide{position:fixed;left:16px;bottom:16px;z-index:60;width:min(300px,calc(100vw - 32px));background:#0a0a0a;color:#fff;border-radius:16px;padding:18px 18px 16px;box-shadow:0 12px 40px rgba(0,0,0,.25);animation:promoin .45s ease}
+.promoslide .x{position:absolute;top:8px;right:10px;background:none;border:0;color:#bbb;font-size:15px;cursor:pointer}
+.promoslide .pct{font-size:2rem;font-weight:900;color:#e63946;letter-spacing:-.02em;line-height:1}
+.promoslide p{margin:8px 0 12px;font-size:14px;line-height:1.45}
+.promoslide p.ok{margin:4px 0}
+.promoslide .small{color:#aaa;font-size:12px}
+.promoslide .cta{width:100%;background:#e63946;color:#fff;border:0;border-radius:10px;padding:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:12px;cursor:pointer}
+@keyframes promoin{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.promohint{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff1f2;border:1px dashed #e63946;border-radius:10px;padding:9px 12px;margin:8px 0 10px;font-size:13px}
+.promohint button{background:#e63946;color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap}
+.promohint em{font-style:normal;color:#0a7d5a;font-weight:700;font-size:12px;white-space:nowrap}

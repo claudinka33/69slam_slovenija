@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useCart } from "./CartContext";
 import { fmt } from "../lib/i18n";
+import PromoHint from "./PromoHint";
 
 export default function CartDrawer({ lang, t }) {
   const {
@@ -63,6 +64,7 @@ export default function CartDrawer({ lang, t }) {
                 <button onClick={openBundle}>{t.bundle_cta}</button>
               </div>
             )}
+            <PromoHint lang={lang} />
             <div className="trow"><span>{t.subtotal}</span><b>{fmt(subtotal)}</b></div>
             <div className="trow"><span>{t.shipping}</span><b>{shipping === 0 ? t.ship_free : fmt(shipping)}</b></div>
             <div className="trow total"><span>{t.total}</span><span>{fmt(subtotal + shipping)}</span></div>
