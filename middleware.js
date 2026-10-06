@@ -20,7 +20,7 @@ export async function middleware(req) {
   }
 
   // trgovina v pripravi
-  if (!lockedNow() || pathname === "/vzdrzevanje") return NextResponse.next();
+  if (!lockedNow() || pathname === "/vzdrzevanje" || /^\/(sl|hr|en)\/info\//.test(pathname)) return NextResponse.next();
   if (searchParams.get("predogled") === PREVIEW_KEY) {
     const url = req.nextUrl.clone();
     url.searchParams.delete("predogled");

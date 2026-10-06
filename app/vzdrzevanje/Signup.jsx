@@ -22,6 +22,7 @@ export default function Signup() {
         <input type="email" required placeholder="tvoj@email.si" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="E-mail" />
         <button disabled={busy}>{busy ? "…" : "Obvesti me"}</button>
       </form>
+      <div className="mt-legal">Z prijavo se strinjaš s prejemanjem e-novic. Odjava je možna kadarkoli. <a href="/sl/info/zasebnost">Politika zasebnosti</a></div>
       <div className={`mt-msg${msg && !msg.ok ? " err" : ""}`}>{msg?.t || ""}</div>
     </>
   );

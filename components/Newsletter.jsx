@@ -26,6 +26,10 @@ export default function Newsletter({ lang }) {
         <button disabled={busy}>{busy ? "…" : tx(lang, "Prijava", "Sign up", "Prijava")}</button>
       </form>
       {msg && <div className="nl-msg">{msg}</div>}
+      <p className="nl-legal">
+        {tx(lang, "Z prijavo se strinjaš s prejemanjem e-novic. Odjava je možna kadarkoli. ", "By signing up you agree to receive our newsletter. Unsubscribe anytime. ", "Prijavom pristaješ na primanje e-novosti. Odjava je moguća bilo kada. ")}
+        <a href={`/${lang}/info/zasebnost`}>{tx(lang, "Politika zasebnosti", "Privacy policy", "Politika privatnosti")}</a>
+      </p>
     </div>
   );
 }

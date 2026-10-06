@@ -28,6 +28,8 @@ const CSS = `
 .mt-form button:disabled{opacity:.6;}
 .mt-msg{margin-top:12px;font-size:.9rem;color:#06d6a0;min-height:1.3em;}
 .mt-msg.err{color:#ff8a8a;}
+.mt-legal{margin-top:10px;font-size:.74rem;color:#777;}
+.mt-legal a{color:#999;}
 .mt-small{margin-top:34px;font-size:.82rem;color:#777;}
 .mt-small a{color:#bdbdbd;}
 .mt-cd{display:flex;gap:10px;justify-content:center;margin:0 0 30px;min-height:76px;}
