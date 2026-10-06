@@ -50,8 +50,8 @@ export default function AddToCart({ code, t }) {
           );
         })}
       </div>
-      <div className={`stock ${size && st <= 3 ? "low" : ""}`}>
-        {size ? (st <= 3 ? `⚠️ ${st} ${t.left}` : `✔ ${t.in_stock} (${st})`) : " "}
+      <div className={`stock ${size && st === 1 ? "low" : ""}`}>
+        {size ? (st === 1 ? `⚠️ ${t.last1}` : `✔ ${t.in_stock}`) : " "}
       </div>
       <button ref={btnRef} className="checkout-btn" onClick={add}>
         {t.add}

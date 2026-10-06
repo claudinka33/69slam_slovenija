@@ -800,3 +800,13 @@ html,body{overflow-x:clip;}
   .ck-go-in{display:none !important;}
   .ck-go-end{display:block;width:100%;margin-top:18px;}
 }
+
+/* popravki 6. 10. — Katy na telefonu */
+.price,.price .old,.prow-price,.cset-price b,.cset-price s{white-space:nowrap;}
+.psizes{text-align:right;}
+@media(max-width:640px){
+  .prow{flex-direction:column;align-items:flex-start;gap:2px;}
+  .psizes{text-align:left;}
+  .prow-list{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  .prow-card{min-width:0;}
+}
