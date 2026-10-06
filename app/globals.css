@@ -760,3 +760,7 @@ html,body{overflow-x:clip;}
   .cartbtn{padding:5px 9px;}
 }
 @media(max-width:480px){.topbar{font-size:.58rem;letter-spacing:.05em;padding-left:8px;padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+
+/* izbirnik države na blagajni */
+.ckform select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.95rem;font-family:inherit;background:#fff;color:inherit}
+.ckform select:focus{outline:none;border-color:var(--accent)}
