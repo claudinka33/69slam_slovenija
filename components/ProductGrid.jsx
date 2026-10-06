@@ -226,7 +226,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
                 <button key={k} className={`cutcard ${kind === k ? "active" : ""}`} onClick={() => { setKind(k); jump(); }}>
                   <span className="cutimg" style={{ backgroundImage: `url('${smpImg || ""}')` }} />
                   <span className="cuttxt">
-                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{tx(lang, "Najbolj prodajan", "Best seller", "Najprodavaniji")}</em>}</b>
+                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{t.cut_top}</em>}</b>
                     <span>{(SWIM_DESC[lang] || SWIM_DESC.sl)[k]}</span>
                     <small>{inK.length} {lang === "en" ? "designs" : lang === "hr" ? (inK.length % 10 === 1 && inK.length % 100 !== 11 ? "dizajn" : "dizajna") : inK.length === 1 ? "dizajn" : inK.length === 2 ? "dizajna" : inK.length < 5 ? "dizajni" : "dizajnov"}</small>
                   </span>
