@@ -789,3 +789,12 @@ html,body{overflow-x:clip;}
 /* ===== Noga: rdeča namesto oranžne ===== */
 .nl-form button{background:var(--red);}
 .rv-code{border-color:var(--red);}
+
+/* ===== Blagajna: zelen gumb za oddajo; na telefonu čisto na dnu (pod košarico) ===== */
+.checkout-btn.ck-go{background:#059669;box-shadow:0 8px 22px rgba(5,150,105,.25);}
+.checkout-btn.ck-go:hover{background:#047857;}
+.ck-go-end{display:none;}
+@media(max-width:900px){
+  .ck-go-in{display:none !important;}
+  .ck-go-end{display:block;width:100%;margin-top:18px;}
+}

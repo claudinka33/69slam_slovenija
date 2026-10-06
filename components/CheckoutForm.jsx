@@ -44,6 +44,12 @@ export default function CheckoutForm({ lang, t }) {
   useEffect(() => { if (!codOk && pay === "cod") setPay("card"); }, [codOk]);
   const codFee = pay === "cod" ? COD_FEE : 0;
   const total = sub2 + ship2 + codFee;
+  // gumb za oddajo: jasno, da gre za plačilo (zakon o varstvu potrošnikov), glede na način plačila
+  const submitLabel = pay === "card"
+    ? tx(lang, `Plačaj ${fmt(total)}`, `Pay ${fmt(total)}`, `Plati ${fmt(total)}`)
+    : pay === "cod"
+    ? tx(lang, "Naroči – plačam ob prevzemu", "Order – pay on delivery", "Naruči – plaćam pri preuzimanju")
+    : tx(lang, "Naroči – plačam po predračunu", "Order – pay by bank transfer", "Naruči – plaćam po predračunu");
   async function applyCode(c0, quiet) {
     const c = typeof c0 === "string" ? c0 : code;
     setCmsg("");
@@ -149,7 +155,7 @@ export default function CheckoutForm({ lang, t }) {
 
   return (
     <div className="ckgrid">
-      <form className="ckcard ckform" onSubmit={submit}>
+      <form className="ckcard ckform" id="ckform" onSubmit={submit}>
         <h3>{t.ck_contact}</h3>
         <label>{t.ck_name}</label>
         <input name="name" required />
@@ -201,8 +207,8 @@ export default function CheckoutForm({ lang, t }) {
             (<a href={`/${lang}/info/vracila-in-odstop`} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>info</a>).
           </span>
         </label>
-        <button className="checkout-btn" style={{ marginTop: 14 }} disabled={sending}>
-          {sending ? "…" : t.ck_submit}
+        <button className="checkout-btn ck-go ck-go-in" style={{ marginTop: 14 }} disabled={sending}>
+          {sending ? "…" : <>{pay === "card" ? "🔒 " : "✓ "}{submitLabel}</>}
         </button>
         {msg && <div className="stubnote">{msg}</div>}
       </form>
@@ -242,6 +248,10 @@ export default function CheckoutForm({ lang, t }) {
         <div className="trow"><span>{t.shipping}</span><b>{!cInfo ? "—" : ship2 === 0 ? t.ship_free : fmt(ship2)}</b></div>
         {codFee > 0 && <div className="trow"><span>{t.cod_fee}</span><b>{fmt(codFee)}</b></div>}
         <div className="trow total"><span>{t.total}</span><span>{fmt(total)}</span></div>
+        <button type="submit" form="ckform" className="checkout-btn ck-go ck-go-end" disabled={sending}>
+          {sending ? "…" : <>{pay === "card" ? "🔒 " : "✓ "}{submitLabel}</>}
+        </button>
+        {msg && <div className="stubnote ck-go-end">{msg}</div>}
       </div>
     </div>
   );
