@@ -14,9 +14,12 @@ export default function Header({ lang, t }) {
   const [logoFailed, setLogoFailed] = useState(false);
   const [menu, setMenu] = useState(false);
   useEffect(() => { setMenu(false); }, [pathname]);
+  // meni je fiksiran čez cel zaslon, zato se odpre kjerkoli na strani (brez zaklepanja drsenja, ki na iPhonu skoči na vrh)
   useEffect(() => {
-    document.body.style.overflow = menu ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!menu) return;
+    const onKey = (e) => e.key === "Escape" && setMenu(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [menu]);
   const logoRef = useRef(null);
 
@@ -68,6 +71,10 @@ export default function Header({ lang, t }) {
       </div>
       <div className={`mmenu ${menu ? "open" : ""}`} onClick={(e) => e.target === e.currentTarget && setMenu(false)}>
         <nav className="mmenu-in">
+          <div className="mmenu-top">
+            <img src={LOGO_WHITE} alt="69SLAM" style={{ height: 22, width: "auto" }} />
+            <button className="mmenu-x" aria-label={lang === "en" ? "Close" : lang === "hr" ? "Zatvori" : "Zapri"} onClick={() => setMenu(false)}>✕</button>
+          </div>
           <Link href={`/${lang}/spodnjice`} onClick={() => setMenu(false)}>{t.nav_shop}<span>→</span></Link>
           <Link href={`/${lang}/kopalke`} onClick={() => setMenu(false)}>{t.nav_swim}<span>→</span></Link>
           <Link href={`/${lang}/dodatki`} onClick={() => setMenu(false)}>{t.nav_acc}<span>→</span></Link>
