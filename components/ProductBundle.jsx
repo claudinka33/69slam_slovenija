@@ -10,6 +10,9 @@ const TXT = {
   en: { badge: "Bundle of 3 · −15%", h: "This print + 2 more = 15% off", sub: "Pick a size and two more prints. Bundles ship free.",
         size: "Size for all three", pick: "Pick", picked: "Picked", none: "No other prints in this size right now.",
         add: "Add bundle to cart", save: "you save", first: "Pick a size first", omni: "Lowest price in the last 30 days" },
+  hr: { badge: "Paket 3 · −15 %", h: "Ovaj print + još 2 = 15 % jeftinije", sub: "Odaberi veličinu i još dva printa. Paket ima besplatnu dostavu.",
+        size: "Veličina za sve tri", pick: "Odaberi još", picked: "Odabrano", none: "U ovoj veličini trenutno nema drugih printova.",
+        add: "Dodaj paket u košaricu", save: "uštediš", first: "Najprije odaberi veličinu", omni: "Najniža cijena u zadnjih 30 dana" },
 };
 
 export default function ProductBundle({ code, lang }) {

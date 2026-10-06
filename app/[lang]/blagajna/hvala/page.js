@@ -1,6 +1,7 @@
 import { db, dbConfigured, ensureSchema } from "../../../../lib/db";
 import { stripe, markPaid } from "../../../../lib/payments";
 import ClearCart from "../../../../components/ClearCart";
+import { tx } from "../../../../lib/i18n";
 import { TrackPurchase } from "../../../../components/Track";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,6 @@ export const metadata = { robots: { index: false } };
 export default async function ThanksPage({ params, searchParams }) {
   const { lang } = await params;
   const sp = await searchParams;
-  const en = lang === "en";
   const number = String(sp?.o || "").replace(/\D/g, "");
   let paid = false;
   let bought = null; // podatki za dogodek nakupa v brskalniku
@@ -40,18 +40,19 @@ export default async function ThanksPage({ params, searchParams }) {
       <div className="ckcard" style={{ maxWidth: 560, margin: "24px auto", textAlign: "center", padding: 40 }}>
         <div style={{ fontSize: "3rem" }}>{cancelled ? "↩️" : "✅"}</div>
         <h3 style={{ margin: "10px 0 6px", fontSize: "1.4rem" }}>
-          {cancelled ? (en ? "Payment cancelled" : "Plačilo preklicano") : `${en ? "Order" : "Naročilo"} #${number}`}
+          {cancelled ? (tx(lang, "Plačilo preklicano", "Payment cancelled", "Plaćanje otkazano")) : `${tx(lang, "Naročilo", "Order", "Narudžba")} #${number}`}
         </h3>
         <p style={{ color: "var(--gray)" }}>
           {cancelled
-            ? (en ? "Your card was not charged. Your cart is still saved — you can try again or choose another payment method."
-                  : "Kartica ni bila bremenjena. Košarica je ostala shranjena — poskusi znova ali izberi drug način plačila.")
+            ? tx(lang, "Kartica ni bila bremenjena. Košarica je ostala shranjena — poskusi znova ali izberi drug način plačila.",
+                  "Your card was not charged. Your cart is still saved — you can try again or choose another payment method.",
+                  "Kartica nije terećena. Košarica je ostala spremljena — pokušaj ponovno ili odaberi drugi način plaćanja.")
             : paid
-            ? (en ? "Payment received — thank you! A confirmation will follow by e-mail." : "Plačilo je uspelo — hvala za nakup! Potrditev sledi na e-mail.")
-            : (en ? "Thank you! We are confirming your payment — a confirmation will follow by e-mail." : "Hvala! Plačilo preverjamo — potrditev sledi na e-mail.")}
+            ? (tx(lang, "Plačilo je uspelo — hvala za nakup! Potrditev sledi na e-mail.", "Payment received — thank you! A confirmation will follow by e-mail.", "Plaćanje je uspjelo — hvala na kupnji! Potvrda stiže e-mailom."))
+            : (tx(lang, "Hvala! Plačilo preverjamo — potrditev sledi na e-mail.", "Thank you! We are confirming your payment — a confirmation will follow by e-mail.", "Hvala! Provjeravamo plaćanje — potvrda stiže e-mailom."))}
         </p>
         <a className="checkout-btn" style={{ display: "inline-block", marginTop: 18, padding: "12px 22px", width: "auto" }}
-          href={cancelled ? `/${lang}/blagajna` : `/${lang}`}>{cancelled ? (en ? "Back to checkout" : "Nazaj na blagajno") : (en ? "Continue shopping" : "Nadaljuj z nakupovanjem")}</a>
+          href={cancelled ? `/${lang}/blagajna` : `/${lang}`}>{cancelled ? (tx(lang, "Nazaj na blagajno", "Back to checkout", "Natrag na blagajnu")) : (tx(lang, "Nadaljuj z nakupovanjem", "Continue shopping", "Nastavi s kupnjom"))}</a>
       </div>
     </main>
   );

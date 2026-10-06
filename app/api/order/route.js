@@ -99,7 +99,7 @@ export async function POST(req) {
   if (body.coupon) {
     const { checkCoupon, bestUnit } = await import("../../../lib/coupon");
     const before = items.reduce((a, x) => a + x.price_cents * x.qty, 0);
-    const chk = await checkCoupon(db(), body.coupon, c.email, before, lang === "en");
+    const chk = await checkCoupon(db(), body.coupon, c.email, before, lang);
     if (!chk.ok) return NextResponse.json({ ok: false, message: chk.message }, { status: 400 });
     for (const it of items) {
       const np = bestUnit(it.price_cents, it.base_cents, chk.coupon.percent);
@@ -175,13 +175,13 @@ export async function POST(req) {
         product_data: { name: `${it.name} (${it.size})${it.bundle_key ? " · Paket 3" : ""}` } },
     }));
     if (shipping > 0)
-      line_items.push({ quantity: 1, price_data: { currency: "eur", unit_amount: shipping, product_data: { name: lang === "en" ? "Shipping" : "Poštnina" } } });
+      line_items.push({ quantity: 1, price_data: { currency: "eur", unit_amount: shipping, product_data: { name: lang === "en" ? "Shipping" : lang === "hr" ? "Poštarina" : "Poštnina" } } });
     try {
       const session = await stripe().checkout.sessions.create({
         mode: "payment",
         line_items,
         customer_email: c.email,
-        locale: lang === "en" ? "en" : "sl",
+        locale: lang === "en" ? "en" : lang === "hr" ? "hr" : "sl",
         client_reference_id: String(order.id),
         metadata: { order_id: String(order.id), order_number: String(order.number) },
         payment_intent_data: { description: `69SLAM naročilo #${order.number}`, metadata: { order_id: String(order.id) } },
@@ -195,7 +195,7 @@ export async function POST(req) {
       // plačila ni bilo mogoče začeti → naročilo prekliči in vrni zalogo
       const { cancelUnpaid } = await import("../../../lib/payments");
       await cancelUnpaid(order.id, "Napaka pri začetku plačila");
-      return NextResponse.json({ ok: false, message: lang === "en" ? "Card payment could not be started. Please try again or choose another method." : "Plačila s kartico ni bilo mogoče začeti. Poskusi znova ali izberi drug način plačila." }, { status: 502 });
+      return NextResponse.json({ ok: false, message: lang === "en" ? "Card payment could not be started. Please try again or choose another method." : lang === "hr" ? "Plaćanje karticom nije bilo moguće pokrenuti. Pokušaj ponovno ili odaberi drugi način plaćanja." : "Plačila s kartico ni bilo mogoče začeti. Poskusi znova ali izberi drug način plačila." }, { status: 502 });
     }
   }
 

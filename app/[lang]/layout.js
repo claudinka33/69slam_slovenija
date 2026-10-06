@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Newsletter from "../../components/Newsletter";
 import { getProducts, slimProduct, primeCatalog } from "../../lib/catalog";
-import { getDict, LANGS } from "../../lib/i18n";
+import { getDict, LANGS, tx } from "../../lib/i18n";
 import { COMPANY } from "../../lib/legal";
 import { CartProvider } from "../../components/CartContext";
 import Header from "../../components/Header";
@@ -56,7 +56,7 @@ export default async function LangLayout({ children, params }) {
             <a href="https://www.tiktok.com/@69slam.si" target="_blank" rel="noopener">TikTok</a>
           </div>
           <div className="legal">
-            {COMPANY.name} · {COMPANY.address} · Matična št.: {COMPANY.reg} · ID za DDV: {COMPANY.vat} · Vpis: {COMPANY.court} · Osnovni kapital: {COMPANY.capital}
+            {COMPANY.name} · {COMPANY.address} · {tx(lang, "Matična št.", "Reg. no.", "Matični broj")}: {COMPANY.reg} · {tx(lang, "ID za DDV", "VAT ID", "PDV ID")}: {COMPANY.vat} · {tx(lang, "Vpis", "Registered at", "Upis")}: {COMPANY.court} · {tx(lang, "Osnovni kapital", "Share capital", "Temeljni kapital")}: {COMPANY.capital}
             <br />
             {t.legal} · <a href="/admin" className="adminlink" rel="nofollow">Admin</a>
           </div>

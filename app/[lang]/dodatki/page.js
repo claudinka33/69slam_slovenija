@@ -5,6 +5,7 @@ import ProductGrid from "../../../components/ProductGrid";
 const TXT = {
   sl: { over: "Dodatki", title: "Kape, nogavice & dodatki", sub: "Kape, nogavice, obeski za ključe, japonke in oblačila 69SLAM — da je outfit popoln." },
   en: { over: "Accessories", title: "Caps, socks & accessories", sub: "Caps, socks, keychains, flip-flops and 69SLAM clothing — to complete the look." },
+  hr: { over: "Dodaci", title: "Kape, čarape i dodaci", sub: "Kape, čarape, privjesci za ključeve, japanke i odjeća 69SLAM — da outfit bude savršen." },
 };
 
 export async function generateMetadata({ params }) {

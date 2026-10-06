@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LANGS } from "../../../../lib/i18n";
-import { DOCS, DOC_ORDER, LEGAL_UPDATED } from "../../../../lib/legal";
+import { LANGS, tx } from "../../../../lib/i18n";
+import { getDocs, DOC_ORDER, LEGAL_UPDATED } from "../../../../lib/legal";
 
 const CSS = `
 .lg-wrap{max-width:860px;margin:0 auto;padding:44px 20px 72px;}
@@ -24,7 +24,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { lang, doc } = await params;
-  const d = DOCS[doc];
+  const d = getDocs(lang)[doc];
   if (!d) return {};
   return {
     title: `${d.title} | 69SLAM.si`,
@@ -35,6 +35,7 @@ export async function generateMetadata({ params }) {
 
 export default async function LegalPage({ params }) {
   const { lang, doc } = await params;
+  const DOCS = getDocs(lang);
   const d = DOCS[doc];
   if (!d) notFound();
 
@@ -43,8 +44,9 @@ export default async function LegalPage({ params }) {
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="lg-wrap">
         <h1>{d.title}</h1>
-        <div className="lg-upd">Zadnja posodobitev: {LEGAL_UPDATED}</div>
-        {lang !== "sl" && <div className="lg-note">Legal documents are available in Slovenian only. Questions? Write to us and we will gladly help in English.</div>}
+        <div className="lg-upd">{tx(lang, "Zadnja posodobitev", "Last updated", "Zadnje ažuriranje")}: {LEGAL_UPDATED}</div>
+        {lang === "en" && <div className="lg-note">Legal documents are available in Slovenian only. Questions? Write to us and we will gladly help in English.</div>}
+        {lang === "hr" && <div className="lg-note">Ovo je prijevod na hrvatski jezik radi lakšeg razumijevanja. U slučaju razlika mjerodavna je slovenska verzija. Pitanja? Pišite nam, rado ćemo pomoći.</div>}
         {d.body.map(([type, val], i) =>
           type === "h2" ? <h2 key={i}>{val}</h2> :
           type === "ul" ? <ul key={i}>{val.map((li, j) => <li key={j}>{li}</li>)}</ul> :

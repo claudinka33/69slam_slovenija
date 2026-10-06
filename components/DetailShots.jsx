@@ -10,7 +10,7 @@ const MICRO = [
   {
     src: "/img/detail/razteg.jpg",
     sl: { t: "Elastične do roba", p: "Rob hlačnice se raztegne in vrne v obliko — zato ne leze navzgor in ostane na mestu ves dan." },
-    hr: { t: "Elastične do ruba", p: "Rub nogavice se rastegne i vrati u oblik — zato se ne penje prema gore i ostaje na mjestu cijeli dan." },
+    hr: { t: "Elastične do ruba", p: "Rub nogavice se rastegne i vrati u oblik — zato se ne podiže i ostaje na mjestu cijeli dan." },
     en: { t: "Stretch to the hem", p: "The leg hem stretches and snaps back into shape — so it stays put and never rides up." },
   },
   {

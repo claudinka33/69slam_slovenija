@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "./CartContext";
-import { fmt } from "../lib/i18n";
+import { fmt, tx } from "../lib/i18n";
 
 /** Vrstica manjših kartic artiklov (Kaj paše zraven / Nazadnje ogledano). */
 function Row({ title, items, lang, t }) {
@@ -32,7 +32,7 @@ function Row({ title, items, lang, t }) {
 export function Pairings({ codes, lang, t }) {
   const { byId } = useCart();
   const items = codes.map((c) => byId(c)).filter((p) => p && p.totalStock > 0);
-  return <Row title={lang === "en" ? "Goes well with" : "Kaj paše zraven"} items={items} lang={lang} t={t} />;
+  return <Row title={tx(lang, "Kaj paše zraven", "Goes well with", "Što ide uz to")} items={items} lang={lang} t={t} />;
 }
 
 const KEY = "rv69";
@@ -48,5 +48,5 @@ export function RecentlyViewed({ code, lang, t }) {
     try { localStorage.setItem(KEY, JSON.stringify([code, ...list.filter((c) => c !== code)].slice(0, 13))); } catch {}
   }, [code]);
   const items = codes.map((c) => byId(c)).filter((p) => p && p.totalStock > 0).slice(0, 6);
-  return <Row title={lang === "en" ? "Recently viewed" : "Nazadnje ogledano"} items={items} lang={lang} t={t} />;
+  return <Row title={tx(lang, "Nazadnje ogledano", "Recently viewed", "Nedavno pregledano")} items={items} lang={lang} t={t} />;
 }

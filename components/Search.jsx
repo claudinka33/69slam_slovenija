@@ -2,14 +2,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "./CartContext";
-import { fmt } from "../lib/i18n";
+import { fmt, tx } from "../lib/i18n";
 
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 // pogovorne besede → kaj iščemo v tipu artikla
 const SYN = { spodnjice: "spodnje perilo", boksarice: "spodnje perilo", gate: "spodnje perilo", gace: "spodnje perilo", bokserice: "spodnje perilo",
   kopalke: "kopal", kopalne: "kopal", bikini: "kopalke", majica: "majica", kapa: "kapa", kape: "kapa", nogavice: "nogavic",
   obesek: "obesek", obeski: "obesek", japonke: "japonke", natikaci: "natikac", microfibra: "mikrofibra", micro: "mikrofibra",
-  bamboo: "bambus", boardshorts: "boardshort", underwear: "spodnje perilo", swimwear: "kopal", socks: "nogavic", cap: "kapa", caps: "kapa" };
+  bamboo: "bambus", boardshorts: "boardshort", underwear: "spodnje perilo", swimwear: "kopal", socks: "nogavic", cap: "kapa", caps: "kapa",
+  kupaci: "kopal", kupace: "kopal", carape: "nogavic", privjesak: "obesek", privjesci: "obesek", japanke: "japonke", natikace: "natikac", bambus: "bambus" };
 
 /** Iskalnik: po šifri (tudi z velikostjo), nazivu, vzorcu, modelu, materialu, kroju. */
 export default function Search({ lang }) {
@@ -17,7 +18,6 @@ export default function Search({ lang }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const inp = useRef(null);
-  const en = lang === "en";
   useEffect(() => { if (open) setTimeout(() => inp.current?.focus(), 30); }, [open]);
   useEffect(() => {
     const k = (e) => { if (e.key === "Escape") setOpen(false); };
@@ -50,7 +50,7 @@ export default function Search({ lang }) {
 
   return (
     <>
-      <button className="srchbtn" aria-label={en ? "Search" : "Iskanje"} onClick={() => setOpen(true)}>
+      <button className="srchbtn" aria-label={tx(lang, "Iskanje", "Search", "Pretraživanje")} onClick={() => setOpen(true)}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
       </button>
       {open && (
@@ -58,11 +58,11 @@ export default function Search({ lang }) {
           <div className="srch-box">
             <div className="srch-top">
               <input ref={inp} value={q} onChange={(e) => setQ(e.target.value)}
-                placeholder={en ? "Search by name, print, code, model …" : "Išči po imenu, vzorcu, šifri, modelu …"} />
-              <button onClick={() => setOpen(false)} aria-label="Zapri">✕</button>
+                placeholder={tx(lang, "Išči po imenu, vzorcu, šifri, modelu …", "Search by name, print, code, model …", "Traži po nazivu, uzorku, šifri, modelu …")} />
+              <button onClick={() => setOpen(false)} aria-label={tx(lang, "Zapri", "Close", "Zatvori")}>✕</button>
             </div>
-            {q.trim() && <div className="srch-count">{res.length ? `${res.length}${res.length === 60 ? "+" : ""} ${en ? "results" : "zadetkov"}` : en ? "No results — try another word." : "Ni zadetkov — poskusi z drugo besedo."}</div>}
-            {!q.trim() && <div className="srch-hint">{en ? "e.g. flamingo · MBYABT · boardshort · bamboo hip · cap" : "npr. flamingo · MBYABT · boardshort · bambus hip · kapa · obesek"}</div>}
+            {q.trim() && <div className="srch-count">{res.length ? `${res.length}${res.length === 60 ? "+" : ""} ${tx(lang, "zadetkov", "results", "rezultata")}` : tx(lang, "Ni zadetkov — poskusi z drugo besedo.", "No results — try another word.", "Nema rezultata — pokušaj s drugom riječi.")}</div>}
+            {!q.trim() && <div className="srch-hint">{tx(lang, "npr. flamingo · MBYABT · boardshort · bambus hip · kapa · obesek", "e.g. flamingo · MBYABT · boardshort · bamboo hip · cap", "npr. flamingo · MBYABT · boardshort · bambus hip · kapa · privjesak")}</div>}
             <div className="srch-res">
               {res.map((p) => {
                 const red = p.sale || p.outlet;

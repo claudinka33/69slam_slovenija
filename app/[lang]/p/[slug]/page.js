@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getProducts, getProductBySlug, defaultDescription, primeCatalog, getSetPartners, getPairings } from "../../../../lib/catalog";
 import { Pairings, RecentlyViewed } from "../../../../components/ProductRow";
 import CompleteSet from "../../../../components/CompleteSet";
-import { getDict, LANGS, fmt } from "../../../../lib/i18n";
+import { getDict, LANGS, fmt, tx } from "../../../../lib/i18n";
 import AddToCart from "../../../../components/AddToCart";
 import ProductGallery from "../../../../components/ProductGallery";
 import ProductBundle from "../../../../components/ProductBundle";
@@ -81,12 +81,12 @@ export default async function ProductPage({ params }) {
       <TrackView id={p.code} name={p.name} price={p.effPrice} />
       <Link href={backHref} className="pback">{t.back}</Link>
       <div className="pgrid">
-        <ProductGallery images={p.images.length ? p.images : (p.img ? [{ src: p.img }] : [])} name={p.name}
+        <ProductGallery images={p.images.length ? p.images : (p.img ? [{ src: p.img }] : [])} name={p.name} lang={lang}
           alt={micro ? `69SLAM ${p.cut} mikrofibra ${p.name}` : `69SLAM ${p.type} ${p.name}`} />
         <div className="pdet">
           <h1>{p.name}</h1>
-          <div className="pcode">{lang === "en" ? "Code" : "Šifra"}: {p.code}</div>
-          {<a href="#ocene" className="pstars">★★★★★ <b>{SUM.rating}</b> · {SUM.count} {lang === "en" ? "reviews" : "ocen"}</a>}
+          <div className="pcode">{tx(lang, "Šifra", "Code", "Šifra")}: {p.code}</div>
+          {<a href="#ocene" className="pstars">★★★★★ <b>{SUM.rating}</b> · {SUM.count} {tx(lang, "ocen", "reviews", "recenzija")}</a>}
           <div className="mline">
             {micro ? <>69SLAM · {p.cut === "hip" ? t.line_hip : t.line_core}{p.collection === "limited" ? ` · ${t.line_ltd}` : ""}</> : <>69SLAM · {p.type}</>}
             {p.sale ? ` · ${t.sale_line}` : ""}{p.outlet ? ` · ${t.out_line}` : ""}
@@ -112,14 +112,14 @@ export default async function ProductPage({ params }) {
           )}
           {boxers && (
           <details className="sizeguide">
-            <summary>{lang === "en" ? "Which size fits me?" : "Katera velikost je zame?"}</summary>
+            <summary>{tx(lang, "Katera velikost je zame?", "Which size fits me?", "Koja mi veličina odgovara?")}</summary>
             <table>
               <thead>
                 <tr>
-                  <th>{lang === "en" ? "Size" : "Velikost"}</th>
-                  <th>{lang === "en" ? "Waist (cm)" : "Pas (cm)"}</th>
-                  <th>{lang === "en" ? "Low waist (cm)" : "Nizek pas (cm)"}</th>
-                  <th>{lang === "en" ? "Jeans size" : "Št. hlač"}</th>
+                  <th>{tx(lang, "Velikost", "Size", "Veličina")}</th>
+                  <th>{tx(lang, "Pas (cm)", "Waist (cm)", "Struk (cm)")}</th>
+                  <th>{tx(lang, "Nizek pas (cm)", "Low waist (cm)", "Niski struk (cm)")}</th>
+                  <th>{tx(lang, "Št. hlač", "Jeans size", "Br. hlača")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -128,9 +128,10 @@ export default async function ProductPage({ params }) {
                 ))}
               </tbody>
             </table>
-            <p>{lang === "en"
-              ? "Waist: around the narrowest part of your waist. Low waist: around your natural waist, just above the hip bone – where the waistband sits. Official 69SLAM size guide."
-              : "Pas: obseg na najožjem delu pasu. Nizek pas: obseg tik nad kolkom – tam, kjer sedi elastika. Uradna tabela velikosti 69SLAM."}</p>
+            <p>{tx(lang,
+              "Pas: obseg na najožjem delu pasu. Nizek pas: obseg tik nad kolkom – tam, kjer sedi elastika. Uradna tabela velikosti 69SLAM.",
+              "Waist: around the narrowest part of your waist. Low waist: around your natural waist, just above the hip bone – where the waistband sits. Official 69SLAM size guide.",
+              "Struk: opseg na najužem dijelu struka. Niski struk: opseg tik iznad kuka – ondje gdje sjedi elastika. Službena tablica veličina 69SLAM.")}</p>
           </details>
           )}
           <AddToCart code={p.code} t={t} />
@@ -147,7 +148,7 @@ export default async function ProductPage({ params }) {
           </div>
           {others.length > 14 && (
             <details className="othermore">
-              <summary>{lang === "en" ? `Show all ${others.length} prints` : `Pokaži vseh ${others.length} printov`}</summary>
+              <summary>{tx(lang, `Pokaži vseh ${others.length} printov`, `Show all ${others.length} prints`, `Prikaži svih ${others.length} printova`)}</summary>
               <div className="othergrid">
                 {others.slice(14).map((x) => (
                   <Link key={x.code} href={`/${lang}/p/${x.slug}`} className={x.code === p.code ? "cur" : ""} title={x.name}>
@@ -167,7 +168,7 @@ export default async function ProductPage({ params }) {
       {boxers && (
       <section className="pgal">
         <div className="pr-head">
-          <h2>{lang === "en" ? "Made to be seen" : "Narejene, da se jih vidi"}</h2>
+          <h2>{tx(lang, "Narejene, da se jih vidi", "Made to be seen", "Napravljene da se vide")}</h2>
           <div className="pr-sum">#playloud · @69slam.slovenija</div>
         </div>
         <div className="pgal-strip">
@@ -185,9 +186,9 @@ export default async function ProductPage({ params }) {
       {(
       <section className="previews" id="ocene">
         <div className="pr-head">
-          <h2>{lang === "en" ? "What customers say" : "Kaj pravijo kupci"}</h2>
+          <h2>{tx(lang, "Kaj pravijo kupci", "What customers say", "Što kažu kupci")}</h2>
           <div className="pr-sum">
-            <span className="pr-stars">★★★★★</span> <b>{SUM.rating} / 5</b> · {SUM.count} {lang === "en" ? "customer reviews" : "ocen kupcev"}
+            <span className="pr-stars">★★★★★</span> <b>{SUM.rating} / 5</b> · {SUM.count} {tx(lang, "ocen kupcev", "customer reviews", "recenzija kupaca")}
           </div>
         </div>
         <div className="pr-grid">
@@ -197,7 +198,7 @@ export default async function ProductPage({ params }) {
               {r.title && <b className="pr-title">{r.title}</b>}
               {r.body && <p>{r.body}</p>}
               <div className="pr-meta">
-                <span>{r.name}<em>✓ {lang === "en" ? "Verified purchase" : "Preverjen nakup"}</em></span>
+                <span>{r.name}<em>✓ {tx(lang, "Preverjen nakup", "Verified purchase", "Provjerena kupnja")}</em></span>
                 <small>{dfmt(r.created_at)}</small>
               </div>
             </div>
@@ -208,15 +209,16 @@ export default async function ProductPage({ params }) {
               {r.title && <b className="pr-title">{r.title}</b>}
               <p>{r.text}</p>
               <div className="pr-meta">
-                <span>{r.name}{r.verified && <em>✓ {lang === "en" ? "Verified purchase" : "Preverjen nakup"}</em>}</span>
+                <span>{r.name}{r.verified && <em>✓ {tx(lang, "Preverjen nakup", "Verified purchase", "Provjerena kupnja")}</em>}</span>
                 <small>{r.about} · {r.date}</small>
               </div>
             </div>
           ))}
         </div>
-        <p className="pr-note">{lang === "en"
-          ? "A selection of reviews from 69slam.si customers, shown unedited. \"Verified purchase\" means the review is linked to an actual order in our shop."
-          : "Izbor ocen kupcev trgovine 69slam.si, objavljenih brez sprememb. Oznaka »Preverjen nakup« pomeni, da je ocena povezana z dejanskim naročilom v naši trgovini."}</p>
+        <p className="pr-note">{tx(lang,
+          "Izbor ocen kupcev trgovine 69slam.si, objavljenih brez sprememb. Oznaka »Preverjen nakup« pomeni, da je ocena povezana z dejanskim naročilom v naši trgovini.",
+          "A selection of reviews from 69slam.si customers, shown unedited. \"Verified purchase\" means the review is linked to an actual order in our shop.",
+          "Izbor recenzija kupaca trgovine 69slam.si, objavljenih bez izmjena. Oznaka »Provjerena kupnja« znači da je recenzija povezana sa stvarnom narudžbom u našoj trgovini.")}</p>
       </section>
       )}
     </main>

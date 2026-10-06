@@ -57,6 +57,57 @@ const STORY = {
       ["Slovenija", "69slam.si – spletna trgovina"],
     ],
   },
+  hr: {
+    meta_title: "Priča 69SLAM — rođeno na Baliju | 69SLAM.si",
+    meta_desc: "Siječanj 2004., Bali, kišna nedjelja i jedno pitanje: zašto je muško donje rublje tako dosadno? Priča brenda 69SLAM i pokreta PLAY LOUD.",
+    kicker: "Priča 69SLAM",
+    h1a: "Rođeno na Baliju.",
+    h1b: "Napravljeno da te se vidi.",
+    blocks: [
+      { h: "Sve je počelo jednim pitanjem", p: [
+        "Siječanj 2004., kišno nedjeljno jutro. Iz jednog jednostavnog pitanja rodila se glasna ideja: zašto je muško donje rublje uvijek tako sivo, sigurno i dosadno?",
+        "Gaće su prva stvar koju ujutro obučeš. Ako dan počne dosadno, kako da se nastavi drukčije?",
+        "Iz tog pitanja nastao je 69SLAM – brend izgrađen na bojama, samopouzdanju i hrabrosti da budeš ono što jesi. Život je već dovoljno ozbiljan. Ono što nosiš neka ti podigne raspoloženje.",
+      ] },
+      { h: "PLAY LOUD", p: [
+        "Nije slogan, nego način razmišljanja. Skoči unutra. Kreći se slobodno. Smij se glasnije. Ne stišavaj se samo zato što to rade drugi.",
+        "69SLAM ne prati trendove. Daje izjave.",
+      ] },
+      { h: "Print je naš jezik", p: [
+        "Odvažan, šaren, neočekivan – i prepoznatljiv na prvi pogled. Balijske maske, pop-art lubanje, prometni znakovi, flamingi i palme – svaki print ima svoju priču. Neki nastaju u suradnji s balijskim umjetnicima, poput Gennetika, koji je za kolekciju FW26 nacrtao print Artgasm.",
+        "Zato nijedne 69SLAM bokserice nisu »samo još jedne bokserice«. One su mali podsjetnik, svako jutro, da dan možeš započeti na svoj način.",
+      ] },
+      { h: "Ekipa s otoka", p: [
+        "Iza brenda stoji šarena družina kreativaca, surfera, skejtera i sanjara iz cijelog svijeta koji žive i stvaraju na Baliju. Različite kulture, različite priče – i upravo je ta mješavina razlog zašto 69SLAM izgleda kao ništa drugo.",
+      ] },
+      { h: "Ne pakiraj dosadu", p: [
+        "Većina muškaraca ide na tjedan dana odmora s tri para bokserica. Mi kažemo: osvježi rotaciju. U Brazilu za Novu godinu obuku potpuno nove gaće za sreću – mi mislimo da svaki dan zaslužuje takav početak.",
+      ] },
+    ],
+    end_h: "Kod nas, iz Slovenije",
+    end_p: [
+      "Više od 20 godina kasnije 69SLAM se nosi diljem svijeta. Na 69slam.si ga dobiješ kod nas – 100 % original, izravno od brenda.",
+      "Usredotočili smo se na ono što 69SLAM radi najbolje: bokserice od mikrofibre. Ne podižu se, ostaju na mjestu cijeli dan i brzo se suše. Izgledaju glasno, nose se tiho.",
+    ],
+    cta: "Odaberi svoj print →",
+    quote: "Život je već dovoljno ozbiljan.",
+    map_kick: "69SLAM u svijetu",
+    map_h: "Od Balija do tvoje ladice",
+    map_p: "Trgovine 69SLAM nalaze se na Baliju i Lomboku, na Tajlandu, u Vijetnamu, Japanu, Rusiji, Španjolskoj, Francuskoj, na Mauricijusu i Réunionu – a u Sloveniji na 69slam.si.",
+    map_note: "Izvor: službeni popis trgovina na 69slam.com",
+    countries: [
+      ["Indonezija", "Bali (14 trgovina) · Lombok i Gili (4)"],
+      ["Tajland", "Phuket · Pattaya · Koh Samui · Koh Phangan"],
+      ["Vijetnam", "Nha Trang"],
+      ["Japan", "Okinawa"],
+      ["Rusija", "Moskva · Soči · Jejsk · Tver"],
+      ["Španjolska", "Valencia"],
+      ["Francuska", "Antibes"],
+      ["Mauricijus", "Grand Baie"],
+      ["Réunion", "Saint-Gilles-les-Bains"],
+      ["Slovenija", "69slam.si – web trgovina"],
+    ],
+  },
   en: {
     meta_title: "The 69SLAM story — born in Bali | 69SLAM.si",
     meta_desc: "January 2004, Bali, a rainy Sunday and one question: why is men's underwear so boring? The story of 69SLAM and the PLAY LOUD movement.",

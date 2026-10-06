@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { fmt } from "../lib/i18n";
+import { fmt, tx } from "../lib/i18n";
 import { useCart } from "./CartContext";
 
 const COLL = ["all", "core", "limited", "sale"];
@@ -42,7 +42,8 @@ function accKind(p) {
 }
 const ACC_ORDER = ["KAPE", "NOGAVICE", "OBESKI", "TORBE", "OBUTEV", "OBLACILA", "DRUGO"];
 const ACC_LABEL = { sl: { KAPE: "Kape", NOGAVICE: "Nogavice", OBESKI: "Obeski za ključe", TORBE: "Torbe", OBUTEV: "Japonke & natikači", OBLACILA: "Oblačila", DRUGO: "Ostalo" },
-  en: { KAPE: "Caps", NOGAVICE: "Socks", OBESKI: "Keychains", TORBE: "Bags", OBUTEV: "Flip-flops & slides", OBLACILA: "Clothing", DRUGO: "Other" } };
+  en: { KAPE: "Caps", NOGAVICE: "Socks", OBESKI: "Keychains", TORBE: "Bags", OBUTEV: "Flip-flops & slides", OBLACILA: "Clothing", DRUGO: "Other" },
+  hr: { KAPE: "Kape", NOGAVICE: "Čarape", OBESKI: "Privjesci za ključeve", TORBE: "Torbe", OBUTEV: "Japanke i natikače", OBLACILA: "Odjeća", DRUGO: "Ostalo" } };
 const SWIM_ORDER = ["ELASTIC", "BOARDSHORT", "VOLLEY", "CLASSIC", "MEDIUM", "LONG", "MAJICE", "DRUGO"];
 const SWIM_TOP = new Set(["ELASTIC", "BOARDSHORT"]);
 /** Izbrani dizajn za sliko modela (po imenu). */
@@ -66,6 +67,14 @@ const SWIM_DESC = {
     LONG: "For those who like their swim shorts longer (~52 cm).",
     MAJICE: "Swim shirts with UV protection – for sun and water.",
     DRUGO: "Other swimwear." },
+  hr: { VOLLEY: "Kratki (~28 cm), 4-way stretch – za maksimalnu slobodu pokreta na plaži i u vodi.",
+    ELASTIC: "Elastični pojas – obučeš i ideš. U 4-way stretch i klasičnoj elastic verziji (~38 cm).",
+    BOARDSHORT: "Rastezljivi 4-way stretch kreće se s tobom – za vodene sportove i aktivne dane na plaži (~38 cm).",
+    CLASSIC: "Klasične kupaće hlače s vezicom i čičkom, živahni printovi (~36 cm).",
+    MEDIUM: "Srednja duljina do koljena – više pokrivenosti, opušten izgled (~46 cm).",
+    LONG: "Za one koji vole duže kupaće (~52 cm).",
+    MAJICE: "Kupaće majice s UV zaštitom – za sunce i vodu.",
+    DRUGO: "Ostali kupaći." },
 };
 const KIND_LABEL = { BOARDSHORT: "Boardshort", VOLLEY: "Volley", ELASTIC: "Elastic", MEDIUM: "Medium length", LONG: "Long length", CLASSIC: "Classic", MAJICE: "Kopalne majice", DRUGO: "Ostalo" };
 
@@ -148,7 +157,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
 
       {mode === "swim" && kinds.length > 1 && (
         <>
-          <div className="flabel">{lang === "en" ? "Pick your model" : "Izberi model"}</div>
+          <div className="flabel">{tx(lang, "Izberi model", "Pick your model", "Odaberi model")}</div>
           <div className="cuts swimcuts">
             {(() => { const used = new Set(); return kinds.map((k) => {
               const inK = products.filter((p) => swimKind(p) === k);
@@ -165,9 +174,9 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
                 <button key={k} className={`cutcard ${kind === k ? "active" : ""}`} onClick={() => setKind(kind === k ? "all" : k)}>
                   <span className="cutimg" style={{ backgroundImage: `url('${smpImg || ""}')` }} />
                   <span className="cuttxt">
-                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{lang === "en" ? "Best seller" : "Najbolj prodajan"}</em>}</b>
+                    <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{tx(lang, "Najbolj prodajan", "Best seller", "Najprodavaniji")}</em>}</b>
                     <span>{(SWIM_DESC[lang] || SWIM_DESC.sl)[k]}</span>
-                    <small>{inK.length} {lang === "en" ? "designs" : inK.length === 1 ? "dizajn" : inK.length === 2 ? "dizajna" : inK.length < 5 ? "dizajni" : "dizajnov"}</small>
+                    <small>{inK.length} {lang === "en" ? "designs" : lang === "hr" ? (inK.length % 10 === 1 && inK.length % 100 !== 11 ? "dizajn" : "dizajna") : inK.length === 1 ? "dizajn" : inK.length === 2 ? "dizajna" : inK.length < 5 ? "dizajni" : "dizajnov"}</small>
                   </span>
                 </button>
               );
@@ -237,7 +246,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
             : null;
           return (
             <Link href={`/${lang}/p/${p.slug}`} className="pcard" key={p.code}>
-              <div className="pimg" style={{ backgroundImage: `url('${p.img}')` }}>{badge}{p.hasSet && <span className="badge set">{lang === "en" ? "Set" : "Komplet"}</span>}</div>
+              <div className="pimg" style={{ backgroundImage: `url('${p.img}')` }}>{badge}{p.hasSet && <span className="badge set">{tx(lang, "Komplet", "Set", "Komplet")}</span>}</div>
               <div className="pinfo">
                 <div className="pname">{p.name}</div>
                 <div className="pline">{cardLine(p, t)}</div>

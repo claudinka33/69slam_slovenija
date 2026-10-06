@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getMenProducts, getOutletProducts, getSwimProducts, primeCatalog } from "../../lib/catalog";
-import { getDict } from "../../lib/i18n";
+import { getDict, LANGS, tx } from "../../lib/i18n";
 import ProductGrid from "../../components/ProductGrid";
 import BundleBar from "../../components/BundleBar";
 import Image from "next/image";
@@ -22,11 +22,11 @@ export async function generateMetadata({ params }) {
   const { lang } = await params;
   const t = getDict(lang);
   return {
-    title: lang === "en" ? "69SLAM.si — Men's underwear & swimwear" : "69SLAM.si — Moško spodnje perilo in kopalke",
+    title: tx(lang, "69SLAM.si — Moško spodnje perilo in kopalke", "69SLAM.si — Men's underwear & swimwear", "69SLAM.si — Muško donje rublje i kupaći"),
     description: t.sub,
     alternates: {
       canonical: `https://69slam.si/${lang}`,
-      languages: { sl: "https://69slam.si/sl", en: "https://69slam.si/en" },
+      languages: Object.fromEntries(LANGS.map((l) => [l, `https://69slam.si/${l}`])),
     },
   };
 }
@@ -63,7 +63,7 @@ export default async function Home({ params }) {
   return (
     <main>
       <section className="hero hero2">
-        <div className="heroimg"><Image src="/img/hero.jpg" alt="69SLAM moške spodnjice z drznim printom" fill priority sizes="100vw" /></div>
+        <div className="heroimg"><Image src="/img/hero.jpg" alt={tx(lang, "69SLAM moške spodnjice z drznim printom", "69SLAM men's underwear with a bold print", "69SLAM muške gaće s odvažnim printom")} fill priority sizes="100vw" /></div>
         <div className="wrap">
           <div>
             <span className="kicker">{t.kicker}</span>
@@ -122,7 +122,7 @@ export default async function Home({ params }) {
                 <Link key={m.kind} href={`/${lang}/kopalke?model=${m.kind}`} className="sw-item" title={m[lang] || m.sl}>
                   <span style={{ backgroundImage: `url('${m.p.img}')` }} />
                   <b>{m[lang] || m.sl}</b>
-                  <small>{m.sub ? `${m.sub} · ` : ""}{m.n} {lang === "en" ? (m.n === 1 ? "design" : "designs") : m.n === 1 ? "dizajn" : m.n === 2 ? "dizajna" : m.n < 5 ? "dizajni" : "dizajnov"}</small>
+                  <small>{m.sub ? `${m.sub} · ` : ""}{m.n} {lang === "en" ? (m.n === 1 ? "design" : "designs") : lang === "hr" ? (m.n % 10 === 1 && m.n % 100 !== 11 ? "dizajn" : "dizajna") : m.n === 1 ? "dizajn" : m.n === 2 ? "dizajna" : m.n < 5 ? "dizajni" : "dizajnov"}</small>
                 </Link>
               ))}
             </div>
@@ -153,7 +153,7 @@ export default async function Home({ params }) {
             <p>{t.story_p2}</p>
           </div>
           <a className="cta" href={`/${lang}/zgodba`} style={{ marginTop: 24 }}>
-            {lang === "en" ? "Read the full story →" : "Preberi celo zgodbo →"}
+            {tx(lang, "Preberi celo zgodbo →", "Read the full story →", "Pročitaj cijelu priču →")}
           </a>
         </div>
       </section>

@@ -2,17 +2,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "./CartContext";
-import { fmt } from "../lib/i18n";
+import { fmt, tx } from "../lib/i18n";
 
 /** »Dopolni komplet« — ujemajoči kosi istega dizajna z izbiro velikosti. */
 export default function CompleteSet({ codes, lang, t }) {
   const { byId, addItem, usedInCart, showToast } = useCart();
   const items = codes.map((c) => byId(c)).filter((p) => p && p.totalStock > 0);
   if (!items.length) return null;
-  const en = lang === "en";
   return (
     <div className="cset">
-      <div className="cset-h">{en ? "Complete the set" : "Dopolni komplet"}<span>{en ? "Same design — pick your size" : "Isti dizajn — izberi svojo velikost"}</span></div>
+      <div className="cset-h">{tx(lang, "Dopolni komplet", "Complete the set", "Upotpuni komplet")}<span>{tx(lang, "Isti dizajn — izberi svojo velikost", "Same design — pick your size", "Isti dizajn — odaberi svoju veličinu")}</span></div>
       {items.map((p) => <SetItem key={p.code} p={p} lang={lang} t={t} addItem={addItem} usedInCart={usedInCart} showToast={showToast} />)}
     </div>
   );
@@ -20,7 +19,6 @@ export default function CompleteSet({ codes, lang, t }) {
 
 function SetItem({ p, lang, t, addItem, usedInCart, showToast }) {
   const [size, setSize] = useState(null);
-  const en = lang === "en";
   const red = p.sale || p.outlet;
   const seg = (p.type || "").split(" · ").filter(Boolean);
   return (
@@ -40,7 +38,7 @@ function SetItem({ p, lang, t, addItem, usedInCart, showToast }) {
         <button type="button" className="cset-add" onClick={() => {
           if (!size) { showToast(t.choose_size); return; }
           if (addItem(p.code, size)) showToast(t.added);
-        }}>{en ? "Add to cart" : "Dodaj v košarico"}</button>
+        }}>{tx(lang, "Dodaj v košarico", "Add to cart", "Dodaj u košaricu")}</button>
       </div>
     </div>
   );

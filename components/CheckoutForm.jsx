@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "./CartContext";
-import { fmt } from "../lib/i18n";
+import { fmt, tx } from "../lib/i18n";
 import { track, adCookies } from "../lib/track";
 import { TrackPurchase } from "./Track";
 import PromoHint from "./PromoHint";
@@ -49,7 +49,7 @@ export default function CheckoutForm({ lang, t }) {
     const r = await fetch("/api/coupon", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: c, email, subtotal, lang }) }).then((x) => x.json()).catch(() => null);
     if (r?.ok) { setCoupon({ code: r.code, percent: r.percent }); setCode(r.code); }
-    else { setCoupon(null); if (!quiet) setCmsg(r?.message || "Koda ni veljavna."); }
+    else { setCoupon(null); if (!quiet) setCmsg(r?.message || tx(lang, "Koda ni veljavna.", "Code is not valid.", "Kod nije valjan.")); }
   }
   // koda iz drsnika/košarice se uveljavi sama
   const autoTried = useRef(false);
@@ -122,17 +122,17 @@ export default function CheckoutForm({ lang, t }) {
         </p>
         {upn && (
           <div className="upnbox">
-            <h4>{lang === "en" ? "Pay by bank transfer" : "Plačilo po predračunu"}</h4>
-            <p>{lang === "en" ? "Scan the QR code with your mobile banking app — all details are filled in." : "Skeniraj QR kodo z mobilno banko — vsi podatki se izpolnijo sami."}</p>
+            <h4>{tx(lang, "Plačilo po predračunu", "Pay by bank transfer", "Plaćanje po predračunu")}</h4>
+            <p>{tx(lang, "Skeniraj QR kodo z mobilno banko — vsi podatki se izpolnijo sami.", "Scan the QR code with your mobile banking app — all details are filled in.", "Skeniraj QR kod mobilnim bankarstvom — svi se podaci ispune sami.")}</p>
             <div className="upnqr" dangerouslySetInnerHTML={{ __html: upn.svg }} />
             <dl>
-              <dt>{lang === "en" ? "Amount" : "Znesek"}</dt><dd><b>{fmt(upn.amount / 100)}</b></dd>
-              <dt>{lang === "en" ? "Payee" : "Prejemnik"}</dt><dd>{upn.payee}, {upn.address}</dd>
+              <dt>{tx(lang, "Znesek", "Amount", "Iznos")}</dt><dd><b>{fmt(upn.amount / 100)}</b></dd>
+              <dt>{tx(lang, "Prejemnik", "Payee", "Primatelj")}</dt><dd>{upn.payee}, {upn.address}</dd>
               <dt>IBAN</dt><dd><b>{upn.iban}</b> ({upn.bank}, BIC {upn.bic})</dd>
-              <dt>{lang === "en" ? "Reference" : "Sklic"}</dt><dd><b>{upn.ref}</b></dd>
-              <dt>{lang === "en" ? "Due" : "Rok plačila"}</dt><dd>{upn.due}</dd>
+              <dt>{tx(lang, "Sklic", "Reference", "Poziv na broj")}</dt><dd><b>{upn.ref}</b></dd>
+              <dt>{tx(lang, "Rok plačila", "Due", "Rok plaćanja")}</dt><dd>{upn.due}</dd>
             </dl>
-            <p className="upnnote">{lang === "en" ? "We ship your order as soon as the payment arrives." : "Paket pošljemo takoj, ko prejmemo plačilo."}</p>
+            <p className="upnnote">{tx(lang, "Paket pošljemo takoj, ko prejmemo plačilo.", "We ship your order as soon as the payment arrives.", "Paket šaljemo čim primimo uplatu.")}</p>
           </div>
         )}
         <a className="checkout-btn" style={{ display: "inline-block", marginTop: 18, padding: "12px 22px", width: "auto" }} href={`/${lang}`}>
@@ -180,7 +180,7 @@ export default function CheckoutForm({ lang, t }) {
         ))}
 
         <p style={{ margin: "16px 0 0", fontSize: ".78rem", color: "var(--gray)", lineHeight: 1.5 }}>
-          {lang === "en" ? "We'll occasionally send you news and offers for similar products. You can unsubscribe in every e-mail." : "Občasno ti bomo poslali novice in ponudbe za podobne izdelke. Odjaviš se lahko v vsakem e-mailu."}
+          {tx(lang, "Občasno ti bomo poslali novice in ponudbe za podobne izdelke. Odjaviš se lahko v vsakem e-mailu.", "We'll occasionally send you news and offers for similar products. You can unsubscribe in every e-mail.", "Povremeno ćemo ti slati novosti i ponude za slične proizvode. Odjaviti se možeš u svakom e-mailu.")}
         </p>
         <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "10px 0 0", fontSize: ".84rem", textTransform: "none", letterSpacing: 0, fontWeight: 500, color: "#333", lineHeight: 1.5 }}>
           <input type="checkbox" name="agree" required style={{ width: "auto", marginTop: 3, accentColor: "var(--accent)" }} />
@@ -217,17 +217,17 @@ export default function CheckoutForm({ lang, t }) {
         })}
         <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "12px 0" }} />
         <div className="ckcode">
-          <input placeholder={lang === "en" ? "Discount code" : "Koda za popust"} value={code}
+          <input placeholder={tx(lang, "Koda za popust", "Discount code", "Kod za popust")} value={code}
             onChange={(e) => { setCode(e.target.value.toUpperCase()); if (coupon) setCoupon(null); }}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(); } }} />
-          <button type="button" onClick={applyCode}>{lang === "en" ? "Apply" : "Uporabi"}</button>
+          <button type="button" onClick={applyCode}>{tx(lang, "Uporabi", "Apply", "Primijeni")}</button>
         </div>
         {cmsg && <div className="ckcode-msg err">{cmsg}</div>}
         <PromoHint lang={lang} active={!!coupon} onApply={(c) => { setCode(c); applyCode(c); }} />
-        {coupon && <div className="ckcode-msg ok">✓ {lang === "en" ? `Code ${coupon.code}: −${coupon.percent} %` : `Koda ${coupon.code}: −${coupon.percent} %`}
-          {discount <= 0 && <span> — {lang === "en" ? "your current discount is already better." : "trenutni popust (paket/akcija) je že boljši."}</span>}</div>}
+        {coupon && <div className="ckcode-msg ok">✓ {tx(lang, `Koda ${coupon.code}: −${coupon.percent} %`, `Code ${coupon.code}: −${coupon.percent} %`, `Kod ${coupon.code}: −${coupon.percent} %`)}
+          {discount <= 0 && <span> — {tx(lang, "trenutni popust (paket/akcija) je že boljši.", "your current discount is already better.", "trenutni popust (paket/akcija) već je bolji.")}</span>}</div>}
         <div className="trow"><span>{t.subtotal}</span><b>{fmt(subtotal)}</b></div>
-        {coupon && discount > 0 && <div className="trow" style={{ color: "var(--red)" }}><span>{lang === "en" ? "Discount" : "Popust"} ({coupon.code})</span><b>−{fmt(discount)}</b></div>}
+        {coupon && discount > 0 && <div className="trow" style={{ color: "var(--red)" }}><span>{tx(lang, "Popust", "Discount", "Popust")} ({coupon.code})</span><b>−{fmt(discount)}</b></div>}
         <div className="trow"><span>{t.shipping}</span><b>{ship2 === 0 ? t.ship_free : fmt(ship2)}</b></div>
         {codFee > 0 && <div className="trow"><span>{t.cod_fee}</span><b>{fmt(codFee)}</b></div>}
         <div className="trow total"><span>{t.total}</span><span>{fmt(total)}</span></div>
