@@ -108,6 +108,9 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   const [cut, setCut] = useState("all");
 
   const keepLimit = useRef(false);
+  // po izbiri modela/kroja skoči dol na izdelke (vrstica z izbiro modelov ostane nad njimi)
+  const jumpRef = useRef(null);
+  const jump = () => setTimeout(() => jumpRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
   useEffect(() => {
     if (keepLimit.current) { keepLimit.current = false; return; }
     setLimit(step);
@@ -217,7 +220,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
               if (smp) used.add(String(smp.name).toUpperCase());
               const smpImg = smp ? fullImg(orig(smp)) : "";
               return (
-                <button key={k} className={`cutcard ${kind === k ? "active" : ""}`} onClick={() => setKind(kind === k ? "all" : k)}>
+                <button key={k} className={`cutcard ${kind === k ? "active" : ""}`} onClick={() => { setKind(k); jump(); }}>
                   <span className="cutimg" style={{ backgroundImage: `url('${smpImg || ""}')` }} />
                   <span className="cuttxt">
                     <b>{k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}{SWIM_TOP.has(k) && <em>{tx(lang, "Najbolj prodajan", "Best seller", "Najprodavaniji")}</em>}</b>
@@ -228,11 +231,14 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
               );
             }); })()}
           </div>
-          {kind !== "all" && (
-            <div className="filters" style={{ marginTop: 12 }}>
-              <button className="chip" onClick={() => setKind("all")}>✕ {t.swim_all}</button>
-            </div>
-          )}
+          <div className="filters jump" ref={jumpRef} style={{ marginTop: 18 }}>
+            <button className={`chip ${kind === "all" ? "active" : ""}`} onClick={() => setKind("all")}>{t.swim_all}</button>
+            {kinds.map((k) => (
+              <button key={k} className={`chip ${kind === k ? "active" : ""}`} onClick={() => setKind(k)}>
+                {k === "MAJICE" ? t.swim_tops : KIND_LABEL[k]}
+              </button>
+            ))}
+          </div>
         </>
       )}
 
@@ -253,7 +259,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
           <div className="flabel">{t.cut_label}</div>
           <div className="cuts">
             {["box", "hip"].map((c) => (
-              <button key={c} className={`cutcard ${cut === c ? "active" : ""}`} onClick={() => setCut(cut === c ? "all" : c)}>
+              <button key={c} className={`cutcard ${cut === c ? "active" : ""}`} onClick={() => { setCut(c); jump(); }}>
                 <span className="cutimg" style={{ backgroundImage: `url('${sample(c)?.img}')` }} />
                 <span className="cuttxt">
                   <b>{t[`cut_${c}`]}{c === "box" && <em>{t.cut_top}</em>}</b>
@@ -267,6 +273,14 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
       )}
       {boxers && (
         <>
+          {hasHip && (
+            <div className="filters jump" ref={jumpRef} style={{ marginTop: 18 }}>
+              <button className={`chip ${cut === "all" ? "active" : ""}`} onClick={() => setCut("all")}>{t.cut_all}</button>
+              {["box", "hip"].map((c) => (
+                <button key={c} className={`chip ${cut === c ? "active" : ""}`} onClick={() => setCut(c)}>{t[`cut_${c}`]}</button>
+              ))}
+            </div>
+          )}
           <div className="flabel">{t.filter_label}</div>
           <div className="filters">
             {COLL.map((f) => (
@@ -274,7 +288,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
                 {t[`filter_${f}`]}
               </button>
             ))}
-            {cut !== "all" && (
+            {cut !== "all" && !hasHip && (
               <button className="chip" onClick={() => setCut("all")}>✕ {t.cut_all}</button>
             )}
           </div>
