@@ -6,6 +6,11 @@ import { typeLabel } from "../lib/typeLabel";
 import { useCart } from "./CartContext";
 
 const COLL = ["all", "core", "limited", "sale"];
+// gumb »nazaj« v brskalniku: zapomni si, da je bil pritisnjen (za obnovitev seznama in pozicije)
+if (typeof window !== "undefined" && !window.__pgBack) {
+  window.__pgBack = 1;
+  window.addEventListener("popstate", () => { window.__pgBackAt = Date.now(); });
+}
 const MEN_GROUPS = ["boksarice", "kopalke", "oblacila", "obutev", "dodatki"];
 const OUT_GROUPS = ["boksarice", "perilo", "kopalke", "oblacila", "obutev"];
 
@@ -102,7 +107,30 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   useEffect(() => { const n = window.innerWidth < 700 ? 12 : 24; setStep(n); setLimit(n); }, []);
   const [cut, setCut] = useState("all");
 
-  useEffect(() => { setLimit(step); }, [group, gender, kind, filter, cut, step]);
+  const keepLimit = useRef(false);
+  useEffect(() => {
+    if (keepLimit.current) { keepLimit.current = false; return; }
+    setLimit(step);
+  }, [group, gender, kind, filter, cut, step]);
+  // stanje seznama (filtri, koliko je naloženih, pozicija) — shrani ob kliku na izdelek, obnovi ob »nazaj«
+  const pgKey = () => "pg:" + window.location.pathname + window.location.search;
+  const saveState = () => {
+    try { sessionStorage.setItem(pgKey(), JSON.stringify({ group, gender, kind, filter, cut, limit, y: window.scrollY })); } catch {}
+  };
+  useEffect(() => {
+    let st = null;
+    try { st = JSON.parse(sessionStorage.getItem(pgKey()) || "null"); } catch {}
+    if (!st || !(window.__pgBackAt && Date.now() - window.__pgBackAt < 3000)) return;
+    keepLimit.current = true;
+    setGroup(st.group); setGender(st.gender); setKind(st.kind); setFilter(st.filter); setCut(st.cut);
+    setLimit(st.limit);
+    let n = 0;
+    const go = () => {
+      window.scrollTo(0, st.y);
+      if (Math.abs(window.scrollY - st.y) > 5 && n++ < 20) setTimeout(go, 50);
+    };
+    setTimeout(go, 30);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // samodejno nalaganje: ko se pri drsenju približaš koncu, se naloži naslednji del
   const moreRef = useRef(null);
   useEffect(() => {
@@ -263,7 +291,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
             : p.collection === "limited" ? <span className="badge ltd">{t.badge_ltd}</span>
             : null;
           return (
-            <Link href={`/${lang}/p/${p.slug}`} className="pcard" key={p.code}>
+            <Link href={`/${lang}/p/${p.slug}`} className="pcard" key={p.code} onClick={saveState}>
               <div className="pimg" style={{ backgroundImage: `url('${p.img}')` }}>{badge}{p.hasSet && <span className="badge set">{tx(lang, "Komplet", "Set", "Komplet")}</span>}</div>
               <div className="pinfo">
                 <div className="pname">{p.name}</div>
