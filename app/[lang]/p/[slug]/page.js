@@ -11,7 +11,7 @@ import ProductBundle from "../../../../components/ProductBundle";
 import { REVIEWS, REVIEW_SUMMARY } from "../../../../lib/reviews";
 import { loadApprovedReviews, reviewsFor } from "../../../../lib/customerReviews";
 import { GALLERY } from "../../../../lib/media";
-import DetailShots, { swimDetailKind } from "../../../../components/DetailShots";
+import DetailShots from "../../../../components/DetailShots";
 import { TrackView } from "../../../../components/Track";
 import { swimFeatures } from "../../../../lib/descriptions";
 
@@ -170,7 +170,7 @@ export default async function ProductPage({ params }) {
 
       {micro && <DetailShots lang={lang} tone="light" />}
       {!micro && boxers && p.material === "bambus" && <DetailShots lang={lang} tone="light" kind="bambus" />}
-      {p.group === "kopalke" && swimDetailKind(p.code) && <DetailShots lang={lang} tone="light" kind={swimDetailKind(p.code)} />}
+      {/* kopalke: slike od blizu odstranjene — dodamo pozneje s pravimi fotografijami */}
 
       {boxers && (
       <section className="pgal">
