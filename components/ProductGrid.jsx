@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { fmt, tx } from "../lib/i18n";
 import { typeLabel } from "../lib/typeLabel";
@@ -103,6 +103,17 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   const [cut, setCut] = useState("all");
 
   useEffect(() => { setLimit(step); }, [group, gender, kind, filter, cut, step]);
+  // samodejno nalaganje: ko se pri drsenju približaš koncu, se naloži naslednji del
+  const moreRef = useRef(null);
+  useEffect(() => {
+    const el = moreRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((en) => {
+      if (en[0].isIntersecting) setLimit((l) => l + step);
+    }, { rootMargin: "800px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  });
 
   // ---------- osnovni nabor ----------
   let base = products;
@@ -272,7 +283,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
         })}
       </div>
       {list.length > limit && (
-        <div className="morewrap">
+        <div className="morewrap" ref={moreRef}>
           <button className="morebtn" onClick={() => setLimit(limit + step * 2)}>
             {tx(lang, "Pokaži več", "Show more", "Prikaži više")} <small>({limit} / {list.length})</small>
           </button>
