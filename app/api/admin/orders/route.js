@@ -75,3 +75,32 @@ export async function PATCH(req) {
   }
   return NextResponse.json({ ok: true, mailed, invoice: invoiceNo });
 }
+
+/**
+ * Izbris TESTNEGA naročila: kot da se nikoli ni zgodilo — zaloga nazaj, brez sledi v zgodovini zaloge,
+ * dobavnica/predračun, opomniki in ocene izbrisani. Ne gre, če je bil izdan račun (ta je že pri FURS).
+ */
+export async function DELETE(req) {
+  const id = Number(new URL(req.url).searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, message: "Manjka naročilo." }, { status: 400 });
+  const sql = db();
+  await ensureSchema();
+  const [o] = await sql`SELECT id, number, status, source FROM orders WHERE id = ${id}`;
+  if (!o) return NextResponse.json({ ok: false, message: "Naročilo ne obstaja." }, { status: 404 });
+  if (o.source === "shopify") return NextResponse.json({ ok: false, message: "Uvoženih Shopify naročil se ne briše." }, { status: 400 });
+  const [inv] = await sql`SELECT number FROM invoices WHERE order_id = ${id} AND kind IN ('racun','dobropis') LIMIT 1`;
+  if (inv) return NextResponse.json({ ok: false, message: `Za to naročilo je že izdan račun ${inv.number} (potrjen pri FURS), zato ga ni mogoče izbrisati. Uporabi Preklicano + dobropis.` }, { status: 400 });
+  const items = await sql`SELECT sku, qty FROM order_items WHERE order_id = ${id}`;
+  if (o.status !== "preklicano")
+    for (const it of items) await sql`UPDATE variants SET stock = stock + ${it.qty} WHERE sku = ${it.sku}`;
+  const skus = items.map((it) => it.sku);
+  await sql`DELETE FROM stock_moves WHERE sku = ANY(${skus}) AND (note = ${"Naročilo #" + o.number} OR note = ${"Neplačano naročilo #" + o.number}
+    OR note = ${"Preklic naročila (id " + id + ")"} OR note LIKE ${"%naročilo #" + o.number})`;
+  await sql`DELETE FROM mail_jobs WHERE (kind = 'review' AND ref_id = ${id})
+    OR (kind IN ('cart1','cart2') AND ref_id IN (SELECT c.id FROM carts c WHERE c.recovered_order = ${id}))`;
+  await sql`DELETE FROM carts WHERE recovered_order = ${id}`;
+  await sql`DELETE FROM reviews WHERE order_id = ${id}`;
+  await sql`DELETE FROM invoices WHERE order_id = ${id} AND kind IN ('dobavnica','predracun')`;
+  await sql`DELETE FROM orders WHERE id = ${id}`;
+  return NextResponse.json({ ok: true, message: `Testno naročilo #${o.number} je izbrisano, zaloga je vrnjena.` });
+}

@@ -139,7 +139,8 @@ export default function Admin() {
         {view === "ocene" && <Reviews onCount={setRevCount} />}
       </main>
 
-      {orderObj && <OrderPanel o={orderObj} onClose={() => setOpenOrder(null)} setStatus={setStatus} />}
+      {orderObj && <OrderPanel o={orderObj} onClose={() => setOpenOrder(null)} setStatus={setStatus}
+        onDeleted={async () => { setOpenOrder(null); await Promise.all([loadOrders(), loadStock()]); }} />}
       <PdfViewer />
     </div>
   );
@@ -382,7 +383,7 @@ function OrderInvoice({ orderId, status, shopify }) {
   );
 }
 
-function OrderPanel({ o, onClose, setStatus }) {
+function OrderPanel({ o, onClose, setStatus, onDeleted }) {
   const [busy, setBusy] = useState(false);
   const [trk, setTrk] = useState(o.tracking || "");
   useEffect(() => {
@@ -424,6 +425,19 @@ function OrderPanel({ o, onClose, setStatus }) {
               <label>Sledilna številka Pošte (vpiši pred »Poslano«)</label>
               <input value={trk} onChange={(e) => setTrk(e.target.value)} placeholder="npr. RB123456789SI" />
               <div className="muted" style={{ marginTop: 6 }}>Ko klikneš »Poslano«, kupec dobi e-mail »Paket je na poti« s to številko.</div>
+            </div>
+          )}
+
+          {o.source !== "shopify" && (
+            <div style={{ marginTop: 12 }}>
+              <button className="adm-btn" disabled={busy} style={{ color: "#e63946", borderColor: "#f3c2c6" }} onClick={async () => {
+                if (!confirm(`Izbrišem TESTNO naročilo ${onum(o)}?\n\nNaročilo, dobavnica/predračun in opomniki se izbrišejo, kosi gredo nazaj na zalogo. Tega ni mogoče razveljaviti.`)) return;
+                setBusy(true);
+                const r = await fetch(`/api/admin/orders?id=${o.id}`, { method: "DELETE" }).then((x) => x.json()).catch(() => null);
+                setBusy(false);
+                if (!r?.ok) { alert(r?.message || "Brisanje ni uspelo."); return; }
+                onDeleted && onDeleted();
+              }}>🗑 Izbriši testno naročilo</button>
             </div>
           )}
 
