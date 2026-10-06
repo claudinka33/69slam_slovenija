@@ -63,7 +63,7 @@ export default async function Home({ params }) {
   return (
     <main>
       <section className="hero hero2">
-        <div className="heroimg"><Image src="/img/hero.jpg" alt={tx(lang, "69SLAM moške spodnjice z drznim printom", "69SLAM men's underwear with a bold print", "69SLAM muške gaće s odvažnim printom")} fill priority sizes="100vw" /></div>
+        <div className="heroimg"><Image src="/img/hero.jpg" alt={tx(lang, "69SLAM moške spodnjice z drznim printom", "69SLAM men's underwear with a bold print", "69SLAM muške bokserice s odvažnim printom")} fill priority sizes="100vw" /></div>
         <div className="wrap">
           <div>
             <span className="kicker">{t.kicker}</span>

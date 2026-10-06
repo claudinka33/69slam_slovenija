@@ -25,7 +25,7 @@ const BAMBUS = [
   {
     src: "/img/detail/bambus-pas.jpg",
     sl: { t: "Mehak širok pas", p: "Elastičen pas se prilagodi telesu, ne reže in drži spodnjice na mestu ves dan." },
-    hr: { t: "Mekani široki pojas", p: "Elastični pojas prilagođava se tijelu, ne steže i drži gaće na mjestu cijeli dan." },
+    hr: { t: "Mekani široki pojas", p: "Elastični pojas prilagođava se tijelu, ne steže i drži bokserice na mjestu cijeli dan." },
     en: { t: "Soft wide waistband", p: "The elastic waistband moves with your body, doesn't dig in and keeps everything in place all day." },
   },
   {

@@ -66,7 +66,7 @@ const STORY = {
     blocks: [
       { h: "Sve je počelo jednim pitanjem", p: [
         "Siječanj 2004., kišno nedjeljno jutro. Iz jednog jednostavnog pitanja rodila se glasna ideja: zašto je muško donje rublje uvijek tako sivo, sigurno i dosadno?",
-        "Gaće su prva stvar koju ujutro obučeš. Ako dan počne dosadno, kako da se nastavi drukčije?",
+        "Bokserice su prva stvar koju ujutro obučeš. Ako dan počne dosadno, kako da se nastavi drukčije?",
         "Iz tog pitanja nastao je 69SLAM – brend izgrađen na bojama, samopouzdanju i hrabrosti da budeš ono što jesi. Život je već dovoljno ozbiljan. Ono što nosiš neka ti podigne raspoloženje.",
       ] },
       { h: "PLAY LOUD", p: [
@@ -81,7 +81,7 @@ const STORY = {
         "Iza brenda stoji šarena družina kreativaca, surfera, skejtera i sanjara iz cijelog svijeta koji žive i stvaraju na Baliju. Različite kulture, različite priče – i upravo je ta mješavina razlog zašto 69SLAM izgleda kao ništa drugo.",
       ] },
       { h: "Ne pakiraj dosadu", p: [
-        "Većina muškaraca ide na tjedan dana odmora s tri para bokserica. Mi kažemo: osvježi rotaciju. U Brazilu za Novu godinu obuku potpuno nove gaće za sreću – mi mislimo da svaki dan zaslužuje takav početak.",
+        "Većina muškaraca ide na tjedan dana odmora s tri para bokserica. Mi kažemo: osvježi rotaciju. U Brazilu za Novu godinu obuku potpuno nove bokserice za sreću – mi mislimo da svaki dan zaslužuje takav početak.",
       ] },
     ],
     end_h: "Kod nas, iz Slovenije",
