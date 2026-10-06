@@ -94,7 +94,7 @@ export default function CheckoutForm({ lang, t }) {
 
   if (success) {
     return (
-      <div className="ckcard" style={{ maxWidth: 560, marginTop: 24, textAlign: "center", padding: 40 }}>
+      <div className="ckcard" style={{ maxWidth: 560, margin: "24px auto", textAlign: "center", padding: 40 }}>
         {bought && <TrackPurchase number={bought.number} value={bought.value} items={bought.items} />}
         <div style={{ fontSize: "3rem" }}>✅</div>
         <h3 style={{ margin: "10px 0 6px", fontSize: "1.4rem" }}>
@@ -122,6 +122,9 @@ export default function CheckoutForm({ lang, t }) {
             <p className="upnnote">{lang === "en" ? "We ship your order as soon as the payment arrives." : "Paket pošljemo takoj, ko prejmemo plačilo."}</p>
           </div>
         )}
+        <a className="checkout-btn" style={{ display: "inline-block", marginTop: 18, padding: "12px 22px", width: "auto" }} href={`/${lang}`}>
+          {lang === "en" ? "Continue shopping" : lang === "hr" ? "Nastavi kupovinu" : "Nadaljuj z nakupovanjem"}
+        </a>
       </div>
     );
   }
