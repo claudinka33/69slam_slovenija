@@ -62,7 +62,7 @@ export default function Search({ lang }) {
               <button onClick={() => setOpen(false)} aria-label={tx(lang, "Zapri", "Close", "Zatvori")}>✕</button>
             </div>
             {q.trim() && <div className="srch-count">{res.length ? `${res.length}${res.length === 60 ? "+" : ""} ${tx(lang, "zadetkov", "results", "rezultata")}` : tx(lang, "Ni zadetkov — poskusi z drugo besedo.", "No results — try another word.", "Nema rezultata — pokušaj s drugom riječi.")}</div>}
-            {!q.trim() && <div className="srch-hint">{tx(lang, "npr. flamingo · MBYABT · boardshort · bambus hip · kapa · obesek", "e.g. flamingo · MBYABT · boardshort · bamboo hip · cap", "npr. flamingo · MBYABT · boardshort · bambus hip · kapa · privjesak")}</div>}
+            {!q.trim() && <div className="srch-hint">{tx(lang, "npr. flamingo · MBYABT · boardshort · bambus hip · kapa", "e.g. flamingo · MBYABT · boardshort · bamboo hip · cap", "npr. flamingo · MBYABT · boardshort · bambus hip · kapa")}</div>}
             <div className="srch-res">
               {res.map((p) => {
                 const red = p.sale || p.outlet;
