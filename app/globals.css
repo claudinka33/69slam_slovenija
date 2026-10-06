@@ -816,6 +816,6 @@ html,body{overflow-x:clip;}
 
 /* prva slika: počasen filmski zoom (Ken Burns) */
 .hero2 .heroimg{overflow:hidden;}
-.hero2 .heroimg img{animation:kenburns 16s ease-in-out infinite alternate;transform-origin:70% 45%;will-change:transform;}
-@keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.14) translate(-1.5%,1%)}}
+.hero2 .heroimg img{animation:kenburns 9s ease-out infinite alternate;transform-origin:70% 45%;will-change:transform;}
+@keyframes kenburns{from{transform:scale(1.02)}to{transform:scale(1.2) translate(-2%,1.5%)}}
 @media (prefers-reduced-motion:reduce){.hero2 .heroimg img{animation:none}}
