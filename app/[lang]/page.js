@@ -6,6 +6,8 @@ import BundleBar from "../../components/BundleBar";
 import Image from "next/image";
 import { IMG } from "../../lib/media";
 import DetailShots from "../../components/DetailShots";
+import { CountUp, Ticker } from "../../components/HeroExtras";
+import { REVIEW_SUMMARY } from "../../lib/reviews";
 import { db, dbConfigured } from "../../lib/db";
 
 // Modeli moških kopalk na prvi strani (prve 3 črke šifre)
@@ -69,16 +71,25 @@ export default async function Home({ params }) {
             <span className="kicker">{t.kicker}</span>
             <h1>{t.h1a}<br /><em>{t.h1b}</em></h1>
             <p className="sub">{t.sub}</p>
+            <div className="hrate"><span>★★★★★</span> <b>{REVIEW_SUMMARY.rating}</b> · {REVIEW_SUMMARY.count} {tx(lang, "ocen kupcev", "customer reviews", "recenzija kupaca")}</div>
             <div className="specs">
-              <div className="spec"><b>{products.filter((p) => p.totalStock > 0).length}</b><span>{t.spec1}</span></div>
-              <div className="spec"><b>500+</b><span>{t.spec2}</span></div>
-              <div className="spec"><b>−15 %</b><span>{t.spec3}</span></div>
+              <div className="spec"><CountUp to={products.filter((p) => p.totalStock > 0).length} /><span>{t.spec1}</span></div>
+              <div className="spec"><CountUp to={500} suffix="+" /><span>{t.spec2}</span></div>
+              <div className="spec"><CountUp to={15} prefix="−" suffix=" %" ms={900} /><span>{t.spec3}</span></div>
             </div>
             <Link className="cta" href={`/${lang}/spodnjice`}>{t.cta_shop}</Link>
             <Link className="cta ghost" href={`/${lang}/kopalke`}>{t.cta_why}</Link>
           </div>
         </div>
       </section>
+
+      <Ticker items={[
+        tx(lang, "Ne lezejo navzgor", "Never ride up", "Ne podižu se"),
+        tx(lang, "Hitro sušenje", "Quick drying", "Brzo sušenje"),
+        tx(lang, "Svežina ves dan", "All-day fresh", "Svježina cijeli dan"),
+        tx(lang, "Drzni printi", "Bold prints", "Odvažni printovi"),
+        tx(lang, "100 % original 69SLAM", "100% original 69SLAM", "100 % original 69SLAM"),
+      ]} />
 
       <section className="usps">
         <div className="wrap">

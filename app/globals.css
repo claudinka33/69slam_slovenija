@@ -819,3 +819,14 @@ html,body{overflow-x:clip;}
 .hero2 .heroimg img{animation:kenburns 9s ease-out infinite alternate;transform-origin:70% 45%;will-change:transform;}
 @keyframes kenburns{from{transform:scale(1.02)}to{transform:scale(1.2) translate(-2%,1.5%)}}
 @media (prefers-reduced-motion:reduce){.hero2 .heroimg img{animation:none}}
+
+/* prva stran: ocena, tekoč trak */
+.hrate{font-size:.9rem;color:#444;margin:-6px 0 18px;}
+.hrate span{color:var(--red);letter-spacing:1px;}
+.hrate b{color:#0a0a0a;}
+.ticker{background:#0a0a0a;color:#fff;overflow:hidden;white-space:nowrap;padding:13px 0;}
+.ticker-in{display:inline-flex;animation:tick 28s linear infinite;}
+.ticker-in span{font-weight:800;text-transform:uppercase;letter-spacing:.1em;font-size:.82rem;padding:0 4px;}
+.ticker-in i{font-style:normal;color:var(--red);margin:0 18px;font-size:.6rem;vertical-align:middle;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ticker-in{animation:none}}
