@@ -46,7 +46,7 @@ const SWIM = [
   {
     src: "/img/detail/kopalke-vrvica.jpg",
     sl: { t: "Vrvica za zavezat", p: "Pas z vrvico, da kopalke ostanejo na mestu — tudi v valovih." },
-    hr: { t: "Vezica za vezanje", p: "Pojas s vezicom da kupaće ostanu na mjestu — i u valovima." },
+    hr: { t: "Vezica za vezanje", p: "Pojas s vezicom da kupaće hlače ostanu na mjestu — i u valovima." },
     en: { t: "Tie drawstring", p: "A drawstring waist keeps your shorts in place — even in the waves." },
   },
   {

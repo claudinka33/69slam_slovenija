@@ -74,7 +74,7 @@ const SWIM_DESC = {
     MEDIUM: "Srednja duljina do koljena – više pokrivenosti, opušten izgled (~46 cm).",
     LONG: "Za one koji vole duže kupaće (~52 cm).",
     MAJICE: "Kupaće majice s UV zaštitom – za sunce i vodu.",
-    DRUGO: "Ostali kupaći." },
+    DRUGO: "Ostale kupaće hlače." },
 };
 const KIND_LABEL = { BOARDSHORT: "Boardshort", VOLLEY: "Volley", ELASTIC: "Elastic", MEDIUM: "Medium length", LONG: "Long length", CLASSIC: "Classic", MAJICE: "Kopalne majice", DRUGO: "Ostalo" };
 

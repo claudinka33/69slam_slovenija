@@ -22,7 +22,7 @@ export async function generateMetadata({ params }) {
   const { lang } = await params;
   const t = getDict(lang);
   return {
-    title: tx(lang, "69SLAM.si — Moško spodnje perilo in kopalke", "69SLAM.si — Men's underwear & swimwear", "69SLAM.si — Muško donje rublje i kupaći"),
+    title: tx(lang, "69SLAM.si — Moško spodnje perilo in kopalke", "69SLAM.si — Men's underwear & swimwear", "69SLAM.si — Muško donje rublje i kupaće hlače"),
     description: t.sub,
     alternates: {
       canonical: `https://69slam.si/${lang}`,
