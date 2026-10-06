@@ -106,6 +106,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   const [limit, setLimit] = useState(24);
   useEffect(() => { const n = window.innerWidth < 700 ? 12 : 24; setStep(n); setLimit(n); }, []);
   const [cut, setCut] = useState("all");
+  const [mat, setMat] = useState("all");
 
   const keepLimit = useRef(false);
   // po izbiri modela/kroja skoči dol na izdelke (vrstica z izbiro modelov ostane nad njimi)
@@ -114,18 +115,18 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   useEffect(() => {
     if (keepLimit.current) { keepLimit.current = false; return; }
     setLimit(step);
-  }, [group, gender, kind, filter, cut, step]);
+  }, [group, gender, kind, filter, cut, mat, step]);
   // stanje seznama (filtri, koliko je naloženih, pozicija) — shrani ob kliku na izdelek, obnovi ob »nazaj«
   const pgKey = () => "pg:" + window.location.pathname + window.location.search;
   const saveState = () => {
-    try { sessionStorage.setItem(pgKey(), JSON.stringify({ group, gender, kind, filter, cut, limit, y: window.scrollY })); } catch {}
+    try { sessionStorage.setItem(pgKey(), JSON.stringify({ group, gender, kind, filter, cut, mat, limit, y: window.scrollY })); } catch {}
   };
   useEffect(() => {
     let st = null;
     try { st = JSON.parse(sessionStorage.getItem(pgKey()) || "null"); } catch {}
     if (!st || !(window.__pgBackAt && Date.now() - window.__pgBackAt < 3000)) return;
     keepLimit.current = true;
-    setGroup(st.group); setGender(st.gender); setKind(st.kind); setFilter(st.filter); setCut(st.cut);
+    setGroup(st.group); setGender(st.gender); setKind(st.kind); setFilter(st.filter); setCut(st.cut); setMat(st.mat || "all");
     setLimit(st.limit);
     let n = 0;
     const go = () => {
@@ -163,11 +164,13 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   const hasHip = boxers && base.some((p) => p.cut === "hip");
   const sample = (c) => base.find((p) => p.cut === c && !p.sale && p.img) || base.find((p) => p.cut === c);
   const count = (c) => base.filter((p) => p.cut === c).length;
+  const hasBamboo = boxers && base.some((p) => p.material === "bambus") && base.some((p) => p.material !== "bambus");
 
   let list = base;
   if (boxers) {
     list = list
       .filter((p) => (cut === "all" ? true : p.cut === cut))
+      .filter((p) => (mat === "all" ? true : (p.material || "mikrofibra") === mat))
       .filter((p) =>
         filter === "all" ? true :
         filter === "core" ? p.collection === "core" && !p.sale :
@@ -292,6 +295,16 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
               <button className="chip" onClick={() => setCut("all")}>✕ {t.cut_all}</button>
             )}
           </div>
+          {hasBamboo && (
+            <>
+              <div className="flabel">{tx(lang, "3. Izberi material", "3. Pick the fabric", "3. Odaberi materijal")}</div>
+              <div className="filters">
+                {[["all", tx(lang, "Vsi materiali", "All fabrics", "Svi materijali")], ["mikrofibra", tx(lang, "Mikrofibra", "Microfibre", "Mikrofibra")], ["bambus", tx(lang, "Bambus", "Bamboo", "Bambus")]].map(([m, l]) => (
+                  <button key={m} className={`chip ${mat === m ? "active" : ""}`} onClick={() => setMat(m)}>{l}</button>
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
 
