@@ -4,7 +4,7 @@ import Link from "next/link";
 import { fmt, tx } from "../lib/i18n";
 import { typeLabel } from "../lib/typeLabel";
 import { useCart } from "./CartContext";
-import { sortSizes } from "../lib/sizes";
+import { sortSizes, sizeEq, sizeLabel } from "../lib/sizes";
 
 const COLL = ["all", "core", "limited", "sale"];
 // gumb »nazaj« v brskalniku: zapomni si, da je bil pritisnjen (za obnovitev seznama in pozicije)
@@ -181,9 +181,11 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
       );
   }
   // filter po velikosti: samo izdelki, ki imajo izbrano velikost na zalogi
-  const sizeOpts = sortSizes([...new Set(list.flatMap((p) => (p.sizes || []).filter((s) => (p.stock?.[s] || 0) > 0)))]);
+  // kopalke s številčnimi velikostmi štejejo kot črke (34 = L), da filter najde vse
+  const inSizes = (p) => (p.sizes || []).filter((s) => (p.stock?.[s] || 0) > 0).map((s) => sizeEq(s, p.group));
+  const sizeOpts = sortSizes([...new Set(list.flatMap(inSizes))]);
   const sizeOn = size !== "all" && sizeOpts.includes(size);
-  if (sizeOn) list = list.filter((p) => (p.stock?.[size] || 0) > 0);
+  if (sizeOn) list = list.filter((p) => inSizes(p).includes(size));
 
   return (
     <>
@@ -346,7 +348,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
                   ) : (
                     <span className="price">{fmt(p.price)}</span>
                   )}
-                  <span className="psizes">{(p.sizes || []).filter((s) => (p.stock?.[s] || 0) > 0).join(" ")}</span>
+                  <span className="psizes">{(p.sizes || []).filter((s) => (p.stock?.[s] || 0) > 0).map((s) => sizeLabel(s, p.group)).join(" ")}</span>
                 </div>
                 {red && <div className="pomni">{t.omni}: {fmt(p.low30 ?? p.price)}</div>}
               </div>

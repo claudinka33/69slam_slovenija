@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCart } from "./CartContext";
 import { fmt, tx } from "../lib/i18n";
 import { typeLabel } from "../lib/typeLabel";
+import { sizeLabel } from "../lib/sizes";
 
 /** »Dopolni komplet« — ujemajoči kosi istega dizajna z izbiro velikosti. */
 export default function CompleteSet({ codes, lang, t }) {
@@ -33,7 +34,7 @@ function SetItem({ p, lang, t, addItem, usedInCart, showToast }) {
         <div className="cset-sizes">
           {p.sizes.filter((s) => (p.stock[s] || 0) > 0).map((s) => {
             const avail = (p.stock[s] || 0) - usedInCart(p.code, s);
-            return <button type="button" key={s} disabled={avail <= 0} className={size === s ? "on" : ""} onClick={() => setSize(s)}>{s}</button>;
+            return <button type="button" key={s} disabled={avail <= 0} className={size === s ? "on" : ""} onClick={() => setSize(s)}>{sizeLabel(s, p.group)}</button>;
           })}
         </div>
         <button type="button" className="cset-add" onClick={() => {

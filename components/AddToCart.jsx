@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "./CartContext";
 import { fmt } from "../lib/i18n";
+import { sizeLabel, sortSizesFor } from "../lib/sizes";
 
 
 export default function AddToCart({ code, t }) {
@@ -36,7 +37,7 @@ export default function AddToCart({ code, t }) {
     <div ref={boxRef}>
       <div className="plabel">{t.size_label}</div>
       <div className="sizes">
-        {p.sizes.map((s) => {
+        {sortSizesFor(p.sizes, p.group).map((s) => {
           const has = s in p.stock;
           const avail = has ? (p.stock[s] || 0) - usedInCart(p.code, s) : 0;
           if (!has || (p.stock[s] || 0) === 0)
@@ -45,7 +46,7 @@ export default function AddToCart({ code, t }) {
             <div key={s}
               className={`size ${size === s ? "active" : ""} ${avail <= 0 ? "out" : ""}`}
               onClick={() => avail > 0 && setSize(s)}>
-              {s}
+              {sizeLabel(s, p.group)}
             </div>
           );
         })}
@@ -59,7 +60,7 @@ export default function AddToCart({ code, t }) {
       <div className={`stickbar ${stick ? "on" : ""}`} aria-hidden={!stick}>
         <div className="sb-info">
           <b>{p.name}</b>
-          <span>{fmt(p.effPrice ?? p.price)}{size ? ` · ${size}` : ""}</span>
+          <span>{fmt(p.effPrice ?? p.price)}{size ? ` · ${sizeLabel(size, p.group)}` : ""}</span>
         </div>
         <button className="sb-btn" onClick={add} tabIndex={stick ? 0 : -1}>
           {size ? t.add : t.size_label}

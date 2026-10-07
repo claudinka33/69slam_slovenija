@@ -117,7 +117,7 @@ export default async function ProductPage({ params }) {
             <span>{t.t2t}</span><span>{t.t1t}</span><span>{t.t3t}</span>
           </div>
           )}
-          {boxers && (
+          {(boxers || (p.group === "kopalke" && p.gender === "moski")) && (
           <details className="sizeguide">
             <summary>{tx(lang, "Katera velikost je zame?", "Which size fits me?", "Koja mi veličina odgovara?")}</summary>
             <table>

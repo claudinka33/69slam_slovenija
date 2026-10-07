@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCart } from "./CartContext";
+import { sizeLabel } from "../lib/sizes";
 import { fmt } from "../lib/i18n";
 import PromoHint from "./PromoHint";
 import { countryName } from "../lib/shipping";
@@ -45,7 +46,7 @@ export default function CartDrawer({ lang, t }) {
                   <div className="cthumb" style={{ backgroundImage: `url('${p.img}')` }} />
                   <div className="cmeta">
                     <b>{p.name}</b>
-                    {c.size} · {fmt(p.effPrice)}
+                    {sizeLabel(c.size, p.group)} · {fmt(p.effPrice)}
                     {p.effPrice < p.price ? <span style={{ color: "var(--red)", fontWeight: 700 }}> −{Math.round((1 - p.effPrice / p.price) * 100)}%</span> : null}
                   </div>
                   <div className="qty">
