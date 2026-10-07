@@ -46,7 +46,7 @@ export default function AddToCart({ code, t }) {
             <div key={s}
               className={`size ${size === s ? "active" : ""} ${avail <= 0 ? "out" : ""}`}
               onClick={() => avail > 0 && setSize(s)}>
-              {sizeLabel(s, p.group)}
+              {sizeLabel(s, p.group, p.code)}
             </div>
           );
         })}
@@ -60,7 +60,7 @@ export default function AddToCart({ code, t }) {
       <div className={`stickbar ${stick ? "on" : ""}`} aria-hidden={!stick}>
         <div className="sb-info">
           <b>{p.name}</b>
-          <span>{fmt(p.effPrice ?? p.price)}{size ? ` · ${sizeLabel(size, p.group)}` : ""}</span>
+          <span>{fmt(p.effPrice ?? p.price)}{size ? ` · ${sizeLabel(size, p.group, p.code)}` : ""}</span>
         </div>
         <button className="sb-btn" onClick={add} tabIndex={stick ? 0 : -1}>
           {size ? t.add : t.size_label}

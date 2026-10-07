@@ -34,7 +34,7 @@ function SetItem({ p, lang, t, addItem, usedInCart, showToast }) {
         <div className="cset-sizes">
           {p.sizes.filter((s) => (p.stock[s] || 0) > 0).map((s) => {
             const avail = (p.stock[s] || 0) - usedInCart(p.code, s);
-            return <button type="button" key={s} disabled={avail <= 0} className={size === s ? "on" : ""} onClick={() => setSize(s)}>{sizeLabel(s, p.group)}</button>;
+            return <button type="button" key={s} disabled={avail <= 0} className={size === s ? "on" : ""} onClick={() => setSize(s)}>{sizeLabel(s, p.group, p.code)}</button>;
           })}
         </div>
         <button type="button" className="cset-add" onClick={() => {
