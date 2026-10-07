@@ -44,7 +44,7 @@ export default function AddToCart({ code, t }) {
             return null; // velikosti, ki jih ni na zalogi, ne prikazujemo
           return (
             <div key={s}
-              className={`size ${size === s ? "active" : ""} ${avail <= 0 ? "out" : ""}`}
+              className={`size ${sizeLabel(s, p.group, p.code).length > 3 ? "wide" : ""} ${size === s ? "active" : ""} ${avail <= 0 ? "out" : ""}`}
               onClick={() => avail > 0 && setSize(s)}>
               {sizeLabel(s, p.group, p.code)}
             </div>

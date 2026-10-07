@@ -850,3 +850,6 @@ html,body{overflow-x:clip;}
   .cuttxt small{font-size:.62rem;}
   .rescount{font-size:.78rem;margin-top:6px;}
 }
+
+/* velikosti s številko (L · 34, 36 (XL)) — širši gumb, manjša pisava */
+.size.wide{min-width:0;padding:10px 12px;font-size:.78rem;white-space:nowrap;letter-spacing:.01em;}
