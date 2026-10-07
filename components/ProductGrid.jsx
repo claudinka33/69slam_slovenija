@@ -4,6 +4,7 @@ import Link from "next/link";
 import { fmt, tx } from "../lib/i18n";
 import { typeLabel } from "../lib/typeLabel";
 import { useCart } from "./CartContext";
+import { sortSizes } from "../lib/sizes";
 
 const COLL = ["all", "core", "limited", "sale"];
 // gumb »nazaj« v brskalniku: zapomni si, da je bil pritisnjen (za obnovitev seznama in pozicije)
@@ -107,6 +108,7 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   useEffect(() => { const n = window.innerWidth < 700 ? 12 : 24; setStep(n); setLimit(n); }, []);
   const [cut, setCut] = useState("all");
   const [mat, setMat] = useState("all");
+  const [size, setSize] = useState("all");
 
   const keepLimit = useRef(false);
   // po izbiri modela/kroja skoči dol na izdelke (vrstica z izbiro modelov ostane nad njimi)
@@ -115,18 +117,18 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
   useEffect(() => {
     if (keepLimit.current) { keepLimit.current = false; return; }
     setLimit(step);
-  }, [group, gender, kind, filter, cut, mat, step]);
+  }, [group, gender, kind, filter, cut, mat, size, step]);
   // stanje seznama (filtri, koliko je naloženih, pozicija) — shrani ob kliku na izdelek, obnovi ob »nazaj«
   const pgKey = () => "pg:" + window.location.pathname + window.location.search;
   const saveState = () => {
-    try { sessionStorage.setItem(pgKey(), JSON.stringify({ group, gender, kind, filter, cut, mat, limit, y: window.scrollY })); } catch {}
+    try { sessionStorage.setItem(pgKey(), JSON.stringify({ group, gender, kind, filter, cut, mat, size, limit, y: window.scrollY })); } catch {}
   };
   useEffect(() => {
     let st = null;
     try { st = JSON.parse(sessionStorage.getItem(pgKey()) || "null"); } catch {}
     if (!st || !(window.__pgBackAt && Date.now() - window.__pgBackAt < 3000)) return;
     keepLimit.current = true;
-    setGroup(st.group); setGender(st.gender); setKind(st.kind); setFilter(st.filter); setCut(st.cut); setMat(st.mat || "all");
+    setGroup(st.group); setGender(st.gender); setKind(st.kind); setFilter(st.filter); setCut(st.cut); setMat(st.mat || "all"); setSize(st.size || "all");
     setLimit(st.limit);
     let n = 0;
     const go = () => {
@@ -178,6 +180,10 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
         p.sale
       );
   }
+  // filter po velikosti: samo izdelki, ki imajo izbrano velikost na zalogi
+  const sizeOpts = sortSizes([...new Set(list.flatMap((p) => (p.sizes || []).filter((s) => (p.stock?.[s] || 0) > 0)))]);
+  const sizeOn = size !== "all" && sizeOpts.includes(size);
+  if (sizeOn) list = list.filter((p) => (p.stock?.[size] || 0) > 0);
 
   return (
     <>
@@ -308,6 +314,17 @@ export default function ProductGrid({ products: all, lang, t, mode = "men" }) {
         </>
       )}
 
+      {sizeOpts.length > 1 && (
+        <>
+          <div className="flabel">{tx(lang, "Velikost", "Size", "Veličina")}</div>
+          <div className="filters sizechips">
+            <button className={`chip ${!sizeOn ? "active" : ""}`} onClick={() => setSize("all")}>{tx(lang, "Vse", "All", "Sve")}</button>
+            {sizeOpts.map((s) => (
+              <button key={s} className={`chip ${size === s ? "active" : ""}`} onClick={() => setSize(size === s ? "all" : s)}>{s}</button>
+            ))}
+          </div>
+        </>
+      )}
       <div className="rescount">{list.length} {boxers ? t.rescount : t.items}</div>
       <div className="grid">
         {list.slice(0, limit).map((p) => {
