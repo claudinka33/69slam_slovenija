@@ -9,6 +9,16 @@ export async function GET(req) {
   const sql = db();
   await ensureSchema();
   const qp = new URL(req.url).searchParams;
+  // maili kupcu za naročilo + stanje dostave (Resend)
+  if (qp.get("mails") && qp.get("id")) {
+    const id = qp.get("id");
+    const { mailStatus } = await import("../../../../lib/mail");
+    const rows = await sql`SELECT kind, email, subject, attachment, resend_id, error, at FROM mail_log WHERE order_id = ${id} ORDER BY at`;
+    for (const r of rows) r.status = r.error ? "napaka" : await mailStatus(r.resend_id);
+    const [o] = await sql`SELECT email, mailed_at FROM orders WHERE id = ${id}`;
+    const inv = await sql`SELECT number, sent_at, sent_to FROM invoices WHERE order_id = ${id} AND kind = 'racun' AND sent_at IS NOT NULL`;
+    return NextResponse.json({ ok: true, log: rows, legacy: { confirm_at: o?.mailed_at || null, invoices: inv } });
+  }
   // diagnostika pred odprtjem: spletna naročila, števec, današnji premiki zaloge (?diag=1, ?diag=1&reset=1)
   if (qp.get("diag")) {
     if (qp.get("reset"))

@@ -424,6 +424,45 @@ function OrderInvoice({ orderId, status, shopify }) {
   );
 }
 
+const MAIL_KIND = { potrditev: "Potrditev naročila", poslano: "Paket je na poti" };
+const MAIL_ST = {
+  delivered: ["✅ dostavljeno", "#059669"], opened: ["✅ dostavljeno · odprto", "#059669"], clicked: ["✅ dostavljeno · odprto", "#059669"],
+  sent: ["⏳ poslano, čaka dostavo", "#b45309"], queued: ["⏳ v vrsti", "#b45309"], scheduled: ["⏳ v vrsti", "#b45309"], delivery_delayed: ["⏳ dostava zamuja", "#b45309"],
+  bounced: ["❌ ni dostavljeno (napačen naslov)", "#e63946"], complained: ["⚠️ označeno kot vsiljena pošta", "#e63946"], napaka: ["❌ napaka pri pošiljanju", "#e63946"], failed: ["❌ pošiljanje ni uspelo", "#e63946"], suppressed: ["❌ naslov je blokiran (prej zavrnjen)", "#e63946"], canceled: ["✕ preklicano", "#666"],
+};
+/** Kateri maili so šli kupcu in ali so bili dostavljeni. */
+function OrderMails({ orderId, status }) {
+  const [d, setD] = useState(null);
+  useEffect(() => { let on = true; getJSON(`/api/admin/orders?id=${orderId}&mails=1`).then((x) => on && setD(x || { log: [] })); return () => { on = false; }; }, [orderId, status]);
+  if (!d) return null;
+  const rows = d.log || [];
+  const legacy = !rows.length && (d.legacy?.confirm_at || d.legacy?.invoices?.length);
+  return (
+    <>
+      <div className="adm-sec">📧 Maili kupcu</div>
+      {!rows.length && !legacy && <div className="muted">Kupcu še ni bil poslan noben mail.</div>}
+      {rows.map((m, i) => {
+        const st = MAIL_ST[m.status] || [m.status ? m.status : "poslano", "#666"];
+        return (
+          <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid var(--a-line, #eee)", fontSize: 13 }}>
+            <div><b>{MAIL_KIND[m.kind] || m.kind}</b> <span className="muted">· {dt(m.at)}</span></div>
+            <div className="muted">na {m.email}{m.attachment ? <> · 📎 {m.attachment}</> : null}</div>
+            <div style={{ color: st[1], fontWeight: 700 }}>{st[0]}</div>
+            {m.error && <div style={{ color: "#e63946" }}>{m.error}</div>}
+          </div>
+        );
+      })}
+      {legacy && (
+        <div className="muted" style={{ fontSize: 13 }}>
+          {d.legacy.confirm_at && <div>✅ Potrditev naročila poslana · {dt(d.legacy.confirm_at)}</div>}
+          {(d.legacy.invoices || []).map((v) => <div key={v.number}>✅ Račun {v.number} poslan na {v.sent_to} · {dt(v.sent_at)}</div>)}
+          <div style={{ marginTop: 4 }}>Stanje dostave se beleži za maile od 7. 10. 2026 naprej.</div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function OrderPanel({ o, onClose, setStatus, onDeleted }) {
   const [busy, setBusy] = useState(false);
   const [trk, setTrk] = useState(o.tracking || "");
@@ -469,18 +508,7 @@ function OrderPanel({ o, onClose, setStatus, onDeleted }) {
             </div>
           )}
 
-          {o.source !== "shopify" && (
-            <div style={{ marginTop: 12 }}>
-              <button className="adm-btn" disabled={busy} style={{ color: "#e63946", borderColor: "#f3c2c6" }} onClick={async () => {
-                if (!confirm(`Izbrišem TESTNO naročilo ${onum(o)}?\n\nNaročilo, dobavnica/predračun in opomniki se izbrišejo, kosi gredo nazaj na zalogo. Tega ni mogoče razveljaviti.`)) return;
-                setBusy(true);
-                const r = await fetch(`/api/admin/orders?id=${o.id}`, { method: "DELETE" }).then((x) => x.json()).catch(() => null);
-                setBusy(false);
-                if (!r?.ok) { alert(r?.message || "Brisanje ni uspelo."); return; }
-                onDeleted && onDeleted();
-              }}>🗑 Izbriši testno naročilo</button>
-            </div>
-          )}
+          {o.source !== "shopify" && <OrderMails orderId={o.id} status={o.status} />}
 
           <div className="adm-sec">Kupec in dostava</div>
           <dl className="adm-dl">
