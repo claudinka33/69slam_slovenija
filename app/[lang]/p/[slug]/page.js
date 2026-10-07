@@ -72,8 +72,30 @@ export default async function ProductPage({ params }) {
       "@type": "Offer",
       priceCurrency: "EUR",
       price: p.effPrice.toFixed(2),
-      availability: "https://schema.org/InStock",
+      availability: p.totalStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      itemCondition: "https://schema.org/NewCondition",
       url: `https://69slam.si/${lang}/p/${p.slug}`,
+      seller: { "@type": "Organization", name: "69SLAM.si" },
+      // dostava (Google: »Vnosi na seznam trgovcev«) — SI 5 € (brezplačno nad 50 €), HR 8 € (brezplačno nad 80 €), 1–2 delovna dneva
+      shippingDetails: [["SI", p.effPrice >= 50 ? 0 : 5], ["HR", p.effPrice >= 80 ? 0 : 8]].map(([cc, fee]) => ({
+        "@type": "OfferShippingDetails",
+        shippingRate: { "@type": "MonetaryAmount", value: fee.toFixed(2), currency: "EUR" },
+        shippingDestination: { "@type": "DefinedRegion", addressCountry: cc },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+          transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 2, unitCode: "DAY" },
+        },
+      })),
+      // vračila: 14 dni, po pošti, stroške vračila plača kupec
+      hasMerchantReturnPolicy: ["SI", "HR"].map((cc) => ({
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: cc,
+        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: 14,
+        returnMethod: "https://schema.org/ReturnByMail",
+        returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+      })),
     },
   };
 
