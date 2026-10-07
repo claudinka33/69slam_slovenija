@@ -834,3 +834,19 @@ html,body{overflow-x:clip;}
 /* oznaka »Komplet« spodaj na sliki, da ne prekrije popusta */
 .badge.set{top:auto;bottom:12px;left:12px;right:auto;}
 @media(max-width:640px){.badge{font-size:.6rem;padding:3px 9px;top:8px;left:8px;}.badge.set{top:auto;bottom:8px;left:8px;}}
+
+/* filtri na telefonu: kompaktno, vsaka skupina v eni vrstici (drsenje levo-desno) */
+@media(max-width:640px){
+  .flabel{margin:14px 0 6px;font-size:.66rem;}
+  .filters{flex-wrap:nowrap;overflow-x:auto;gap:6px;margin:0 -16px 2px;padding:0 16px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .filters::-webkit-scrollbar{display:none;}
+  .filters.jump{margin-top:12px !important;}
+  .chip{flex:none;padding:6px 12px;font-size:.68rem;white-space:nowrap;}
+  .cuts{gap:8px;}
+  .cutimg,.swimcuts .cutimg{width:72px;min-height:78px;}
+  .cuttxt{padding:8px 12px;gap:2px;}
+  .cuttxt b{font-size:.95rem;}
+  .cuttxt span{font-size:.76rem;line-height:1.3;}
+  .cuttxt small{font-size:.62rem;}
+  .rescount{font-size:.78rem;margin-top:6px;}
+}
