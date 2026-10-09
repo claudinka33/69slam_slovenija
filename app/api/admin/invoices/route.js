@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, dbConfigured, ensureSchema } from "../../../../lib/db";
-import { issueInvoice, invoicePdf, emailInvoice, invoiceFromOrder, getInvSettings, saveInvSettings, computeInvoice, convertToInvoice, docsForNewOrder, KIND_FILE, creditable, creditNote } from "../../../../lib/invoices";
+import { issueInvoice, invoicePdf, emailInvoice, invoiceFromOrder, getInvSettings, saveInvSettings, computeInvoice, convertToInvoice, docsForNewOrder, KIND_FILE, creditable, creditNote, stockRule, takeStock, returnTakenStock, KIND_NAME } from "../../../../lib/invoices";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +23,14 @@ export async function GET(req) {
   if (u.searchParams.get("drafts")) {
     const rows = await sql`SELECT id, kind, title, total_cents, data, updated_at FROM invoice_drafts ORDER BY updated_at DESC`;
     return NextResponse.json({ ok: true, drafts: rows });
+  }
+  if (u.searchParams.get("stockcheck")) {
+    const docs = await sql`SELECT id, number, kind, customer_name, issued_at, items, source_id, order_id, series, meta, status FROM invoices
+      WHERE series <> 'MK' AND order_id IS NULL AND kind IN ('dobavnica','racun') AND status <> 'storniran' AND (meta->'stock') IS NULL ORDER BY id`;
+    const out = [];
+    for (const d of docs) if (await stockRule(sql, d)) out.push({ id: d.id, number: d.number, kind: d.kind, customer: d.customer_name, issued_at: d.issued_at,
+      lines: (d.items || []).filter((l) => String(l.code || "").trim() && Number(l.qty) > 0).map((l) => ({ code: l.code, desc: l.desc, qty: l.qty })) });
+    return NextResponse.json({ ok: true, docs: out });
   }
   if (u.searchParams.get("settings")) return NextResponse.json({ ok: true, settings: await getInvSettings() });
   if (u.searchParams.get("customers")) {
@@ -99,6 +107,9 @@ export async function POST(req) {
       const inv = await issueInvoice({ ...b, items });
       if (b.draft_id) await sql`DELETE FROM invoice_drafts WHERE id = ${b.draft_id}`;
       let message = `${inv.number} je izdan ✓`;
+      const st = inv.stockResult;
+      if (st?.ok?.length) message += ` · z zaloge: ${st.ok.join(", ")}`;
+      if (st?.unknown?.length) message += ` · ⚠️ ni v zalogi (popravi ročno): ${st.unknown.join(", ")}`;
       if (b.send && inv.customer_email) {
         const r = await emailInvoice(inv);
         message += r.error ? ` — pošiljanje ni uspelo: ${r.error.message || r.error.name}` : r.skipped ? " (Resend ni nastavljen)" : ` in poslan na ${inv.customer_email}`;
@@ -108,6 +119,10 @@ export async function POST(req) {
     const [inv] = b.id ? await sql`SELECT * FROM invoices WHERE id = ${b.id}` : [null];
     if (inv?.series === "MK" && ["paid", "storno", "convert", "credit"].includes(b.action))
       return NextResponse.json({ ok: false, message: "Arhivski račun iz Metakocke je samo za branje." }, { status: 400 });
+    if (b.action === "takestock" && inv) {
+      const r = await takeStock(inv, `${KIND_NAME[inv.kind]} ${inv.number} (naknadno)`);
+      return NextResponse.json({ ok: true, message: `${inv.number}: ${r.ok.join(", ") || "nič za odšteti"}${r.unknown.length ? " · ⚠️ ni v zalogi: " + r.unknown.join(", ") : ""}` });
+    }
     if (b.action === "send") {
       if (!inv) return NextResponse.json({ ok: false, message: "Ni računa." }, { status: 404 });
       const to = String(b.to || inv.customer_email || "").trim();
@@ -128,7 +143,8 @@ export async function POST(req) {
         customer: { name: inv.customer_name, address: inv.customer_address, zip_city: inv.customer_zip_city, country: inv.customer_country, vat: inv.customer_vat, email: inv.customer_email },
         items, notes: `Dobropis (storno) k računu št. ${inv.number}.` });
       await sql`UPDATE invoices SET status = 'storniran' WHERE id = ${inv.id}`;
-      return NextResponse.json({ ok: true, invoice: cr, message: `Račun ${inv.number} storniran — izdan dobropis ${cr.number}.` });
+      const back = await returnTakenStock(inv, `Storno ${inv.number}`);
+      return NextResponse.json({ ok: true, invoice: cr, message: `Račun ${inv.number} storniran — izdan dobropis ${cr.number}.${back.length ? " Na zalogo: " + back.join(", ") : ""}` });
     }
     if (b.action === "credit" && inv) {
       const r = await creditNote(inv.id, b);
