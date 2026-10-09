@@ -2709,6 +2709,8 @@ function InvoiceForm({ onDone, draft, onDraft }) {
   const sc = (k) => (e) => setC((x) => ({ ...x, [k]: e.target.value }));
   const [arts, setArts] = useState([]);
   const [openA, setOpenA] = useState(-1);
+  const [allDisc, setAllDisc] = useState("");
+  const applyAll = (v) => { setAllDisc(v); setItems((x) => x.map((it) => (String(it.desc || "").trim() || String(it.price || "").trim() ? { ...it, disc: v } : it))); };
   const [aPos, setAPos] = useState(null);
   const aEl = useRef(null);
   useEffect(() => {
@@ -2744,7 +2746,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
     const cents = h.p.price_cents || 0;
     const price = gross ? cents / 100 : Math.round(cents / 1.22) / 100;
     const label = [h.p.type || h.p.category, h.p.name].filter(Boolean).join(" | ") + (h.size && h.size !== "ONE" ? ` | ${h.size}` : "");
-    setItems((x) => x.map((it, j) => (j === i ? { ...it, desc: label, code: h.sku || h.p.code, unit: "kos", vat: 22, price: price ? price.toFixed(2).replace(".", ",") : it.price } : it)));
+    setItems((x) => x.map((it, j) => (j === i ? { ...it, desc: label, code: h.sku || h.p.code, unit: "kos", vat: 22, disc: allDisc || it.disc, price: price ? price.toFixed(2).replace(".", ",") : it.price } : it)));
     setOpenA(-1);
   }
   const tot = calcInv(items, gross);
@@ -2818,7 +2820,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
             <tbody>
               {items.map((it, i) => (
                 <tr key={i}>
-                  <td style={{ position: "relative" }}><textarea rows={1} value={it.desc} onChange={(e) => { setI(i, "desc", e.target.value); openArt(i, e.target); }} onFocus={(e) => openArt(i, e.target)} onBlur={() => setTimeout(() => setOpenA((o) => (o === i ? -1 : o)), 150)} placeholder="Vtipkaj šifro ali ime artikla (npr. MBY tropical L) ali poljuben opis" />
+                  <td style={{ position: "relative" }}><textarea rows={Math.max(1, Math.ceil(String(it.desc || "").length / 42))} style={{ fieldSizing: "content", minHeight: 40, resize: "vertical", lineHeight: 1.35 }} value={it.desc} onChange={(e) => { setI(i, "desc", e.target.value); openArt(i, e.target); }} onFocus={(e) => openArt(i, e.target)} onBlur={() => setTimeout(() => setOpenA((o) => (o === i ? -1 : o)), 150)} placeholder="Vtipkaj šifro ali ime artikla (npr. MBY tropical L) ali poljuben opis" />
                     {openA === i && aPos && artHits(it.desc).length > 0 && (
                       <div style={{ position: "fixed", left: Math.max(8, Math.min(aPos.left, window.innerWidth - 568)), top: aPos.top, zIndex: 1000, width: "min(560px, calc(100vw - 16px))", background: "#fff", border: "1px solid #e0e0e0", borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,.12)", maxHeight: Math.max(180, Math.min(360, aPos.below)), overflowY: "auto" }}>
                         {artHits(it.desc).map((h, k) => (
@@ -2848,7 +2850,15 @@ function InvoiceForm({ onDone, draft, onDraft }) {
             </tbody>
           </table>
         </div>
-        <button className="adm-btn" style={{ marginTop: 10 }} onClick={() => setItems((x) => [...x, blankItem()])}>+ Dodaj postavko</button>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10, flexWrap: "wrap" }}>
+          <button className="adm-btn" onClick={() => setItems((x) => [...x, { ...blankItem(), disc: allDisc }])}>+ Dodaj postavko</button>
+          <div className="grow" />
+          <label className="strong" style={{ fontSize: 14 }}>Popust na vse postavke</label>
+          <input value={allDisc} onChange={(e) => applyAll(e.target.value)} inputMode="decimal" placeholder="0" style={{ width: 64, textAlign: "right" }} />
+          <span>%</span>
+          {[10, 15, 20, 30, 50].map((v) => <button key={v} className={"adm-btn" + (String(allDisc) === String(v) ? " pri" : "")} onClick={() => applyAll(String(v))}>{v} %</button>)}
+          {allDisc !== "" && <button className="adm-btn" onClick={() => applyAll("")}>✕ brez</button>}
+        </div>
         <div className="inv-tot">
           <div><span>Skupaj brez DDV</span><b>{eur(tot.net)}</b></div>
           <div><span>DDV</span><b>{eur(tot.vat)}</b></div>
