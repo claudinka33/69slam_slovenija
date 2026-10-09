@@ -2710,18 +2710,30 @@ function InvoiceForm({ onDone, draft, onDraft }) {
   const [arts, setArts] = useState([]);
   const [openA, setOpenA] = useState(-1);
   const [aPos, setAPos] = useState(null);
-  const openArt = (i, el) => { const r = el.getBoundingClientRect(); setAPos({ left: r.left, top: r.bottom + 4, below: window.innerHeight - r.bottom - 12 }); setOpenA(i); };
+  const aEl = useRef(null);
+  useEffect(() => {
+    if (openA < 0) return;
+    const f = () => aEl.current && openArt(openA, aEl.current);
+    window.addEventListener("scroll", f, true); window.addEventListener("resize", f);
+    return () => { window.removeEventListener("scroll", f, true); window.removeEventListener("resize", f); };
+  }, [openA]);
+  const openArt = (i, el) => { aEl.current = el; const r = el.getBoundingClientRect(); setAPos({ left: r.left, top: r.bottom + 4, below: window.innerHeight - r.bottom - 12 }); setOpenA(i); };
   useEffect(() => { getJSON("/api/admin/stock").then((d) => setArts(d?.products || [])); }, []);
   const artHits = (txt) => {
     const q = norm(txt).trim();
     if (q.length < 2) return [];
-    const words = q.split(/\s+/);
+    const SZ = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "2xl", "3xl"];
+    const all = q.split(/\s+/);
+    const sizeW = all.filter((w) => SZ.includes(w));
+    const words = all.filter((w) => !SZ.includes(w));
+    if (!words.length) return [];
     const out = [];
     for (const p of arts) {
       const h = norm(`${p.code} ${p.name} ${p.type || ""} ${p.category || ""} ${p.material || ""}`);
       const sz = Object.entries(p.sizes || {});
       for (const [size, v] of sz) {
-        const hs = `${h} ${norm(v.sku)} ${norm(size)}`;
+        const hs = `${h} ${norm(v.sku)}`;
+        if (sizeW.length && !sizeW.includes(norm(size))) continue;
         if (words.every((w) => hs.includes(w))) out.push({ p, size, sku: v.sku, stock: v.stock });
       }
     }
