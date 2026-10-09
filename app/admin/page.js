@@ -166,31 +166,41 @@ export default function Admin() {
 }
 
 /* =========================== DASHBOARD =========================== */
+const MESECI = ["Januar", "Februar", "Marec", "April", "Maj", "Junij", "Julij", "Avgust", "September", "Oktober", "November", "December"];
 function Dashboard({ onOpenOrder, goOrders, toShip = 0, waiting = 0 }) {
-  const [days, setDays] = useState(30);
+  const nowY = new Date().getFullYear(), nowM = new Date().getMonth() + 1;
+  const [year, setYear] = useState(nowY);
   const [d, setD] = useState(null);
-  useEffect(() => {
-    setD(null);
-    getJSON(`/api/admin/dashboard?days=${days}`).then((x) => setD(x || { ok: false }));
-  }, [days]);
+  const [r, setR] = useState(null);
+  useEffect(() => { getJSON(`/api/admin/dashboard?days=30`).then((x) => setD(x || { ok: false })); }, []);
+  useEffect(() => { setR(null); getJSON(`/api/admin/rvc?from=${year}-01-01&to=${year}-12-31`).then((x) => setR(x || { ok: false })); }, [year]);
 
-  const s = d?.stats;
-  const chg = (v) =>
-    v === null || v === undefined ? <span>ni podatkov za primerjavo</span> :
-    <><span className={v >= 0 ? "up" : "down"}>{v >= 0 ? "▲" : "▼"} {Math.abs(v)} %</span> vs prejšnjih {days} dni</>;
+  const lastM = year === nowY ? nowM : 12;
+  const byYm = Object.fromEntries((r?.months || []).map((m) => [m.ym, m]));
+  const rows = Array.from({ length: lastM }, (_, i) => {
+    const ym = `${year}-${String(i + 1).padStart(2, "0")}`;
+    const m = byYm[ym] || {};
+    const sh = m.shipping || 0;
+    return { ym, name: MESECI[i], orders: m.orders || 0, qty: m.qty || 0,
+      gross: (m.gross || 0) + sh, net: (m.net || 0) + Math.round(sh / 1.22), cost: m.cost || 0, rvc: m.rvc || 0, services: m.services || 0, miss: m.missQty || 0 };
+  });
+  const sum = rows.reduce((a, x) => { for (const k of ["orders", "qty", "gross", "net", "cost", "rvc", "services", "miss"]) a[k] += x[k]; return a; },
+    { orders: 0, qty: 0, gross: 0, net: 0, cost: 0, rvc: 0, services: 0, miss: 0 });
+  const cur = rows[rows.length - 1];
+  const pct = (a, b) => (b ? Math.round((a / b) * 100) + " %" : "—");
+  const maxV = Math.max(1, ...rows.map((x) => x.net));
+  const years = []; for (let y = nowY; y >= 2023; y--) years.push(y);
 
   return (
     <>
       <div className="adm-top">
         <div>
           <h1>Dashboard</h1>
-          <div className="sub">Pregled prodaje · zadnjih {days} dni (preklicana naročila niso šteta)</div>
+          <div className="sub">Promet in čisti RVC po mesecih · vse skupaj: spletna naročila, računi iz CMS in arhiv Metakocke (preklicano in stornirano ni šteto)</div>
         </div>
         <div className="grow" />
         <div className="adm-seg">
-          {[7, 30, 90].map((n) => (
-            <button key={n} className={days === n ? "on" : ""} onClick={() => setDays(n)}>{n} dni</button>
-          ))}
+          {years.map((y) => <button key={y} className={year === y ? "on" : ""} onClick={() => setYear(y)}>{y}</button>)}
         </div>
       </div>
 
@@ -205,34 +215,89 @@ function Dashboard({ onOpenOrder, goOrders, toShip = 0, waiting = 0 }) {
 
       <div className="adm-stats">
         <div className="adm-card adm-stat">
-          <div className="k">Prihodek</div>
-          <div className="v">{s ? eur(s.revenue) : "…"}</div>
-          <div className="d">{s ? chg(s.revenueChange) : " "}</div>
+          <div className="k">Promet · {cur ? cur.name.toLowerCase() : ""}</div>
+          <div className="v">{r ? eur(cur?.gross || 0) : "…"}</div>
+          <div className="d">{r ? `${eur(cur?.net || 0)} brez DDV · ${cur?.orders || 0} prodaj` : " "}</div>
         </div>
         <div className="adm-card adm-stat">
-          <div className="k">Naročila</div>
-          <div className="v">{s ? s.orders : "…"}</div>
-          <div className="d">{s ? chg(s.ordersChange) : " "}</div>
+          <div className="k">Čisti RVC · {cur ? cur.name.toLowerCase() : ""}</div>
+          <div className="v" style={{ color: "#047857" }}>{r ? eur(cur?.rvc || 0) : "…"}</div>
+          <div className="d">{r ? `marža ${pct(cur?.rvc || 0, cur?.net || 0)}` : " "}</div>
         </div>
         <div className="adm-card adm-stat">
-          <div className="k">Povprečna košarica</div>
-          <div className="v">{s ? eur(s.aov) : "…"}</div>
-          <div className="d">na naročilo</div>
+          <div className="k">Promet · {year === nowY ? "letos" : year}</div>
+          <div className="v">{r ? eur(sum.gross) : "…"}</div>
+          <div className="d">{r ? `${eur(sum.net)} brez DDV · povpr. ${eur(Math.round(sum.gross / Math.max(1, rows.length)))}/mesec` : " "}</div>
         </div>
         <div className="adm-card adm-stat">
-          <div className="k">Vračajoče stranke</div>
-          <div className="v">{s ? `${s.returningPct} %` : "…"}</div>
-          <div className="d">{s ? `od ${s.buyers} kupcev v obdobju` : " "}</div>
+          <div className="k">Čisti RVC · {year === nowY ? "letos" : year}</div>
+          <div className="v" style={{ color: "#047857" }}>{r ? eur(sum.rvc) : "…"}</div>
+          <div className="d">{r ? `marža ${pct(sum.rvc, sum.net)} · povpr. ${eur(Math.round(sum.rvc / Math.max(1, rows.length)))}/mesec` : " "}</div>
+        </div>
+      </div>
+
+      <div className="adm-card" style={{ marginBottom: 16 }}>
+        <div className="adm-card-h">
+          <h3>Po mesecih {year}</h3>
+          <span style={{ fontSize: 12, color: "var(--a-muted)", display: "flex", gap: 14 }}>
+            <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "#3b82f6", marginRight: 5 }} />promet brez DDV</span>
+            <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "#10b981", marginRight: 5 }} />čisti RVC</span>
+          </span>
+        </div>
+        {!r ? <div className="adm-empty">Nalagam …</div> : (
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 200, padding: "8px 4px 0", overflowX: "auto" }}>
+            {rows.map((x) => (
+              <div key={x.ym} title={`${x.name}: promet ${eur(x.net)} brez DDV · RVC ${eur(x.rvc)}`} style={{ flex: "1 0 34px", display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
+                <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 3 }}>
+                  <div style={{ width: "42%", maxWidth: 22, height: `${(x.net / maxV) * 100}%`, minHeight: x.net ? 2 : 0, background: "#3b82f6", borderRadius: "4px 4px 0 0" }} />
+                  <div style={{ width: "42%", maxWidth: 22, height: `${(Math.max(0, x.rvc) / maxV) * 100}%`, minHeight: x.rvc > 0 ? 2 : 0, background: "#10b981", borderRadius: "4px 4px 0 0" }} />
+                </div>
+                <div style={{ fontSize: 11, color: "var(--a-muted)", marginTop: 6 }}>{x.name.slice(0, 3)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="adm-scroll" style={{ marginTop: 14 }}>
+          <table className="adm-tbl">
+            <thead><tr><th>Mesec</th><th className="r">Prodaj</th><th className="r">Kosov</th><th className="r">Promet z DDV</th><th className="r">Promet brez DDV</th><th className="r">Nabavna</th><th className="r">Čisti RVC</th><th className="r">Marža</th></tr></thead>
+            <tbody>
+              {!r ? <tr><td colSpan={8} className="adm-empty">Nalagam …</td></tr> : rows.slice().reverse().map((x) => (
+                <tr key={x.ym} style={x.ym === `${nowY}-${String(nowM).padStart(2, "0")}` ? { background: "#f5f9ff" } : undefined}>
+                  <td className="strong">{x.name}</td>
+                  <td className="r num">{x.orders}</td>
+                  <td className="r num">{x.qty}</td>
+                  <td className="r num strong">{eur(x.gross)}</td>
+                  <td className="r num">{eur(x.net)}</td>
+                  <td className="r num muted">{eur(x.cost)}</td>
+                  <td className="r num strong" style={{ color: x.rvc >= 0 ? "#047857" : "#b91c1c" }}>{eur(x.rvc)}</td>
+                  <td className="r num">{pct(x.rvc, x.net)}</td>
+                </tr>))}
+              {r && <tr style={{ borderTop: "2px solid #0a0a0a" }}>
+                <td className="strong">Skupaj {year}</td>
+                <td className="r num strong">{sum.orders}</td>
+                <td className="r num strong">{sum.qty}</td>
+                <td className="r num strong">{eur(sum.gross)}</td>
+                <td className="r num strong">{eur(sum.net)}</td>
+                <td className="r num strong">{eur(sum.cost)}</td>
+                <td className="r num strong" style={{ color: "#047857" }}>{eur(sum.rvc)}</td>
+                <td className="r num strong">{pct(sum.rvc, sum.net)}</td>
+              </tr>}
+            </tbody>
+          </table>
+        </div>
+        <div className="muted" style={{ fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>
+          Promet vključuje poštnino in storitve (npr. marketing). Čisti RVC = prodaja brez DDV − nabavna cena artiklov (poštnina ni všteta; storitve štejejo v celoti).
+          {sum.miss > 0 && ` ⚠️ Za ${sum.miss} kosov ni nabavne cene — pri njih RVC ni štet (Cenik & RVC).`}
         </div>
       </div>
 
       <div className="adm-grid2">
         <div className="adm-card">
-          <div className="adm-card-h"><h3>Prodaja po dnevih</h3></div>
+          <div className="adm-card-h"><h3>Prodaja po dnevih</h3><span className="sub" style={{ fontSize: 12, color: "var(--a-muted)" }}>spletna naročila · zadnjih 30 dni</span></div>
           {d?.series ? <BarChart series={d.series} /> : <div className="adm-empty">Nalagam …</div>}
         </div>
         <div className="adm-card">
-          <div className="adm-card-h"><h3>Top 5 printov</h3><span className="sub" style={{ fontSize: 12, color: "var(--a-muted)" }}>prodani kosi</span></div>
+          <div className="adm-card-h"><h3>Top 5 printov</h3><span className="sub" style={{ fontSize: 12, color: "var(--a-muted)" }}>zadnjih 30 dni</span></div>
           <Top5 top={d?.top} />
         </div>
       </div>
@@ -2816,10 +2881,11 @@ function InvoiceForm({ onDone, draft, onDraft }) {
         </div>
         <div className="adm-scroll">
           <table className="adm-tbl inv-items">
-            <thead><tr><th style={{ width: "34%" }}>Opis (lahko karkoli)</th><th>Šifra</th><th>Kol.</th><th>EM</th><th>{gross ? "Cena z DDV" : "Cena brez DDV"}</th><th>Pop. %</th><th>DDV %</th><th className="r">Vrednost</th><th></th></tr></thead>
+            <thead><tr><th style={{ width: 28 }}>#</th><th style={{ width: "34%" }}>Opis (lahko karkoli)</th><th>Šifra</th><th>Kol.</th><th>EM</th><th>{gross ? "Cena z DDV" : "Cena brez DDV"}</th><th>Pop. %</th><th>DDV %</th><th className="r">Vrednost</th><th></th></tr></thead>
             <tbody>
               {items.map((it, i) => (
                 <tr key={i}>
+                  <td className="strong num" style={{ color: "var(--a-muted)", verticalAlign: "middle" }}>{i + 1}.</td>
                   <td style={{ position: "relative" }}><textarea rows={Math.max(1, Math.ceil(String(it.desc || "").length / 42))} style={{ fieldSizing: "content", minHeight: 40, resize: "vertical", lineHeight: 1.35 }} value={it.desc} onChange={(e) => { setI(i, "desc", e.target.value); openArt(i, e.target); }} onFocus={(e) => openArt(i, e.target)} onBlur={() => setTimeout(() => setOpenA((o) => (o === i ? -1 : o)), 150)} placeholder="Vtipkaj šifro ali ime artikla (npr. MBY tropical L) ali poljuben opis" />
                     {openA === i && aPos && artHits(it.desc).length > 0 && (
                       <div style={{ position: "fixed", left: Math.max(8, Math.min(aPos.left, window.innerWidth - 568)), top: aPos.top, zIndex: 1000, width: "min(560px, calc(100vw - 16px))", background: "#fff", border: "1px solid #e0e0e0", borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,.12)", maxHeight: Math.max(180, Math.min(360, aPos.below)), overflowY: "auto" }}>
@@ -2860,6 +2926,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
           {allDisc !== "" && <button className="adm-btn" onClick={() => applyAll("")}>✕ brez</button>}
         </div>
         <div className="inv-tot">
+          <div><span>Postavk / kosov</span><b>{items.filter((it) => String(it.desc || "").trim()).length} / {items.filter((it) => String(it.desc || "").trim() && String(it.code || "").trim()).reduce((a, it) => a + numIn(it.qty), 0)}</b></div>
           <div><span>Skupaj brez DDV</span><b>{eur(tot.net)}</b></div>
           <div><span>DDV</span><b>{eur(tot.vat)}</b></div>
           <div className="big"><span>Za plačilo</span><b>{eur(tot.total)}</b></div>
