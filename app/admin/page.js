@@ -2707,6 +2707,34 @@ function InvoiceForm({ onDone, draft, onDraft }) {
   useEffect(() => { getJSON("/api/admin/invoices?customers=1").then((d) => setPast(d?.customers || [])); !draft && getJSON("/api/admin/invoices?settings=1").then((d) => d?.settings && setDueDays(String(d.settings.due_days))); }, []);
   const setI = (i, k, v) => setItems((x) => x.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
   const sc = (k) => (e) => setC((x) => ({ ...x, [k]: e.target.value }));
+  const [arts, setArts] = useState([]);
+  const [openA, setOpenA] = useState(-1);
+  const [aPos, setAPos] = useState(null);
+  const openArt = (i, el) => { const r = el.getBoundingClientRect(); setAPos({ left: r.left, top: r.bottom + 4, below: window.innerHeight - r.bottom - 12 }); setOpenA(i); };
+  useEffect(() => { getJSON("/api/admin/stock").then((d) => setArts(d?.products || [])); }, []);
+  const artHits = (txt) => {
+    const q = norm(txt).trim();
+    if (q.length < 2) return [];
+    const words = q.split(/\s+/);
+    const out = [];
+    for (const p of arts) {
+      const h = norm(`${p.code} ${p.name} ${p.type || ""} ${p.category || ""} ${p.material || ""}`);
+      const sz = Object.entries(p.sizes || {});
+      for (const [size, v] of sz) {
+        const hs = `${h} ${norm(v.sku)} ${norm(size)}`;
+        if (words.every((w) => hs.includes(w))) out.push({ p, size, sku: v.sku, stock: v.stock });
+      }
+    }
+    out.sort((x, y) => (y.stock > 0) - (x.stock > 0) || x.p.name.localeCompare(y.p.name));
+    return out.slice(0, 40);
+  };
+  function pickArt(i, h) {
+    const cents = h.p.price_cents || 0;
+    const price = gross ? cents / 100 : Math.round(cents / 1.22) / 100;
+    const label = [h.p.type || h.p.category, h.p.name].filter(Boolean).join(" | ") + (h.size && h.size !== "ONE" ? ` | ${h.size}` : "");
+    setItems((x) => x.map((it, j) => (j === i ? { ...it, desc: label, code: h.sku || h.p.code, unit: "kos", vat: 22, price: price ? price.toFixed(2).replace(".", ",") : it.price } : it)));
+    setOpenA(-1);
+  }
   const tot = calcInv(items, gross);
   const body = () => ({ kind, tracking, customer: ctype === "podjetje" ? c : { ...c, vat: "" }, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
   async function saveDraft() {
@@ -2778,7 +2806,24 @@ function InvoiceForm({ onDone, draft, onDraft }) {
             <tbody>
               {items.map((it, i) => (
                 <tr key={i}>
-                  <td><textarea rows={1} value={it.desc} onChange={(e) => setI(i, "desc", e.target.value)} placeholder="npr. Marketing – vodenje oglasov, september" /></td>
+                  <td style={{ position: "relative" }}><textarea rows={1} value={it.desc} onChange={(e) => { setI(i, "desc", e.target.value); openArt(i, e.target); }} onFocus={(e) => openArt(i, e.target)} onBlur={() => setTimeout(() => setOpenA((o) => (o === i ? -1 : o)), 150)} placeholder="Vtipkaj šifro ali ime artikla (npr. MBY tropical L) ali poljuben opis" />
+                    {openA === i && aPos && artHits(it.desc).length > 0 && (
+                      <div style={{ position: "fixed", left: Math.max(8, Math.min(aPos.left, window.innerWidth - 568)), top: aPos.top, zIndex: 1000, width: "min(560px, calc(100vw - 16px))", background: "#fff", border: "1px solid #e0e0e0", borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,.12)", maxHeight: Math.max(180, Math.min(360, aPos.below)), overflowY: "auto" }}>
+                        {artHits(it.desc).map((h, k) => (
+                          <div key={k} onMouseDown={() => pickArt(i, h)} style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid #f0f0f0", opacity: h.stock > 0 ? 1 : 0.45 }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f7")} onMouseLeave={(e) => (e.currentTarget.style.background = "")}>
+                            {h.p.img ? <img src={h.p.img} alt="" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 6, flex: "none" }} /> : <div style={{ width: 36, height: 36, borderRadius: 6, background: "#f5f5f7", flex: "none" }} />}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="strong" style={{ fontSize: 14 }}>{h.p.name} · {h.size}</div>
+                              <div className="muted" style={{ fontSize: 12 }}>{h.sku} · {h.p.type || h.p.category || ""}</div>
+                            </div>
+                            <div style={{ textAlign: "right", fontSize: 12, flex: "none" }}>
+                              <div className="strong">{eur(h.p.price_cents || 0)}</div>
+                              <div style={{ color: h.stock > 0 ? "#047857" : "#b91c1c" }}>zaloga {h.stock}</div>
+                            </div>
+                          </div>))}
+                      </div>)}
+                  </td>
                   <td><input value={it.code} onChange={(e) => setI(i, "code", e.target.value)} style={{ width: 90 }} /></td>
                   <td><input value={it.qty} onChange={(e) => setI(i, "qty", e.target.value)} style={{ width: 56 }} inputMode="decimal" /></td>
                   <td><input value={it.unit} onChange={(e) => setI(i, "unit", e.target.value)} style={{ width: 52 }} /></td>
