@@ -2898,7 +2898,8 @@ function InvoiceForm({ onDone, draft, onDraft }) {
       <div className="adm-card" style={{ padding: 16, marginTop: 12 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
           <b>Postavke</b><div className="grow" />
-          <label className="adm-check"><input type="checkbox" checked={gross} onChange={(e) => setGross(e.target.checked)} /> Cene vključujejo DDV (maloprodaja)</label>
+          <label className="adm-check"><input type="checkbox" checked={gross} onChange={(e) => { const g = e.target.checked; setGross(g);
+            setItems((x) => x.map((it) => { const p = numIn(it.price); if (!p) return it; const v = 1 + (Number(it.vat) || 0) / 100; const np = g ? Math.round(p * v * 100) / 100 : Math.round((p / v) * 100) / 100; return { ...it, price: np.toFixed(2).replace(".", ",") }; })); }} /> Cene vključujejo DDV (maloprodaja)</label>
         </div>
         <div className="adm-scroll">
           <table className="adm-tbl inv-items">
