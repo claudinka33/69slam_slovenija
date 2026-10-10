@@ -177,7 +177,12 @@ export async function POST(req) {
     }
     if (b.action === "convert" && inv) {
       const r = await convertToInvoice(inv.id);
-      return NextResponse.json({ ok: true, invoice: r, message: `Narejen račun ${r.number} ✓` });
+      const st = r.stockResult;
+      let message = `Narejen račun ${r.number} ✓`;
+      if (st?.ok?.length) message += ` · z zaloge: ${st.ok.join(", ")}`;
+      else if (inv.kind === "dobavnica") message += " · zaloga je bila odšteta že na dobavnici";
+      if (st?.unknown?.length) message += ` · ⚠️ ni v zalogi (popravi ročno): ${st.unknown.join(", ")}`;
+      return NextResponse.json({ ok: true, invoice: r, message });
     }
     if (b.action === "orderdocs") {
       const r = await docsForNewOrder(b.order_id);
