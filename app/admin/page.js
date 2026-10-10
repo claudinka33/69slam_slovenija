@@ -2742,7 +2742,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
   const blankItem = () => ({ code: "", desc: "", qty: "1", unit: "kos", price: "", disc: "", vat: 22 });
   const [c, setC] = useState({ name: "", address: "", zip_city: "", country: "Slovenija", vat: "", email: "", ...(D.customer || {}) });
   const [items, setItems] = useState(D.items?.length ? D.items : [blankItem()]);
-  const [gross, setGross] = useState(!!D.gross);
+  const [gross, setGross] = useState(D.gross === undefined ? true : !!D.gross);
   const [payment, setPayment] = useState(D.payment || "trr");
   const [dueDays, setDueDays] = useState(D.due_days != null ? String(D.due_days) : "8");
   const [serviceDate, setServiceDate] = useState(D.service_date || new Date().toISOString().slice(0, 10));
