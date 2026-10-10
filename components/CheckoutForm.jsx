@@ -242,7 +242,7 @@ export default function CheckoutForm({ lang, t }) {
         {cmsg && <div className="ckcode-msg err">{cmsg}</div>}
         <PromoHint lang={lang} active={!!coupon} onApply={(c) => { setCode(c); applyCode(c); }} />
         {coupon && <div className="ckcode-msg ok">✓ {tx(lang, `Koda ${coupon.code}: −${coupon.percent} %`, `Code ${coupon.code}: −${coupon.percent} %`, `Kod ${coupon.code}: −${coupon.percent} %`)}
-          {discount <= 0 && <span> — {tx(lang, "trenutni popust (paket/akcija) je že boljši.", "your current discount is already better.", "trenutni popust (paket/akcija) već je bolji.")}</span>}</div>}
+          {discount <= 0 && <div style={{ color: "#b45309", marginTop: 4 }}>{tx(lang, "Koda ne velja za že znižane izdelke (razprodaja, zadnji kosi, akcija, Paket 3) — popusti se ne seštevajo, obdržiš boljšo ceno, ki je že upoštevana.", "Codes don't apply to items that are already discounted — discounts don't stack, you keep the better price already applied.", "Kod ne vrijedi za već snižene proizvode — popusti se ne zbrajaju, zadržavaš bolju cijenu koja je već uračunata.")}</div>}</div>}
         <div className="trow"><span>{t.subtotal}</span><b>{fmt(subtotal)}</b></div>
         {coupon && discount > 0 && <div className="trow" style={{ color: "var(--red)" }}><span>{tx(lang, "Popust", "Discount", "Popust")} ({coupon.code})</span><b>−{fmt(discount)}</b></div>}
         <div className="trow"><span>{t.shipping}</span><b>{!cInfo ? "—" : ship2 === 0 ? t.ship_free : fmt(ship2)}</b></div>
