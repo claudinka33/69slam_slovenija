@@ -25,8 +25,11 @@ async function build(u) {
   if (kind === "shipped") ({ html, subject } = renderShipped(o));
   else if (kind === "review") ({ html, subject } = renderReview(o, ps.slice(0, 2), s));
   else if (kind === "cart1" || kind === "cart2") {
-    const c = { token: "0".repeat(24), email: o.email, lang, cart: ps.map((p, i) => ({ id: p.code, size: ["M", "L", "XL"][i], qty: 1 })) };
-    ({ html, subject } = renderCart(kind, c, s, kind === "cart2" && s.cart_discount2 ? "KOSARICA-A1B2C3" : null));
+    // ?sale=1 → košarica samo z že znižanimi kosi (−50 %): mail brez kode
+    const sale = u.searchParams.get("sale") === "1";
+    const src = sale ? getProducts().filter((p) => p.outlet && Object.values(p.stock || {}).some((n) => n > 0)).slice(0, 2) : ps;
+    const c = { token: "0".repeat(24), email: o.email, lang, cart: src.map((p, i) => ({ id: p.code, size: Object.keys(p.stock || {}).find((k) => p.stock[k] > 0) || ["M", "L", "XL"][i], qty: 1 })) };
+    ({ html, subject } = renderCart(kind, c, s, kind === "cart2" && s.cart_discount2 && !sale ? "KOSARICA-A1B2C3" : null));
   } else {
     const r = await renderOrderConfirmation(o);
     ({ html, subject, attachments } = r);
