@@ -166,6 +166,7 @@ export default function Admin() {
 }
 
 /* =========================== DASHBOARD =========================== */
+const KIND_NAME_UI = { racun: "Račun", dobropis: "Dobropis", predracun: "Predračun", dobavnica: "Dobavnico" };
 const MESECI = ["Januar", "Februar", "Marec", "April", "Maj", "Junij", "Julij", "Avgust", "September", "Oktober", "November", "December"];
 function Dashboard({ onOpenOrder, goOrders, toShip = 0, waiting = 0 }) {
   const nowY = new Date().getFullYear(), nowM = new Date().getMonth() + 1;
@@ -2651,7 +2652,7 @@ function Invoices() {
   }
   async function doSend() {
     setMsg({ ok: true, t: "Pošiljam …" });
-    const d = await post("/api/admin/invoices", { action: "send", id: send.inv.id, to: send.to });
+    const d = await post("/api/admin/invoices", { action: "send", id: send.inv.id, to: send.to, note: send.note || "" });
     setMsg({ ok: !!d?.ok, t: d?.message || "Napaka." }); setSend(null); load(q, tab);
   }
   return (
@@ -2724,6 +2725,9 @@ function Invoices() {
             <div className="adm-mh"><h3>Pošlji {send.inv.number}</h3><button className="x" onClick={() => setSend(null)}>✕</button></div>
             <div className="adm-mb">
               <div className="adm-field"><label>E-mail prejemnika</label><input value={send.to} onChange={(e) => setSend({ ...send, to: e.target.value })} placeholder="kupec@email.si" /></div>
+              <div className="adm-field"><label>Sporočilo kupcu (neobvezno)</label>
+                <textarea rows={4} value={send.note || ""} onChange={(e) => setSend({ ...send, note: e.target.value })} placeholder={"npr. Živjo Andrej, hvala za nakup! Lep pozdrav, Claudia"} style={{ width: "100%" }} /></div>
+              <div className="muted" style={{ fontSize: 12, margin: "-4px 0 12px", lineHeight: 1.5 }}>Mail že sam napiše: »Pozdravljeni, v prilogi vam pošiljamo {(KIND_NAME_UI[send.inv.kind] || "račun").toLowerCase()} št. {send.inv.number} v znesku {eur(Math.abs(send.inv.total_cents))}{send.inv.payment === "trr" && ["racun", "predracun"].includes(send.inv.kind) ? ", rok plačila … z UPN QR kodo" : ""}.« Tvoje sporočilo se doda nad to besedilo.</div>
               <button className="adm-btn pri" onClick={doSend}>✉️ Pošlji PDF</button>
             </div>
           </div>

@@ -148,7 +148,7 @@ export async function POST(req) {
       if (!inv) return NextResponse.json({ ok: false, message: "Ni računa." }, { status: 404 });
       const to = String(b.to || inv.customer_email || "").trim();
       if (!to) return NextResponse.json({ ok: false, message: "Vpiši e-mail prejemnika." }, { status: 400 });
-      const r = await emailInvoice(inv, to);
+      const r = await emailInvoice(inv, to, b.note);
       return NextResponse.json({ ok: !r.error && !r.skipped, message: r.skipped ? "Resend ni nastavljen." : r.error ? "Resend: " + (r.error.message || r.error.name) : `Poslano na ${to} ✓` });
     }
     if (b.action === "paid" && inv) {
