@@ -166,6 +166,19 @@ export default function Admin() {
 }
 
 /* =========================== DASHBOARD =========================== */
+function mailTemplate(inv) {
+  const kn = { racun: "račun", dobropis: "dobropis", predracun: "predračun", dobavnica: "dobavnico" }[inv.kind] || "račun";
+  const first = String(inv.customer_name || "").trim().split(/\s+/)[0];
+  const isCo = /d\.o\.o|s\.p\.|d\.d\./i.test(inv.customer_name || "");
+  const d8 = (d) => { const x = new Date(d); return `${x.getDate()}. ${x.getMonth() + 1}. ${x.getFullYear()}`; };
+  let s = `Pozdravljeni${first && !isCo ? ", " + first.charAt(0).toUpperCase() + first.slice(1).toLowerCase() : ""}!\n\nV prilogi vam pošiljamo ${kn} št. ${inv.number}`;
+  if (inv.kind !== "dobavnica") s += ` v znesku ${eur(Math.abs(inv.total_cents))}`;
+  s += ".";
+  if (inv.kind === "dobropis") s += (inv.ref_number ? ` Dobropis se nanaša na račun št. ${inv.ref_number}.` : "") + (inv.payment === "kartica" ? " Znesek vam vrnemo na plačilno kartico, s katero ste plačali." : " Znesek vam nakažemo na vaš bančni račun v nekaj delovnih dneh.");
+  if (inv.payment === "trr" && ["racun", "predracun"].includes(inv.kind) && !inv.paid_at) s += ` Rok plačila: ${d8(inv.due_date)} — na dokumentu je UPN QR koda za hitro plačilo z mobilno banko.`;
+  s += "\n\nDokumente pošiljamo samo v elektronski obliki — tako skupaj varujemo okolje. 🌱\n\nLep pozdrav,\n69slam Slovenija";
+  return s;
+}
 const KIND_NAME_UI = { racun: "Račun", dobropis: "Dobropis", predracun: "Predračun", dobavnica: "Dobavnico" };
 const MESECI = ["Januar", "Februar", "Marec", "April", "Maj", "Junij", "Julij", "Avgust", "September", "Oktober", "November", "December"];
 function Dashboard({ onOpenOrder, goOrders, toShip = 0, waiting = 0 }) {
@@ -2706,7 +2719,7 @@ function Invoices() {
                       {open && r.kind === "predracun" && !r.order_id && <><button className="adm-btn" onClick={async () => { const x = await getJSON(`/api/admin/invoices?credit=${r.id}`); if (x?.invoice) editDoc(x.invoice); }}>✏️ Uredi</button>{" "}</>}
                       {!ark && ["caka", "napaka"].includes(r.furs_status) && <><button className="adm-btn pri" title={r.furs_error || ""} onClick={async () => { const x = await post("/api/admin/furs", { action: "retry", id: r.id }); setMsg({ ok: !!x?.ok, t: x?.message || "Napaka." }); load(q, tab); }}>↻ FURS</button>{" "}</>}
                       <button className="adm-btn" onClick={() => openPdfId(r.id, pdfName(r))}>📄 PDF</button>{" "}
-                      <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "" })}>✉️</button>{" "}
+                      <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "", note: mailTemplate(r) })}>✉️</button>{" "}
                       {!ark && r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
                       {!ark && r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <><button className="adm-btn" onClick={() => setCredit(r)}>↩️ Dobropis</button>{" "}</>}
                       {!ark && r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
@@ -2725,9 +2738,12 @@ function Invoices() {
             <div className="adm-mh"><h3>Pošlji {send.inv.number}</h3><button className="x" onClick={() => setSend(null)}>✕</button></div>
             <div className="adm-mb">
               <div className="adm-field"><label>E-mail prejemnika</label><input value={send.to} onChange={(e) => setSend({ ...send, to: e.target.value })} placeholder="kupec@email.si" /></div>
-              <div className="adm-field"><label>Sporočilo kupcu (neobvezno)</label>
-                <textarea rows={4} value={send.note || ""} onChange={(e) => setSend({ ...send, note: e.target.value })} placeholder={"npr. Živjo Andrej, hvala za nakup! Lep pozdrav, Claudia"} style={{ width: "100%" }} /></div>
-              <div className="muted" style={{ fontSize: 12, margin: "-4px 0 12px", lineHeight: 1.5 }}>Mail že sam napiše: »Pozdravljeni, v prilogi vam pošiljamo {(KIND_NAME_UI[send.inv.kind] || "račun").toLowerCase()} št. {send.inv.number} v znesku {eur(Math.abs(send.inv.total_cents))}{send.inv.payment === "trr" && ["racun", "predracun"].includes(send.inv.kind) ? ", rok plačila … z UPN QR kodo" : ""}.« Tvoje sporočilo se doda nad to besedilo.</div>
+              <div className="adm-field"><label>Besedilo maila — lahko ga spremeniš</label>
+                <textarea rows={10} value={send.note || ""} onChange={(e) => setSend({ ...send, note: e.target.value })} style={{ width: "100%", lineHeight: 1.5 }} /></div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", margin: "-4px 0 12px" }}>
+                <button className="adm-btn" onClick={() => setSend({ ...send, note: mailTemplate(send.inv) })}>↺ Ponastavi predlogo</button>
+                <span className="muted" style={{ fontSize: 12 }}>PDF dokumenta je v prilogi.</span>
+              </div>
               <button className="adm-btn pri" onClick={doSend}>✉️ Pošlji PDF</button>
             </div>
           </div>
