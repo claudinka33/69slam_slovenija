@@ -2616,6 +2616,15 @@ function Invoices() {
   const [credit, setCredit] = useState(null);
   const [draft, setDraft] = useState(null);
   const [formKey, setFormKey] = useState(0);
+  function editDoc(r) {
+    setDraft({ id: null, edit: { id: r.id, number: r.number }, data: { kind: r.kind, ctype: r.customer_vat ? "podjetje" : "fizicna", gross: !!r.prices_gross, payment: r.payment,
+      due_days: Math.max(0, Math.round((new Date(r.due_date) - new Date(String(r.issued_at).slice(0, 10))) / 86400000)) || 8,
+      service_date: String(r.service_date || "").slice(0, 10), notes: r.notes || "", tracking: r.tracking || "",
+      customer: { name: r.customer_name || "", address: r.customer_address || "", zip_city: r.customer_zip_city || "", country: r.customer_country || "Slovenija", vat: r.customer_vat || "", email: r.customer_email || "" },
+      items: (r.items || []).map((it) => ({ code: it.code || "", desc: it.desc || "", qty: String(it.qty ?? 1).replace(".", ","), unit: it.unit || "kos",
+        price: it.price != null ? Number(it.price).toFixed(2).replace(".", ",") : "", disc: it.disc ? String(it.disc).replace(".", ",") : "", vat: it.vat ?? 22 })) } });
+    setFormKey((k) => k + 1); setTab("nov");
+  }
   const [dKey, setDKey] = useState(0);
   const [closeM, setCloseM] = useState(false);
   const listTab = ["racun", "dobropis", "predracun", "dobavnica", "arhiv"].includes(tab);
@@ -2693,6 +2702,7 @@ function Invoices() {
                     <td style={{ whiteSpace: "nowrap" }}>
                       {canShip && <><button className="adm-btn pri" onClick={() => shipped(r)}>📦 Poslano</button>{" "}</>}
                       {!canShip && open && (r.kind === "predracun" || r.kind === "dobavnica") && <><button className="adm-btn pri" onClick={() => act(r, "convert")}>🧾 Ustvari račun</button>{" "}</>}
+                      {open && r.kind === "predracun" && !r.order_id && <><button className="adm-btn" onClick={async () => { const x = await getJSON(`/api/admin/invoices?credit=${r.id}`); if (x?.invoice) editDoc(x.invoice); }}>✏️ Uredi</button>{" "}</>}
                       {!ark && ["caka", "napaka"].includes(r.furs_status) && <><button className="adm-btn pri" title={r.furs_error || ""} onClick={async () => { const x = await post("/api/admin/furs", { action: "retry", id: r.id }); setMsg({ ok: !!x?.ok, t: x?.message || "Napaka." }); load(q, tab); }}>↻ FURS</button>{" "}</>}
                       <button className="adm-btn" onClick={() => openPdfId(r.id, pdfName(r))}>📄 PDF</button>{" "}
                       <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "" })}>✉️</button>{" "}
@@ -2725,6 +2735,7 @@ function Invoices() {
 
 function InvoiceForm({ onDone, draft, onDraft }) {
   const D = draft?.data || {};
+  const edit = draft?.edit || null;
   const [draftId, setDraftId] = useState(draft?.id || null);
   const [kind, setKind] = useState(D.kind || "racun");
   const [tracking, setTracking] = useState(D.tracking || "");
@@ -2824,7 +2835,16 @@ function InvoiceForm({ onDone, draft, onDraft }) {
     if (d?.ok) { setDraftId(d.draft_id); setInfo("✓ Osnutek shranjen " + new Date().toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" })); onDraft?.(); }
     else setErr(d?.message || "Napaka.");
   }
+  async function saveEdit(send) {
+    setErr("");
+    if (send && !c.email.trim()) { setErr("Za pošiljanje vpiši e-mail kupca."); return; }
+    setBusy(true);
+    const d = await post("/api/admin/invoices", { action: "update", id: edit.id, ...body(), send });
+    setBusy(false);
+    if (d?.ok) onDone({ ok: true, t: d.message }, kind); else setErr(d?.message || "Napaka.");
+  }
   async function issue(send) {
+    if (edit) return saveEdit(send);
     setErr("");
     if (send && !c.email.trim()) { setErr("Za pošiljanje vpiši e-mail kupca."); return; }
     if (!confirm(`Izdam ${DOC1[kind]} za ${c.name || "kupca"} v znesku ${eur(tot.total)}?${send ? `\nPoslan bo na ${c.email}.` : ""}\n\nIzdanega dokumenta ni mogoče spreminjati.`)) return;
@@ -2837,7 +2857,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
     <div className="inv-form">
       <div className="adm-card" style={{ padding: 14, marginBottom: 12, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <b>Vrsta dokumenta</b>
-        <div className="adm-seg">{[["predracun", "Predračun"], ["dobavnica", "Dobavnica"], ["racun", "Račun"]].map(([k, l]) => <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>)}</div>
+        {edit ? <b style={{ color: "#b45309" }}>✏️ Urejaš {edit.number} — številka ostane ista</b> : <div className="adm-seg">{[["predracun", "Predračun"], ["dobavnica", "Dobavnica"], ["racun", "Račun"]].map(([k, l]) => <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>)}</div>}
         {kind === "dobavnica" && <input className="adm-input" style={{ minWidth: 200 }} value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Št. pošiljke (neobvezno)" />}
         <span className="muted">{kind === "racun" ? "Uradni račun — številka 2026-…" : kind === "predracun" ? "PR-2026-… z UPN QR kodo; kasneje »Ustvari račun«." : "DOB-2026-… s cenami; kasneje »Ustvari račun«."}</span>
       </div>
@@ -2944,11 +2964,11 @@ function InvoiceForm({ onDone, draft, onDraft }) {
         {err && <div className="adm-note err">{err}</div>}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="adm-btn" disabled={busy} onClick={() => openPdf({ action: "preview", ...body() }, `predogled-${kind}.pdf`)}>👁 Predogled PDF</button>
-          <button className="adm-btn" disabled={busy} onClick={saveDraft}>💾 Shrani osnutek</button>
+          {!edit && <button className="adm-btn" disabled={busy} onClick={saveDraft}>💾 Shrani osnutek</button>}
           {info && <span className="muted" style={{ alignSelf: "center" }}>{info}</span>}
           <div className="grow" />
-          <button className="adm-btn" disabled={busy} onClick={() => issue(false)}>🧾 Izdaj {DOC1[kind]}</button>
-          <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>✉️ Izdaj in pošlji po e-mailu</button>
+          <button className="adm-btn" disabled={busy} onClick={() => issue(false)}>{edit ? "💾 Shrani spremembe" : <>🧾 Izdaj {DOC1[kind]}</>}</button>
+          <button className="adm-btn pri" disabled={busy} onClick={() => issue(true)}>{edit ? "✉️ Shrani in pošlji po e-mailu" : "✉️ Izdaj in pošlji po e-mailu"}</button>
         </div>
       </div>
     </div>

@@ -119,6 +119,27 @@ export async function POST(req) {
     const [inv] = b.id ? await sql`SELECT * FROM invoices WHERE id = ${b.id}` : [null];
     if (inv?.series === "MK" && ["paid", "storno", "convert", "credit"].includes(b.action))
       return NextResponse.json({ ok: false, message: "Arhivski račun iz Metakocke je samo za branje." }, { status: 400 });
+    if (b.action === "update" && inv) {
+      if (inv.kind !== "predracun" || inv.series === "MK" || inv.order_id || inv.converted_to || inv.status !== "izdan")
+        return NextResponse.json({ ok: false, message: "Urejati je mogoče samo ročni predračun, iz katerega še ni narejen račun." }, { status: 400 });
+      const items = (b.items || []).filter((i) => String(i.desc || "").trim());
+      if (!items.length) return NextResponse.json({ ok: false, message: "Dodaj vsaj eno postavko." }, { status: 400 });
+      const calc = computeInvoice(items, !!b.gross);
+      const c = b.customer || {};
+      const dueDays = b.due_days != null ? Number(b.due_days) : 8;
+      const due = new Date(new Date(inv.issued_at).getTime() + dueDays * 86400000).toISOString().slice(0, 10);
+      const [u] = await sql`UPDATE invoices SET customer_name = ${String(c.name || "").slice(0, 200)}, customer_address = ${c.address || null}, customer_zip_city = ${c.zip_city || null},
+          customer_country = ${c.country || "Slovenija"}, customer_vat = ${c.vat || null}, customer_email = ${c.email || null},
+          items = ${JSON.stringify(calc.lines.map(({ amount, ...x }) => x))}::jsonb, prices_gross = ${!!b.gross}, payment = ${b.payment || "trr"}, notes = ${b.notes || null},
+          service_date = ${b.service_date || inv.service_date}, due_date = ${due}, net_cents = ${calc.net}, vat_cents = ${calc.vat}, total_cents = ${calc.total}
+        WHERE id = ${inv.id} RETURNING *`;
+      let message = `${u.number} posodobljen ✓`;
+      if (b.send && u.customer_email) {
+        const r = await emailInvoice(u);
+        message += r.error ? ` — pošiljanje ni uspelo: ${r.error.message || r.error.name}` : r.skipped ? " (Resend ni nastavljen)" : ` in poslan na ${u.customer_email}`;
+      }
+      return NextResponse.json({ ok: true, invoice: u, message });
+    }
     if (b.action === "takestock" && inv) {
       const r = await takeStock(inv, `${KIND_NAME[inv.kind]} ${inv.number} (naknadno)`);
       return NextResponse.json({ ok: true, message: `${inv.number}: ${r.ok.join(", ") || "nič za odšteti"}${r.unknown.length ? " · ⚠️ ni v zalogi: " + r.unknown.join(", ") : ""}` });
