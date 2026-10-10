@@ -32,13 +32,13 @@ export async function POST(req) {
   if (b.id) {
     await sql`UPDATE coupons SET code = ${code}, percent = ${pct}, active = ${b.active !== false}, starts_at = ${d(b.starts)},
       expires_at = ${d(b.ends, true)}, min_order_cents = ${min || 0}, once_per_email = ${!!b.once}, max_uses = ${max},
-      note = ${b.note ? String(b.note).slice(0, 200) : null} WHERE id = ${b.id}`;
+      note = ${b.note ? String(b.note).slice(0, 200) : null}, stack = ${!!b.stack} WHERE id = ${b.id}`;
   } else {
     const ex = await sql`SELECT id FROM coupons WHERE code = ${code}`;
     if (ex.length) return NextResponse.json({ ok: false, message: `Koda ${code} že obstaja.` }, { status: 409 });
-    await sql`INSERT INTO coupons (code, percent, active, starts_at, expires_at, min_order_cents, once_per_email, max_uses, note)
+    await sql`INSERT INTO coupons (code, percent, active, starts_at, expires_at, min_order_cents, once_per_email, max_uses, note, stack)
       VALUES (${code}, ${pct}, ${b.active !== false}, ${d(b.starts)}, ${d(b.ends, true)}, ${min || 0}, ${!!b.once}, ${max},
-        ${b.note ? String(b.note).slice(0, 200) : null})`;
+        ${b.note ? String(b.note).slice(0, 200) : null}, ${!!b.stack})`;
   }
   return NextResponse.json({ ok: true, message: `Koda ${code} shranjena.` });
 }

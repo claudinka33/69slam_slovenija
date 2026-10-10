@@ -104,7 +104,7 @@ export async function POST(req) {
     const chk = await checkCoupon(db(), body.coupon, c.email, before, lang);
     if (!chk.ok) return NextResponse.json({ ok: false, message: chk.message }, { status: 400 });
     for (const it of items) {
-      const np = bestUnit(it.price_cents, it.base_cents, chk.coupon.percent);
+      const np = bestUnit(it.price_cents, it.base_cents, chk.coupon.percent, chk.coupon.stack);
       discount += (it.price_cents - np) * it.qty;
       it.price_cents = np;
     }

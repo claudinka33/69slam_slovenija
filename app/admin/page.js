@@ -635,11 +635,11 @@ function Coupons() {
   const [msg, setMsg] = useState(null);
   const load = useCallback(async () => { const d = await getJSON("/api/admin/coupons"); setList(d?.coupons || []); }, []);
   useEffect(() => { load(); }, [load]);
-  const blank = { code: "", percent: "20", starts: "", ends: "", min_order: "", max_uses: "", once: false, active: true, note: "" };
+  const blank = { code: "", percent: "20", starts: "", ends: "", min_order: "", max_uses: "", once: false, active: true, note: "", stack: false };
   function edit(c) {
     setForm({ id: c.id, code: c.code, percent: String(c.percent), starts: isoDay(c.starts_at), ends: isoDay(c.expires_at),
       min_order: c.min_order_cents ? (c.min_order_cents / 100).toString().replace(".", ",") : "", max_uses: c.max_uses ? String(c.max_uses) : "",
-      once: c.once_per_email, active: c.active, note: c.note || "" });
+      once: c.once_per_email, active: c.active, note: c.note || "", stack: !!c.stack });
   }
   async function save(e) {
     e.preventDefault();
@@ -655,7 +655,7 @@ function Coupons() {
   async function toggle(c) {
     await getJSON("/api/admin/coupons", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: c.id, code: c.code, percent: c.percent, starts: isoDay(c.starts_at), ends: isoDay(c.expires_at),
-        min_order: c.min_order_cents ? c.min_order_cents / 100 : "", max_uses: c.max_uses || "", once: c.once_per_email, active: !c.active, note: c.note }) });
+        min_order: c.min_order_cents ? c.min_order_cents / 100 : "", max_uses: c.max_uses || "", once: c.once_per_email, active: !c.active, note: c.note, stack: !!c.stack }) });
     load();
   }
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
@@ -679,7 +679,7 @@ function Coupons() {
                 <td><div className="strong">{c.code}</div>{c.note && <div className="muted">{c.note}</div>}</td>
                 <td className="r num strong">−{c.percent} %</td>
                 <td className="muted">{c.starts_at ? isoDay(c.starts_at).split("-").reverse().join(". ") : "takoj"} – {c.expires_at ? isoDay(c.expires_at).split("-").reverse().join(". ") : "brez konca"}</td>
-                <td className="muted">{[c.min_order_cents ? `nad ${eur(c.min_order_cents)}` : null, c.once_per_email ? "1× na kupca" : null, c.max_uses ? `največ ${c.max_uses}×` : null].filter(Boolean).join(" · ") || "—"}</td>
+                <td className="muted">{[c.min_order_cents ? `nad ${eur(c.min_order_cents)}` : null, c.once_per_email ? "1× na kupca" : null, c.max_uses ? `največ ${c.max_uses}×` : null, c.stack ? "tudi na znižano" : null].filter(Boolean).join(" · ") || "—"}</td>
                 <td className="r num">{c.uses}{c.max_uses ? ` / ${c.max_uses}` : ""}</td>
                 <td className="r num">{c.uses ? <>{eur(c.revenue_cents)}<div className="muted">popust {eur(c.discount_cents)}</div></> : "—"}</td>
                 <td><span className={`adm-tag ${cls === "ok" ? "sub" : ""}`}>{st}</span></td>
@@ -711,6 +711,7 @@ function Coupons() {
                 <div className="adm-field" style={{ flex: 1 }}><label>Največ uporab skupaj</label><input type="number" min="1" value={form.max_uses} onChange={set("max_uses")} placeholder="neomejeno" /></div>
               </div>
               <label className="adm-check" style={{ marginBottom: 10 }}><input type="checkbox" checked={form.once} onChange={set("once")} /> Vsak kupec (e-mail) jo lahko uporabi samo 1×</label>
+              <label className="adm-check" style={{ marginBottom: 10 }}><input type="checkbox" checked={!!form.stack} onChange={set("stack")} /> Velja tudi za že znižane izdelke (popust od znižane cene) — za opravičila in VIP</label>
               <label className="adm-check" style={{ marginBottom: 14 }}><input type="checkbox" checked={form.active} onChange={set("active")} /> Koda je vklopljena</label>
               <div className="adm-field"><label>Opomba (samo zate)</label><input value={form.note} onChange={set("note")} placeholder="npr. odprtje nove trgovine" /></div>
               <button className="adm-btn pri" type="submit">💾 Shrani kodo</button>

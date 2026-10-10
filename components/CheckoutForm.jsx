@@ -33,7 +33,7 @@ export default function CheckoutForm({ lang, t }) {
     track("InitiateCheckout", { value: subtotal, items });
   }, [cart.length]);
   // velja boljši popust: koda ALI paket/odprodaja (nikoli oba)
-  const best = (cur, base) => (coupon ? Math.min(cur, Math.round(base * (1 - coupon.percent / 100) * 100) / 100) : cur);
+  const best = (cur, base) => (!coupon ? cur : coupon.stack ? Math.round(cur * (1 - coupon.percent / 100) * 100) / 100 : Math.min(cur, Math.round(base * (1 - coupon.percent / 100) * 100) / 100));
   const lineTotal = (c) => {
     if (c.bundle) return c.items.reduce((a, x) => { const p = byId(x.id); const base = p?.price || 0; return a + best(+(base * 0.85).toFixed(2), base); }, 0);
     const p = byId(c.id); return best(p?.effPrice || 0, p?.price || 0) * c.qty;
@@ -57,7 +57,7 @@ export default function CheckoutForm({ lang, t }) {
     const email = document.querySelector('input[name="email"]')?.value || "";
     const r = await fetch("/api/coupon", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: c, email, subtotal, lang }) }).then((x) => x.json()).catch(() => null);
-    if (r?.ok) { setCoupon({ code: r.code, percent: r.percent }); setCode(r.code); }
+    if (r?.ok) { setCoupon({ code: r.code, percent: r.percent, stack: !!r.stack }); setCode(r.code); }
     else { setCoupon(null); if (!quiet) setCmsg(r?.message || tx(lang, "Koda ni veljavna.", "Code is not valid.", "Kod nije valjan.")); }
   }
   // koda iz drsnika/košarice se uveljavi sama
