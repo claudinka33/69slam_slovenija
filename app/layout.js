@@ -4,6 +4,8 @@ import { Analytics } from "@vercel/analytics/next";
 export const metadata = {
   title: "69SLAM.si — moško spodnje perilo box mikrofibra",
   description: "Uradna 69SLAM spletna trgovina. Boksarice iz mikrofibre, ki ne lezejo navzgor in ostanejo na mestu ves dan.",
+  // potrditev domene 69slam.si v Meta Business (prej je oznako dodajal Shopify)
+  other: { "facebook-domain-verification": "r3zpqmu8xb35twy5dzbkp8txi2g06l" },
 };
 
 export default function RootLayout({ children }) {
