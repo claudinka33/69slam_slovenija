@@ -23,6 +23,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "d8j0ntlcm91z4.cloudfront.net" },
       { protocol: "https", hostname: "cdn.shopify.com" },
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
     ],
   },
 };

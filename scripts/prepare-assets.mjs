@@ -24,6 +24,17 @@ async function fetchWithTimeout(url, ms = 20000) {
   }
 }
 
+// če je slika že kopirana v Vercel Blob (tabela image_mirror), jo vzemi od tam – Shopify ni več potreben
+try {
+  const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (dbUrl) {
+    const { neon } = await import("@neondatabase/serverless");
+    const rows = await neon(dbUrl)`SELECT src, url FROM image_mirror`;
+    const m = Object.fromEntries(rows.map((r) => [r.src, r.url]));
+    for (const a of ASSETS) a.url = m[a.url.split("?")[0]] || a.url;
+  }
+} catch { /* tabela še ne obstaja */ }
+
 for (const asset of ASSETS) {
   try {
     const res = await fetchWithTimeout(asset.url);

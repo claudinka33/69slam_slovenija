@@ -11,6 +11,7 @@ import ProductBundle from "../../../../components/ProductBundle";
 import { REVIEWS, REVIEW_SUMMARY } from "../../../../lib/reviews";
 import { loadApprovedReviews, reviewsFor } from "../../../../lib/customerReviews";
 import { GALLERY } from "../../../../lib/media";
+import { mirrorUrl } from "../../../../lib/mirror";
 import DetailShots from "../../../../components/DetailShots";
 import { TrackView } from "../../../../components/Track";
 import { swimFeatures } from "../../../../lib/descriptions";
@@ -202,7 +203,7 @@ export default async function ProductPage({ params }) {
         </div>
         <div className="pgal-strip">
           {GALLERY.map((src, i) => (
-            <img key={i} src={src} alt={`69SLAM ${i + 1}`} loading="lazy" />
+            <img key={i} src={mirrorUrl(src)} alt={`69SLAM ${i + 1}`} loading="lazy" />
           ))}
         </div>
       </section>
