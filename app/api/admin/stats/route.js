@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, dbConfigured, ensureSchema } from "../../../../lib/db";
+import { primeCatalog, getAnyProduct, getProducts } from "../../../../lib/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,6 +57,23 @@ export async function GET(req) {
       COUNT(DISTINCT vid) FILTER (WHERE kind = 'cart')::int AS carts
     FROM stat_events WHERE at >= ${since} AND kind IN ('product', 'cart') AND item IS NOT NULL
     GROUP BY item ORDER BY views DESC, carts DESC LIMIT 20`;
+
+  // koda artikla → polno ime (npr. »Moško spodnje perilo · BAMBUS · BOX« + »GRAY« + koda)
+  try { await primeCatalog(); } catch {}
+  let all = [];
+  try { all = getProducts({ withEmpty: true }); } catch {}
+  for (const x of products) {
+    let pr = null;
+    try { pr = getAnyProduct(x.item); } catch {}
+    if (!pr) {
+      const same = all.filter((p) => String(p.name || "").toUpperCase() === String(x.item || "").toUpperCase());
+      if (same.length === 1) pr = same[0];
+    }
+    x.code = pr?.code || null;
+    x.name = pr?.name || x.item;
+    x.type = pr?.type_sl || null;
+    x.slug = pr?.slug || null;
+  }
 
   const devices = await sql`SELECT device, COUNT(DISTINCT vid)::int AS visitors
     FROM stat_events WHERE at >= ${since} GROUP BY device ORDER BY visitors DESC`;

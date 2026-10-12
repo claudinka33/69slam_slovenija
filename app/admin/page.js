@@ -3657,7 +3657,11 @@ function Stats() {
                  !d.products?.length ? <tr><td colSpan={4} className="adm-empty">Še ni podatkov.</td></tr> :
                  d.products.map((x) => (
                   <tr key={x.item}>
-                    <td className="strong">{x.item}</td>
+                    <td>
+                      {x.type && <div className="muted" style={{ fontSize: 11.5 }}>{x.type}</div>}
+                      <div className="strong">{x.slug ? <a href={`/sl/p/${x.slug}`} target="_blank" rel="noreferrer">{x.name}</a> : x.name}</div>
+                      {x.code && <div className="muted" style={{ fontSize: 11.5, fontFamily: "monospace" }}>{x.code}</div>}
+                    </td>
                     <td className="r num">{num(x.views)}</td>
                     <td className="r num">{num(x.carts)}</td>
                     <td className="r num muted">{x.views ? pct(x.carts, x.views) : "—"}</td>
