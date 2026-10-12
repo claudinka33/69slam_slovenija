@@ -610,7 +610,7 @@ function PostaBox({ o, onChanged }) {
     setBusy(false); setRaw(r?.raw || null);
     setMsg(!r?.ok ? { ok: false, t: "Pošta: " + (r?.text || "ni odgovora") }
       : r.tracking ? { ok: true, t: `✅ Sledilna številka ${r.tracking} — naročilo je označeno kot Poslano${r.shipped?.mailed ? " in kupec je dobil mail" : ""}.` }
-      : { ok: true, t: "Sledilne številke še ni — v portalu natisni nalepko in klikni »Oddaj izbrane pošiljke«." });
+      : { ok: true, t: "Pošta številke še ne sporoča — pride, ko paket sprejmejo na pošti. Če ne želiš čakati: prepiši številko z nalepke (CH…SI) v polje spodaj in klikni »Poslano«." });
     await onChanged?.();
   }
   if (!active && !o.posta_sent_at) return null;
@@ -729,8 +729,8 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
 
           {o.source !== "shopify" && (
             <div className="adm-field" style={{ marginTop: 12 }}>
-              <label>Sledilna številka Pošte {o.posta_sent_at ? "(pride sama iz portala)" : "(ali vpiši ročno pred »Poslano«)"}</label>
-              <input value={trk} onChange={(e) => setTrk(e.target.value)} placeholder="npr. RB123456789SI" />
+              <label>Sledilna številka Pošte {o.posta_sent_at ? "(pride sama, ko paket sprejmejo na pošti — ali jo prepiši z nalepke)" : "(ali vpiši ročno pred »Poslano«)"}</label>
+              <input value={trk} onChange={(e) => setTrk(e.target.value)} placeholder="npr. CH847763033SI" />
               <div className="muted" style={{ marginTop: 6 }}>Ko klikneš »Poslano«, kupec dobi e-mail »Paket je na poti« s to številko.</div>
             </div>
           )}
