@@ -159,6 +159,12 @@ export async function POST(req) {
     RETURNING id, number`;
   if (pickup) await sql`UPDATE orders SET pickup = ${JSON.stringify(pickup)}::jsonb WHERE id = ${order.id}`;
 
+  // lastna anonimna statistika (brez piškotkov): naročilo poveže z obiskom istega dne
+  try {
+    const { recordEvent } = await import("../../../lib/stats");
+    await recordEvent(req, { kind: "purchase", path: `/${lang}/blagajna`, item: String(order.number), value_cents: total });
+  } catch {}
+
   // podatki za merjenje oglasov (samo ob oglaševalski privolitvi v obvestilu o piškotkih)
   const adMeta = requestMeta(req, body.ad);
   if (adMeta) {

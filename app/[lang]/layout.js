@@ -9,6 +9,7 @@ import CartDrawer from "../../components/CartDrawer";
 import BundleBuilder from "../../components/BundleBuilder";
 import Consent, { ConsentLink } from "../../components/Consent";
 import PromoSlide from "../../components/PromoSlide";
+import StatsBeacon from "../../components/StatsBeacon";
 
 export function generateStaticParams() {
   return LANGS.map((lang) => ({ lang }));
@@ -23,6 +24,7 @@ export default async function LangLayout({ children, params }) {
 
   return (
     <CartProvider products={products} lang={lang}>
+      <StatsBeacon />
       <Header lang={lang} t={t} />
       {children}
       <footer className="site" id="faq">

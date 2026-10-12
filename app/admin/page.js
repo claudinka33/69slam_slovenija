@@ -91,6 +91,7 @@ export default function Admin() {
 
   const NAV = [
     { id: "dashboard", ico: "📊", lbl: "Dashboard" },
+    { id: "statistika", ico: "📈", lbl: "Statistika obiska" },
     { id: "narocila", ico: "📦", lbl: "Naročila", bdg: newCount || null },
     { id: "zaloga", ico: "👕", lbl: "Artikli" },
     { id: "stranke", ico: "👤", lbl: "Stranke" },
@@ -146,6 +147,7 @@ export default function Admin() {
         {view === "dashboard" && <Dashboard onOpenOrder={(id) => { setOpenOrder(id); }} goOrders={() => go("narocila")}
           toShip={(orders || []).filter((o) => o.source !== "shopify" && stageOf(o) === "posiljanje").length}
           waiting={(orders || []).filter((o) => o.source !== "shopify" && stageOf(o) === "caka").length} />}
+        {view === "statistika" && <Stats />}
         {view === "narocila" && <Orders orders={orders} onOpen={setOpenOrder} reload={loadOrders} />}
         {view === "zaloga" && <Stock stock={stock} reload={loadStock} />}
         {view === "inventura" && <Inventory stock={stock} reload={loadStock} />}
@@ -3469,5 +3471,208 @@ function InvoiceSettings() {
         <button className="adm-btn" onClick={() => openPdf(sample)}>👁 Predogled oblike</button>
       </div>
     </div>
+  );
+}
+
+/* ───────────── Statistika obiska (lastna, brez piškotkov) ───────────── */
+function Stats() {
+  const [days, setDays] = useState(7);
+  const [d, setD] = useState(null);
+  useEffect(() => { setD(null); getJSON(`/api/admin/stats?days=${days}`).then((x) => setD(x || { ok: false })); }, [days]);
+
+  const f = d?.funnel || {};
+  const pct = (a, b) => (b ? (Math.round((a / b) * 1000) / 10).toLocaleString("sl-SI") + " %" : "—");
+  const num = (n) => Number(n || 0).toLocaleString("sl-SI");
+  const steps = [
+    ["Obiskali trgovino", f.visitors],
+    ["Pogledali izdelek", f.product],
+    ["Dodali v košarico", f.cart],
+    ["Začeli nakup (blagajna)", f.checkout],
+    ["Kupili", f.buyers],
+  ];
+  const top = Math.max(1, f.visitors || 0);
+
+  // dnevi brez obiska → 0
+  const series = (() => {
+    if (!d?.daily || days === 1) return [];
+    const by = Object.fromEntries(d.daily.map((x) => [x.d, x]));
+    const out = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const t = new Date(Date.now() - i * 864e5).toLocaleDateString("sv-SE", { timeZone: "Europe/Ljubljana" });
+      out.push(by[t] || { d: t, visitors: 0, pageviews: 0 });
+    }
+    return out;
+  })();
+  const maxV = Math.max(1, ...series.map((x) => x.visitors));
+  const lbl = (s) => { const [, m, dd] = s.split("-"); return `${+dd}. ${+m}.`; };
+  const every = series.length > 31 ? 14 : series.length > 8 ? 5 : 1;
+  const devTot = Math.max(1, (d?.devices || []).reduce((a, x) => a + x.visitors, 0));
+
+  return (
+    <>
+      <div className="adm-top">
+        <div>
+          <h1>Statistika obiska</h1>
+          <div className="sub">Vsi obiskovalci, tudi tisti, ki zavrnejo piškotke · anonimno, brez piškotkov{d?.live ? ` · 🟢 ${d.live} na strani zadnjih 30 min` : ""}</div>
+        </div>
+        <div className="grow" />
+        <div className="adm-seg">
+          {[[1, "Danes"], [7, "7 dni"], [30, "30 dni"], [90, "90 dni"]].map(([k, l]) =>
+            <button key={k} className={days === k ? "on" : ""} onClick={() => setDays(k)}>{l}</button>)}
+        </div>
+      </div>
+
+      {d && d.ok === false && <div className="adm-note">⚠️ Statistike ni bilo mogoče naložiti.</div>}
+
+      <div className="adm-stats">
+        <div className="adm-card adm-stat">
+          <div className="k">Obiskovalci</div>
+          <div className="v">{d ? num(d.totals?.visitors) : "…"}</div>
+          <div className="d">{d ? `${num(d.totals?.pageviews)} ogledov strani` : " "}</div>
+        </div>
+        <div className="adm-card adm-stat">
+          <div className="k">Dodali v košarico</div>
+          <div className="v">{d ? num(f.cart) : "…"}</div>
+          <div className="d">{d ? `${pct(f.cart, f.visitors)} obiskovalcev` : " "}</div>
+        </div>
+        <div className="adm-card adm-stat">
+          <div className="k">Nakupi</div>
+          <div className="v" style={{ color: "#047857" }}>{d ? num(f.purchases) : "…"}</div>
+          <div className="d">{d ? `konverzija ${pct(f.buyers, f.visitors)}` : " "}</div>
+        </div>
+        <div className="adm-card adm-stat">
+          <div className="k">Promet iz obiskov</div>
+          <div className="v">{d ? eur(f.revenue) : "…"}</div>
+          <div className="d">{d ? `${eur(f.visitors ? Math.round((f.revenue || 0) / f.visitors) : 0)} na obiskovalca` : " "}</div>
+        </div>
+      </div>
+
+      <div className="adm-grid2">
+        <div className="adm-card">
+          <div className="adm-card-h"><h3>Pot do nakupa</h3><span style={{ fontSize: 12, color: "var(--a-muted)" }}>koliko ljudi pride do katerega koraka</span></div>
+          {!d ? <div className="adm-empty">Nalagam …</div> : steps.map(([name, n], i) => (
+            <div key={name} style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                <b>{name}</b>
+                <span><b>{num(n)}</b>{i > 0 && <span className="muted"> · {pct(n, steps[i - 1][1])} od prejšnjega</span>}</span>
+              </div>
+              <div style={{ background: "#f1f2f4", borderRadius: 6, height: 12, overflow: "hidden" }}>
+                <div style={{ width: `${((n || 0) / top) * 100}%`, minWidth: n ? 3 : 0, height: "100%", background: i === steps.length - 1 ? "#10b981" : "#3b82f6", borderRadius: 6 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="adm-card">
+          <div className="adm-card-h"><h3>Naprave</h3></div>
+          {!d ? <div className="adm-empty">Nalagam …</div> : !d.devices?.length ? <div className="adm-empty">Še ni podatkov.</div> :
+            d.devices.map((x) => (
+              <div key={x.device} style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                  <b>{x.device === "Mobilni" ? "📱" : x.device === "Tablica" ? "📲" : "💻"} {x.device}</b>
+                  <span>{num(x.visitors)} · {pct(x.visitors, devTot)}</span>
+                </div>
+                <div style={{ background: "#f1f2f4", borderRadius: 6, height: 10, overflow: "hidden" }}>
+                  <div style={{ width: `${(x.visitors / devTot) * 100}%`, height: "100%", background: "#0a0a0a", borderRadius: 6 }} />
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {days > 1 && (
+        <div className="adm-card" style={{ marginBottom: 16 }}>
+          <div className="adm-card-h"><h3>Obiskovalci po dnevih</h3></div>
+          {!d ? <div className="adm-empty">Nalagam …</div> : (
+            <>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 160, padding: "8px 4px 0" }}>
+                {series.map((x) => (
+                  <div key={x.d} title={`${lbl(x.d)}: ${x.visitors} obiskovalcev · ${x.pageviews} ogledov`} style={{ flex: 1, height: "100%", display: "flex", alignItems: "flex-end" }}>
+                    <div style={{ width: "100%", height: `${(x.visitors / maxV) * 100}%`, minHeight: x.visitors ? 2 : 0, background: "#3b82f6", borderRadius: "3px 3px 0 0" }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 3, padding: "4px 4px 0" }}>
+                {series.map((x, i) => <span key={x.d} style={{ flex: 1, fontSize: 10, color: "var(--a-muted)", whiteSpace: "nowrap" }}>{(series.length - 1 - i) % every === 0 ? lbl(x.d) : ""}</span>)}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="adm-card" style={{ marginBottom: 16 }}>
+        <div className="adm-card-h"><h3>Od kod prihajajo</h3><span style={{ fontSize: 12, color: "var(--a-muted)" }}>»Direktno« = vpisali naslov, zaznamek ali aplikacija brez povezave</span></div>
+        <div className="adm-scroll">
+          <table className="adm-tbl">
+            <thead><tr><th>Vir</th><th className="r">Obiskovalci</th><th className="r">Delež</th><th className="r">V košarico</th><th className="r">Nakupi</th><th className="r">Promet</th></tr></thead>
+            <tbody>
+              {!d ? <tr><td colSpan={6} className="adm-empty">Nalagam …</td></tr> :
+               !d.sources?.length ? <tr><td colSpan={6} className="adm-empty">Še ni podatkov — prvi obiski se pokažejo v nekaj minutah.</td></tr> :
+               d.sources.map((x) => (
+                <tr key={x.source}>
+                  <td className="strong">{x.source}</td>
+                  <td className="r num">{num(x.visitors)}</td>
+                  <td className="r num muted">{pct(x.visitors, f.visitors)}</td>
+                  <td className="r num">{num(x.carts)}</td>
+                  <td className="r num strong">{num(x.purchases)}</td>
+                  <td className="r num">{x.revenue ? eur(x.revenue) : "—"}</td>
+                </tr>))}
+            </tbody>
+          </table>
+        </div>
+        {d?.campaigns?.length > 0 && (
+          <div className="adm-scroll" style={{ marginTop: 14 }}>
+            <table className="adm-tbl">
+              <thead><tr><th>Kampanja (utm_campaign)</th><th>Vir</th><th className="r">Obiskovalci</th></tr></thead>
+              <tbody>{d.campaigns.map((x) => <tr key={x.campaign + x.source}><td className="strong">{x.campaign}</td><td>{x.source}</td><td className="r num">{num(x.visitors)}</td></tr>)}</tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="adm-grid2">
+        <div className="adm-card">
+          <div className="adm-card-h"><h3>Najbolj gledani izdelki</h3></div>
+          <div className="adm-scroll">
+            <table className="adm-tbl">
+              <thead><tr><th>Izdelek</th><th className="r">Ogledi</th><th className="r">V košarico</th><th className="r">Delež</th></tr></thead>
+              <tbody>
+                {!d ? <tr><td colSpan={4} className="adm-empty">Nalagam …</td></tr> :
+                 !d.products?.length ? <tr><td colSpan={4} className="adm-empty">Še ni podatkov.</td></tr> :
+                 d.products.map((x) => (
+                  <tr key={x.item}>
+                    <td className="strong">{x.item}</td>
+                    <td className="r num">{num(x.views)}</td>
+                    <td className="r num">{num(x.carts)}</td>
+                    <td className="r num muted">{x.views ? pct(x.carts, x.views) : "—"}</td>
+                  </tr>))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="adm-card">
+          <div className="adm-card-h"><h3>Najbolj obiskane strani</h3></div>
+          <div className="adm-scroll">
+            <table className="adm-tbl">
+              <thead><tr><th>Stran</th><th className="r">Ogledi</th></tr></thead>
+              <tbody>
+                {!d ? <tr><td colSpan={2} className="adm-empty">Nalagam …</td></tr> :
+                 !d.pages?.length ? <tr><td colSpan={2} className="adm-empty">Še ni podatkov.</td></tr> :
+                 d.pages.map((x) => (
+                  <tr key={x.path}>
+                    <td style={{ wordBreak: "break-all" }}><a href={x.path} target="_blank" rel="noreferrer">{x.path}</a></td>
+                    <td className="r num">{num(x.views)}</td>
+                  </tr>))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div className="muted" style={{ fontSize: 12, lineHeight: 1.5, marginTop: 4 }}>
+        Šteje vse obiskovalce brez piškotkov: obiskovalec je prepoznan samo znotraj istega dne (anonimen odtis, ki ga ne moremo povezati z osebo), zato isti človek v dveh dneh šteje dvakrat.
+        Roboti in iskalniki niso šteti. Nakupi štejejo naročila, ki niso preklicana.
+        {d?.startedAt && ` Merjenje teče od ${new Date(d.startedAt).toLocaleDateString("sl-SI")}.`}
+      </div>
+    </>
   );
 }
