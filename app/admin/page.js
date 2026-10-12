@@ -746,6 +746,19 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
             {o.cod_fee_cents ? <div><span>Odkupnina</span><span>{eur(o.cod_fee_cents)}</span></div> : null}
             <div className="all"><span>Skupaj</span><span>{eur(o.total_cents)}</span></div>
           </div>
+
+          {o.source !== "shopify" && (
+            <div style={{ marginTop: 22, paddingTop: 14, borderTop: "1px solid var(--a-line, #eee)" }}>
+              <button className="adm-btn" disabled={busy} style={{ color: "#e63946", borderColor: "#e63946" }} onClick={async () => {
+                if (!confirm(`Izbrišem naročilo ${onum(o)}? Uporabi samo za testna naročila — naročilo izgine, kosi se vrnejo na zalogo.${o.posta_sent_at ? "\n\nPOZOR: naročilo je že v portalu Pošte — tam ga izbriši ročno." : ""}`)) return;
+                setBusy(true);
+                const r = await fetch(`/api/admin/orders?id=${o.id}`, { method: "DELETE" }).then((x) => x.json()).catch(() => null);
+                setBusy(false);
+                if (r?.ok) { alert(r.message); await onDeleted?.(); }
+                else setMailMsg({ ok: false, t: r?.message || "Brisanje ni uspelo." });
+              }}>🗑️ Izbriši testno naročilo</button>
+            </div>
+          )}
         </div>
       </div>
     </div>
