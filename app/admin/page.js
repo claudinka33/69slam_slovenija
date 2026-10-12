@@ -21,7 +21,7 @@ function stageOf(o) {
   return "posiljanje";
 }
 const STAGES = [
-  ["posiljanje", "📦 Za pošiljanje", "Plačano ali po povzetju — zapakiraj, vpiši sledilno številko in klikni »Poslano«."],
+  ["posiljanje", "📦 Za pošiljanje", "Plačano ali po povzetju — obkljukaj naročila in klikni »📮 Pošlji na Pošto«. V portalu oddaj.mojpaket.si nato natisni nalepke in oddaj; ko Pošta dodeli sledilno številko, se naročilo samo označi kot »Poslano« in kupec dobi mail z računom."],
   ["caka", "⏳ Čaka plačilo", "Predračun še ni plačan (ali kartično plačilo ni bilo dokončano). Ko denar prispe, klikni »Plačano«."],
   ["poslano", "🚚 Poslano", "Na poti h kupcu. Račun je bil izdan in poslan ob odpremi."],
   ["zakljuceno", "✅ Zaključeno", ""],
@@ -146,7 +146,7 @@ export default function Admin() {
         {view === "dashboard" && <Dashboard onOpenOrder={(id) => { setOpenOrder(id); }} goOrders={() => go("narocila")}
           toShip={(orders || []).filter((o) => o.source !== "shopify" && stageOf(o) === "posiljanje").length}
           waiting={(orders || []).filter((o) => o.source !== "shopify" && stageOf(o) === "caka").length} />}
-        {view === "narocila" && <Orders orders={orders} onOpen={setOpenOrder} />}
+        {view === "narocila" && <Orders orders={orders} onOpen={setOpenOrder} reload={loadOrders} />}
         {view === "zaloga" && <Stock stock={stock} reload={loadStock} />}
         {view === "inventura" && <Inventory stock={stock} reload={loadStock} />}
         {view === "prevzemi" && <Receipts stock={stock} reloadStock={loadStock} />}
@@ -402,7 +402,20 @@ function Top5({ top }) {
 }
 
 /* =========================== NAROČILA =========================== */
-function Orders({ orders, onOpen }) {
+const canPosta = (o) => o.source !== "shopify" && ["novo", "placano"].includes(o.status);
+function Orders({ orders, onOpen, reload }) {
+  const [sel, setSel] = useState({});
+  const [pBusy, setPBusy] = useState(false);
+  const [pMsg, setPMsg] = useState(null);
+  async function sendPosta(ids) {
+    if (!ids.length) return;
+    setPBusy(true); setPMsg(null);
+    const r = await getJSON("/api/admin/posta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids }) });
+    setPBusy(false);
+    setPMsg({ ok: !!r?.ok, t: r?.message || "Pošiljanje ni uspelo." });
+    setSel({});
+    await reload?.();
+  }
   const counts = useMemo(() => {
     const c = { vsa: (orders || []).length };
     for (const [k] of STAGES) c[k] = (orders || []).filter((o) => stageOf(o) === k).length;
@@ -418,6 +431,9 @@ function Orders({ orders, onOpen }) {
       (!t || `${o.number} ${o.name} ${o.email} ${o.city}`.toLowerCase().includes(t)));
   }, [orders, cur, q]);
   const hint = STAGES.find(([k]) => k === cur)?.[2];
+  const selectable = list.filter((o) => canPosta(o) && !o.posta_sent_at);
+  const selIds = selectable.filter((o) => sel[o.id]).map((o) => o.id);
+  const allOn = selectable.length > 0 && selIds.length === selectable.length;
   const isNew = (o) => Date.now() - new Date(o.created_at).getTime() < 24 * 3600 * 1000;
 
   return (
@@ -445,19 +461,36 @@ function Orders({ orders, onOpen }) {
         <div className="adm-search"><input placeholder="Išči: št., ime, e-mail …" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       </div>
       {hint && <div className="adm-note" style={{ marginBottom: 12 }}>{hint}</div>}
+      {selectable.length > 0 && (
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
+          <button className="adm-btn" disabled={pBusy || !selIds.length} onClick={() => sendPosta(selIds)}
+            style={{ background: selIds.length ? "#FFD900" : undefined, color: "#0a0a0a", fontWeight: 800, padding: "10px 16px" }}>
+            {pBusy ? "Pošiljam …" : `📮 Pošlji na Pošto${selIds.length ? ` (${selIds.length})` : ""}`}
+          </button>
+          <span className="muted" style={{ fontSize: 13 }}>{selIds.length ? "Izbrana naročila gredo v portal oddaj.mojpaket.si." : "Obkljukaj naročila, ki jih pošiljaš."}</span>
+          <div className="grow" />
+          <a href="https://oddaj.mojpaket.si/" target="_blank" rel="noreferrer" className="adm-btn" style={{ textDecoration: "none" }}>Odpri portal Pošte ↗</a>
+        </div>
+      )}
+      {pMsg && <div className={`adm-note ${pMsg.ok ? "ok" : "err"}`} style={{ marginBottom: 12 }}>{pMsg.t}</div>}
       <div className="adm-card adm-scroll">
         <table className="adm-tbl">
-          <thead><tr><th>Št.</th><th>Datum</th><th>Kupec</th><th>Plačilo</th><th>Stanje</th><th className="r">Znesek</th></tr></thead>
+          <thead><tr><th style={{ width: 34 }}>{selectable.length > 0 && <input type="checkbox" checked={allOn} title="Izberi vse"
+            onChange={() => setSel(allOn ? {} : Object.fromEntries(selectable.map((o) => [o.id, true])))} style={{ width: 18, height: 18 }} />}</th><th>Št.</th><th>Datum</th><th>Kupec</th><th>Plačilo</th><th>Stanje</th><th className="r">Znesek</th></tr></thead>
           <tbody>
-            {orders === null ? <tr><td colSpan={6} className="adm-empty">Nalagam …</td></tr> :
-             !list.length ? <tr><td colSpan={6} className="adm-empty">{orders.length ? "Tukaj ni naročil." : "Še ni naročil. Ko kupec odda naročilo, se pojavi tukaj."}</td></tr> :
+            {orders === null ? <tr><td colSpan={7} className="adm-empty">Nalagam …</td></tr> :
+             !list.length ? <tr><td colSpan={7} className="adm-empty">{orders.length ? "Tukaj ni naročil." : "Še ni naročil. Ko kupec odda naročilo, se pojavi tukaj."}</td></tr> :
              list.map((o) => (
               <tr key={o.id} className="click" onClick={() => onOpen(o.id)}>
+                <td onClick={(e) => e.stopPropagation()}>{canPosta(o) && !o.posta_sent_at &&
+                  <input type="checkbox" checked={!!sel[o.id]} onChange={() => setSel((x) => ({ ...x, [o.id]: !x[o.id] }))} style={{ width: 18, height: 18 }} />}</td>
                 <td className="strong">{onum(o)}{isNew(o) && o.source !== "shopify" && <span style={{ marginLeft: 6, background: "#e63946", color: "#fff", borderRadius: 50, padding: "2px 7px", fontSize: 10, fontWeight: 800 }}>NOVO</span>}</td>
                 <td className="muted">{dt(o.created_at)}</td>
                 <td>{o.name}<div className="muted">{o.email}</div></td>
                 <td>{PAY[o.payment] || o.payment}{o.paid_at ? <div className="muted">✓ plačano</div> : null}</td>
-                <td><b style={{ fontSize: 13 }}>{STAGE_LBL[stageOf(o)]}</b></td>
+                <td><b style={{ fontSize: 13 }}>{STAGE_LBL[stageOf(o)]}</b>
+                  {o.posta_sent_at && canPosta(o) && <div className="muted" style={{ fontSize: 12 }}>📮 v portalu Pošte · čaka oddajo</div>}
+                  {o.tracking && o.status === "poslano" && <div className="muted" style={{ fontSize: 12 }}>{o.tracking}</div>}</td>
                 <td className="r strong num">{eur(o.total_cents)}</td>
               </tr>
             ))}
@@ -556,6 +589,46 @@ function OrderMails({ orderId, status, refresh, onMsg }) {
   );
 }
 
+/** Pošta Slovenije: pošlji naročilo v portal, stanje, ročno preverjanje sledilne številke. */
+function PostaBox({ o, onChanged }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const [raw, setRaw] = useState(null);
+  const active = ["novo", "placano"].includes(o.status);
+  async function send(again) {
+    if (again && !confirm("Naročilo je že v portalu. Ga pošljem še enkrat? (V portalu preveri, da ni podvojeno.)")) return;
+    setBusy(true); setMsg(null);
+    const r = await getJSON("/api/admin/posta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [o.id], again: !!again }) });
+    setBusy(false); setMsg({ ok: !!r?.ok, t: r?.message || "Pošiljanje ni uspelo." });
+    await onChanged?.();
+  }
+  async function check() {
+    setBusy(true); setMsg(null);
+    const r = await getJSON(`/api/admin/posta?id=${o.id}`);
+    setBusy(false); setRaw(r?.raw || null);
+    setMsg(!r?.ok ? { ok: false, t: "Pošta: " + (r?.text || "ni odgovora") }
+      : r.tracking ? { ok: true, t: `✅ Sledilna številka ${r.tracking} — naročilo je označeno kot Poslano${r.shipped?.mailed ? " in kupec je dobil mail" : ""}.` }
+      : { ok: true, t: "Sledilne številke še ni — v portalu natisni nalepko in klikni »Oddaj izbrane pošiljke«." });
+    await onChanged?.();
+  }
+  if (!active && !o.posta_sent_at) return null;
+  return (
+    <div className="adm-note" style={{ marginTop: 12, background: "#fff8e1", color: "#5c4a00", display: "block" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <b>📮 Pošta Slovenije</b>
+        <span>{o.posta_sent_at ? `v portalu od ${dt(o.posta_sent_at)}` : "še ni v portalu"}</span>
+        <div className="grow" />
+        {active && !o.posta_sent_at && <button className="adm-btn" disabled={busy} onClick={() => send(false)} style={{ background: "#FFD900", fontWeight: 800 }}>{busy ? "Pošiljam …" : "Pošlji na Pošto"}</button>}
+        {o.posta_sent_at && active && <button className="adm-btn" disabled={busy} onClick={check}>{busy ? "Preverjam …" : "↻ Preveri sledilno št."}</button>}
+        {o.posta_sent_at && active && <button className="adm-btn" disabled={busy} onClick={() => send(true)}>Pošlji znova</button>}
+      </div>
+      {o.posta_status && <div style={{ fontSize: 12.5, marginTop: 6, opacity: 0.85 }}>Zadnje stanje: {o.posta_status}</div>}
+      {msg && <div style={{ marginTop: 6, fontWeight: 700, color: msg.ok ? "#047857" : "#e63946" }}>{msg.t}</div>}
+      {raw && <details style={{ marginTop: 6, fontSize: 11 }}><summary>Tehnični odgovor Pošte</summary><pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all", maxHeight: 200, overflow: "auto" }}>{raw}</pre></details>}
+    </div>
+  );
+}
+
 function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [trk, setTrk] = useState(o.tracking || "");
@@ -604,9 +677,11 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
             ))}
           </div>
 
+          {o.source !== "shopify" && <PostaBox o={o} onChanged={onChanged} />}
+
           {o.source !== "shopify" && (
             <div className="adm-field" style={{ marginTop: 12 }}>
-              <label>Sledilna številka Pošte (vpiši pred »Poslano«)</label>
+              <label>Sledilna številka Pošte {o.posta_sent_at ? "(pride sama iz portala)" : "(ali vpiši ročno pred »Poslano«)"}</label>
               <input value={trk} onChange={(e) => setTrk(e.target.value)} placeholder="npr. RB123456789SI" />
               <div className="muted" style={{ marginTop: 6 }}>Ko klikneš »Poslano«, kupec dobi e-mail »Paket je na poti« s to številko.</div>
             </div>

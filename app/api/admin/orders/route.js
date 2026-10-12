@@ -32,7 +32,8 @@ export async function GET(req) {
     return NextResponse.json({ ok: true, web, seq, moves, docs, stripe: stripeInfo });
   }
   const orders = await sql`SELECT id, number, status, payment, name, email, phone, address, zip, city,
-      lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at, coupon_code, discount_cents
+      lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at, coupon_code, discount_cents,
+      country, posta_sent_at, posta_status, posta_checked_at
     FROM orders ORDER BY created_at DESC, id DESC LIMIT 2000`;
   const items = await sql`SELECT order_id, sku, name, size, qty, price_cents, bundle_key
     FROM order_items WHERE order_id = ANY(${orders.map((o) => o.id)})`;
@@ -125,38 +126,23 @@ export async function PATCH(req) {
   const [prev] = await sql`SELECT status, source FROM orders WHERE id = ${id}`;
   if (!prev) return NextResponse.json({ ok: false, message: "Naročilo ne obstaja." }, { status: 404 });
 
-  await sql`UPDATE orders SET status = ${status},
-      tracking = COALESCE(${tracking ? String(tracking).trim().slice(0, 60) : null}, tracking),
-      paid_at = CASE WHEN ${status} = 'placano' THEN COALESCE(paid_at, now()) ELSE paid_at END
-    WHERE id = ${id}`;
-  // kupcu: »paket je na poti« (ne za uvožena Shopify naročila)
   let mailed = false;
   let invoiceNo = null;
-  if (status === "poslano" && prev.status !== "poslano" && prev.source !== "shopify") {
-    // račun se izda ob pošiljanju in gre kupcu kot priloga maila »paket je na poti«
-    let att = null;
-    try {
-      const { invoiceFromOrder, invoicePdf } = await import("../../../../lib/invoices");
-      const inv = await invoiceFromOrder(id);
-      if (inv) {
-        att = [{ filename: `racun-${inv.number}.pdf`, content: (await invoicePdf(inv)).toString("base64") }];
-        invoiceNo = inv.number;
-      }
-    } catch (e) { console.error("[račun]", e); }
-    try {
-      const { sendShipped, mailConfigured } = await import("../../../../lib/mail");
-      if (mailConfigured()) {
-        const r = await sendShipped(id, att);
-        mailed = true;
-        if (att && invoiceNo && !r?.error) await sql`UPDATE invoices SET sent_at = now(), sent_to = (SELECT email FROM orders WHERE id = ${id}) WHERE number = ${invoiceNo}`;
-      }
-    } catch (e) { console.error(e); }
+  if (status === "poslano") {
+    // račun + mail »paket je na poti« (skupna logika z avtomatiko Pošte)
+    const { markShipped } = await import("../../../../lib/ship");
+    ({ mailed, invoice: invoiceNo } = await markShipped(id, tracking));
+  } else {
+    await sql`UPDATE orders SET status = ${status},
+        tracking = COALESCE(${tracking ? String(tracking).trim().slice(0, 60) : null}, tracking),
+        paid_at = CASE WHEN ${status} = 'placano' THEN COALESCE(paid_at, now()) ELSE paid_at END
+      WHERE id = ${id}`;
+    if (tracking) await sql`UPDATE invoices SET tracking = ${String(tracking).trim().slice(0, 60)} WHERE order_id = ${id} AND kind = 'dobavnica'`;
   }
 
   // preklic: neizkoriščeni dokumenti naročila (dobavnica, predračun) se prekličejo
   if (status === "preklicano" && prev.status !== "preklicano")
     await sql`UPDATE invoices SET status = 'preklican' WHERE order_id = ${id} AND kind IN ('dobavnica','predracun') AND converted_to IS NULL`;
-  if (tracking) await sql`UPDATE invoices SET tracking = ${String(tracking).trim().slice(0, 60)} WHERE order_id = ${id} AND kind = 'dobavnica'`;
 
   // uvožena Shopify naročila ne vplivajo na zalogo
   if (status === "preklicano" && prev.status !== "preklicano" && prev.source !== "shopify") {
