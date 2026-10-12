@@ -3563,6 +3563,7 @@ function Stats() {
       <div className="adm-grid2">
         <div className="adm-card">
           <div className="adm-card-h"><h3>Pot do nakupa</h3><span style={{ fontSize: 12, color: "var(--a-muted)" }}>koliko ljudi pride do katerega koraka</span></div>
+          <div style={{ padding: "14px 20px 18px" }}>
           {!d ? <div className="adm-empty">Nalagam …</div> : steps.map(([name, n], i) => (
             <div key={name} style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
@@ -3574,9 +3575,11 @@ function Stats() {
               </div>
             </div>
           ))}
+          </div>
         </div>
         <div className="adm-card">
           <div className="adm-card-h"><h3>Naprave</h3></div>
+          <div style={{ padding: "14px 20px 18px" }}>
           {!d ? <div className="adm-empty">Nalagam …</div> : !d.devices?.length ? <div className="adm-empty">Še ni podatkov.</div> :
             d.devices.map((x) => (
               <div key={x.device} style={{ marginBottom: 12 }}>
@@ -3589,6 +3592,7 @@ function Stats() {
                 </div>
               </div>
             ))}
+          </div>
         </div>
       </div>
 
@@ -3596,18 +3600,18 @@ function Stats() {
         <div className="adm-card" style={{ marginBottom: 16 }}>
           <div className="adm-card-h"><h3>Obiskovalci po dnevih</h3></div>
           {!d ? <div className="adm-empty">Nalagam …</div> : (
-            <>
+            <div style={{ padding: "8px 20px 16px" }}>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 160, padding: "8px 4px 0" }}>
                 {series.map((x) => (
                   <div key={x.d} title={`${lbl(x.d)}: ${x.visitors} obiskovalcev · ${x.pageviews} ogledov`} style={{ flex: 1, height: "100%", display: "flex", alignItems: "flex-end" }}>
-                    <div style={{ width: "100%", height: `${(x.visitors / maxV) * 100}%`, minHeight: x.visitors ? 2 : 0, background: "#3b82f6", borderRadius: "3px 3px 0 0" }} />
+                    <div style={{ width: "100%", maxWidth: 40, margin: "0 auto", height: `${(x.visitors / maxV) * 100}%`, minHeight: x.visitors ? 2 : 0, background: "#3b82f6", borderRadius: "3px 3px 0 0" }} />
                   </div>
                 ))}
               </div>
               <div style={{ display: "flex", gap: 3, padding: "4px 4px 0" }}>
                 {series.map((x, i) => <span key={x.d} style={{ flex: 1, fontSize: 10, color: "var(--a-muted)", whiteSpace: "nowrap" }}>{(series.length - 1 - i) % every === 0 ? lbl(x.d) : ""}</span>)}
               </div>
-            </>
+            </div>
           )}
         </div>
       )}
