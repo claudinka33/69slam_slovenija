@@ -55,6 +55,66 @@ export async function GET(req) {
   });
 }
 
+/**
+ * Popravek e-maila kupca in/ali ponovno pošiljanje maila.
+ * { id, action: "email", email, resend?: true }  → popravi naslov povsod (naročilo, dokumenti, čakajoči maili) in pošlje potrditev znova
+ * { id, action: "resend", kind: "potrditev" | "poslano" } → pošlje mail znova na trenutni naslov
+ */
+export async function POST(req) {
+  const body = await req.json().catch(() => ({}));
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, message: "Manjka naročilo." }, { status: 400 });
+  const sql = db();
+  await ensureSchema();
+  const [o] = await sql`SELECT id, email, status, source FROM orders WHERE id = ${id}`;
+  if (!o) return NextResponse.json({ ok: false, message: "Naročilo ne obstaja." }, { status: 404 });
+  const msgs = [];
+
+  if (body.action === "email") {
+    const email = String(body.email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+      return NextResponse.json({ ok: false, message: "E-mail ni veljaven." }, { status: 400 });
+    const old = String(o.email || "").toLowerCase();
+    if (email !== old) {
+      await sql`UPDATE orders SET email = ${email} WHERE id = ${id}`;
+      await sql`UPDATE invoices SET customer_email = ${email} WHERE order_id = ${id}`;
+      await sql`UPDATE mail_jobs SET email = ${email} WHERE status = 'cakajoce' AND (
+        (kind = 'review' AND ref_id = ${id}) OR lower(email) = ${old})`;
+      // seznam naročnikov: napačen naslov zamenjaj s pravim (če pravega še ni)
+      if (old) {
+        const [has] = await sql`SELECT 1 FROM subscribers WHERE lower(email) = ${email}`;
+        if (has) await sql`DELETE FROM subscribers WHERE lower(email) = ${old}`;
+        else await sql`UPDATE subscribers SET email = ${email} WHERE lower(email) = ${old}`;
+      }
+      msgs.push(`E-mail popravljen na ${email}.`);
+    }
+    if (!body.resend) return NextResponse.json({ ok: true, message: msgs.join(" ") || "E-mail je že pravilen." });
+    body.kind = o.status === "poslano" || o.status === "zakljuceno" ? "poslano" : "potrditev";
+  } else if (body.action !== "resend") {
+    return NextResponse.json({ ok: false, message: "Neznano dejanje." }, { status: 400 });
+  }
+
+  if (o.source === "shopify") return NextResponse.json({ ok: false, message: "Za uvožena Shopify naročila se maili ne pošiljajo." }, { status: 400 });
+  const { mailConfigured, sendOrderConfirmation, sendShipped } = await import("../../../../lib/mail");
+  if (!mailConfigured()) return NextResponse.json({ ok: false, message: "Pošiljanje mailov ni nastavljeno." }, { status: 500 });
+  const [cur] = await sql`SELECT email FROM orders WHERE id = ${id}`;
+  const { docAttachment } = await import("../../../../lib/invoices");
+  if (body.kind === "poslano") {
+    const [inv] = await sql`SELECT * FROM invoices WHERE order_id = ${id} AND kind = 'racun' AND status <> 'storniran' ORDER BY id LIMIT 1`;
+    const att = inv ? [await docAttachment(inv)] : undefined;
+    const r = await sendShipped(id, att);
+    if (r?.error) return NextResponse.json({ ok: false, message: "Pošiljanje ni uspelo: " + (r.error.message || r.error.name || "napaka") });
+    if (inv) await sql`UPDATE invoices SET sent_at = now(), sent_to = ${cur.email} WHERE id = ${inv.id}`;
+    msgs.push(`Mail »Paket je na poti«${inv ? " z računom" : ""} je poslan znova na ${cur.email}.`);
+  } else {
+    // potrditev (+ predračun, če gre za plačilo po predračunu)
+    const [pre] = await sql`SELECT * FROM invoices WHERE order_id = ${id} AND kind = 'predracun' AND status = 'izdan' ORDER BY id LIMIT 1`;
+    await sendOrderConfirmation(id, pre ? [await docAttachment(pre)] : []);
+    msgs.push(`Potrditev naročila je poslana znova na ${cur.email}.`);
+  }
+  return NextResponse.json({ ok: true, message: msgs.join(" ") });
+}
+
 /** Sprememba statusa naročila. Ob preklicu se zaloga vrne. */
 export async function PATCH(req) {
   const { id, status, tracking } = await req.json().catch(() => ({}));

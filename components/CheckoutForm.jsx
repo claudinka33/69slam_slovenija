@@ -7,6 +7,7 @@ import { TrackPurchase } from "./Track";
 import PromoHint from "./PromoHint";
 import { COD_FEE, country as countryOf, countryOptions, shipFor } from "../lib/shipping";
 import { storedPromo } from "./usePromo";
+import { emailSuggestion } from "../lib/emailCheck";
 
 
 export default function CheckoutForm({ lang, t }) {
@@ -22,6 +23,18 @@ export default function CheckoutForm({ lang, t }) {
   const [coupon, setCoupon] = useState(null); // { code, percent }
   const [cmsg, setCmsg] = useState("");
   const [bought, setBought] = useState(null); // podatki za dogodek nakupa
+  const [emailFix, setEmailFix] = useState(null); // predlog popravka zatipkanega e-maila
+  const [emailOk, setEmailOk] = useState(""); // naslov, ki ga je kupec potrdil kot pravilnega
+  const emailRef = useRef(null);
+  function checkEmail(v) {
+    const sug = v && v !== emailOk ? emailSuggestion(v) : null;
+    setEmailFix(sug);
+    return sug;
+  }
+  function applyFix() {
+    if (emailRef.current && emailFix) { emailRef.current.value = emailFix; saveCart(emailFix); }
+    setEmailFix(null);
+  }
   const startSent = useRef(false);
   // začetek nakupa (enkrat, ko je košarica naložena)
   useEffect(() => {
@@ -84,6 +97,11 @@ export default function CheckoutForm({ lang, t }) {
   async function submit(e) {
     e.preventDefault();
     if (sending) return;
+    const em = (emailRef.current?.value || "").trim();
+    if (em && em !== emailOk && checkEmail(em)) {
+      emailRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setSending(true);
     setMsg("");
     const data = Object.fromEntries(new FormData(e.target));
@@ -160,7 +178,24 @@ export default function CheckoutForm({ lang, t }) {
         <label>{t.ck_name}</label>
         <input name="name" required />
         <label>{t.ck_email}</label>
-        <input name="email" type="email" required onBlur={(e) => saveCart(e.target.value.trim())} />
+        <input name="email" type="email" required ref={emailRef}
+          onBlur={(e) => { const v = e.target.value.trim(); checkEmail(v); saveCart(v); }}
+          onChange={() => emailFix && setEmailFix(null)} />
+        {emailFix && (
+          <div style={{ background: "#fff8e1", color: "#5c4a00", border: "1px solid #FFD900", borderRadius: 10, padding: "10px 12px", margin: "6px 0 4px", fontSize: 14, lineHeight: 1.5 }}>
+            ⚠️ {tx(lang, "Ali ste mislili", "Did you mean", "Jeste li mislili")} <b>{emailFix}</b>?
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+              <button type="button" onClick={applyFix}
+                style={{ background: "#0a0a0a", color: "#fff", border: 0, borderRadius: 10, padding: "8px 12px", fontWeight: 800, fontSize: 12.5, textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer" }}>
+                {tx(lang, "Da, popravi", "Yes, fix it", "Da, ispravi")}
+              </button>
+              <button type="button" onClick={() => { setEmailOk((emailRef.current?.value || "").trim()); setEmailFix(null); }}
+                style={{ background: "transparent", color: "#5c4a00", border: "1px solid #c9b25a", borderRadius: 10, padding: "8px 12px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+                {tx(lang, "Ne, moj naslov je pravilen", "No, my address is correct", "Ne, moja adresa je točna")}
+              </button>
+            </div>
+          </div>
+        )}
         <label>{t.ck_phone}</label>
         <input name="phone" />
         <label>{t.ck_addr}</label>

@@ -158,7 +158,7 @@ export default function Admin() {
         {view === "ocene" && <Reviews onCount={setRevCount} />}
       </main>
 
-      {orderObj && <OrderPanel o={orderObj} onClose={() => setOpenOrder(null)} setStatus={setStatus}
+      {orderObj && <OrderPanel o={orderObj} onClose={() => setOpenOrder(null)} setStatus={setStatus} onChanged={loadOrders}
         onDeleted={async () => { setOpenOrder(null); await Promise.all([loadOrders(), loadStock()]); }} />}
       <PdfViewer />
     </div>
@@ -510,9 +510,18 @@ const MAIL_ST = {
   bounced: ["❌ ni dostavljeno (napačen naslov)", "#e63946"], complained: ["⚠️ označeno kot vsiljena pošta", "#e63946"], napaka: ["❌ napaka pri pošiljanju", "#e63946"], failed: ["❌ pošiljanje ni uspelo", "#e63946"], suppressed: ["❌ naslov je blokiran (prej zavrnjen)", "#e63946"], canceled: ["✕ preklicano", "#666"],
 };
 /** Kateri maili so šli kupcu in ali so bili dostavljeni. */
-function OrderMails({ orderId, status }) {
+const MAIL_BAD = ["bounced", "complained", "napaka", "failed", "suppressed"];
+function OrderMails({ orderId, status, refresh, onMsg }) {
   const [d, setD] = useState(null);
-  useEffect(() => { let on = true; getJSON(`/api/admin/orders?id=${orderId}&mails=1`).then((x) => on && setD(x || { log: [] })); return () => { on = false; }; }, [orderId, status]);
+  const [busy, setBusy] = useState("");
+  useEffect(() => { let on = true; getJSON(`/api/admin/orders?id=${orderId}&mails=1`).then((x) => on && setD(x || { log: [] })); return () => { on = false; }; }, [orderId, status, refresh]);
+  async function resend(kind) {
+    setBusy(kind);
+    const r = await fetch("/api/admin/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: orderId, action: "resend", kind }) }).then((x) => x.json()).catch(() => null);
+    setBusy("");
+    onMsg?.({ ok: !!r?.ok, t: r?.message || "Pošiljanje ni uspelo." });
+    getJSON(`/api/admin/orders?id=${orderId}&mails=1`).then((x) => setD(x || { log: [] }));
+  }
   if (!d) return null;
   const rows = d.log || [];
   const legacy = !rows.length && (d.legacy?.confirm_at || d.legacy?.invoices?.length);
@@ -528,6 +537,11 @@ function OrderMails({ orderId, status }) {
             <div className="muted">na {m.email}{m.attachment ? <> · 📎 {m.attachment}</> : null}</div>
             <div style={{ color: st[1], fontWeight: 700 }}>{st[0]}</div>
             {m.error && <div style={{ color: "#e63946" }}>{m.error}</div>}
+            {(MAIL_BAD.includes(m.status) || m.status === null) && MAIL_KIND[m.kind] && (
+              <button className="adm-btn" style={{ marginTop: 6 }} disabled={!!busy} onClick={() => resend(m.kind)}>
+                {busy === m.kind ? "Pošiljam …" : "↻ Pošlji ponovno"}
+              </button>
+            )}
           </div>
         );
       })}
@@ -542,9 +556,20 @@ function OrderMails({ orderId, status }) {
   );
 }
 
-function OrderPanel({ o, onClose, setStatus, onDeleted }) {
+function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [trk, setTrk] = useState(o.tracking || "");
+  const [mailEdit, setMailEdit] = useState(null); // urejanje e-maila kupca
+  const [mailMsg, setMailMsg] = useState(null);
+  const [refresh, setRefresh] = useState(0);
+  async function saveEmail(resend) {
+    setBusy(true);
+    const r = await fetch("/api/admin/orders", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: o.id, action: "email", email: mailEdit, resend }) }).then((x) => x.json()).catch(() => null);
+    setBusy(false);
+    setMailMsg({ ok: !!r?.ok, t: r?.message || "Shranjevanje ni uspelo." });
+    if (r?.ok) { setMailEdit(null); setRefresh((n) => n + 1); await onChanged?.(); }
+  }
   useEffect(() => {
     const k = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", k);
@@ -587,12 +612,30 @@ function OrderPanel({ o, onClose, setStatus, onDeleted }) {
             </div>
           )}
 
-          {o.source !== "shopify" && <OrderMails orderId={o.id} status={o.status} />}
+          {o.source !== "shopify" && <OrderMails orderId={o.id} status={o.status} refresh={refresh} onMsg={setMailMsg} />}
+          {mailMsg && <div className={`adm-note ${mailMsg.ok ? "ok" : "err"}`} style={{ marginTop: 8 }}>{mailMsg.t}</div>}
 
           <div className="adm-sec">Kupec in dostava</div>
           <dl className="adm-dl">
             <dt>Ime</dt><dd><b>{o.name}</b></dd>
-            <dt>E-mail</dt><dd><a href={`mailto:${o.email}`} style={{ color: "var(--a-blue)" }}>{o.email}</a></dd>
+            <dt>E-mail</dt><dd>
+              {mailEdit === null ? (
+                <span style={{ display: "inline-flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <a href={`mailto:${o.email}`} style={{ color: "var(--a-blue)" }}>{o.email}</a>
+                  {o.source !== "shopify" && <button className="adm-btn" onClick={() => { setMailEdit(o.email || ""); setMailMsg(null); }}>✏️ Popravi</button>}
+                </span>
+              ) : (
+                <div>
+                  <input value={mailEdit} onChange={(e) => setMailEdit(e.target.value)} type="email" autoFocus
+                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #e0e0e0", borderRadius: 10, fontSize: 14 }} />
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                    <button className="adm-btn" disabled={busy} style={{ background: "#0a0a0a", color: "#fff" }} onClick={() => saveEmail(true)}>Shrani in pošlji mail znova</button>
+                    <button className="adm-btn" disabled={busy} onClick={() => saveEmail(false)}>Samo shrani</button>
+                    <button className="adm-btn" disabled={busy} onClick={() => setMailEdit(null)}>Prekliči</button>
+                  </div>
+                </div>
+              )}
+            </dd>
             {o.phone && <><dt>Telefon</dt><dd>{o.phone}</dd></>}
             <dt>Naslov</dt><dd>{o.address}<br />{o.zip} {o.city}{o.country && o.country !== "SI" ? `, ${o.country}` : ""}</dd>
             <dt>Plačilo</dt><dd>{PAY[o.payment] || o.payment}{o.paid_at ? " · ✓ plačano" : ""}</dd>
