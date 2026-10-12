@@ -33,9 +33,9 @@ export async function GET(req) {
   }
   const orders = await sql`SELECT id, number, status, payment, name, email, phone, address, zip, city,
       lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at, coupon_code, discount_cents,
-      country, posta_sent_at, posta_status, posta_checked_at, pickup
+      country, posta_sent_at, posta_status, posta_checked_at, pickup, manual_pct, orig_shipping_cents
     FROM orders ORDER BY created_at DESC, id DESC LIMIT 2000`;
-  const items = await sql`SELECT order_id, sku, name, size, qty, price_cents, bundle_key
+  const items = await sql`SELECT order_id, sku, name, size, qty, price_cents, bundle_key, orig_price_cents
     FROM order_items WHERE order_id = ANY(${orders.map((o) => o.id)})`;
   // slike artiklov (prva slika iz kataloga)
   const imgs = {};
@@ -70,6 +70,23 @@ export async function POST(req) {
   const [o] = await sql`SELECT id, email, status, source FROM orders WHERE id = ${id}`;
   if (!o) return NextResponse.json({ ok: false, message: "Naročilo ne obstaja." }, { status: 404 });
   const msgs = [];
+
+  if (body.action === "discount") {
+    const { applyManualDiscount } = await import("../../../../lib/orderDiscount");
+    const r = await applyManualDiscount(id, body.percent, !!body.freeShip);
+    if (!r.ok || !body.mail) return NextResponse.json(r);
+    try {
+      const { mailConfigured, sendOrderConfirmation } = await import("../../../../lib/mail");
+      if (mailConfigured()) {
+        const { docAttachment } = await import("../../../../lib/invoices");
+        const [pre] = await sql`SELECT * FROM invoices WHERE order_id = ${id} AND kind = 'predracun' AND status = 'izdan' ORDER BY id LIMIT 1`;
+        await sendOrderConfirmation(id, pre ? [await docAttachment(pre)] : [], { updated: true });
+        const [cur] = await sql`SELECT email FROM orders WHERE id = ${id}`;
+        r.message += ` ✉️ Popravljena potrditev poslana na ${cur.email}.`;
+      }
+    } catch (e) { console.error(e); r.message += " ⚠️ Maila ni bilo mogoče poslati."; }
+    return NextResponse.json(r);
+  }
 
   if (body.action === "email") {
     const email = String(body.email || "").trim().toLowerCase();

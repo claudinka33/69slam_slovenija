@@ -631,6 +631,52 @@ function PostaBox({ o, onChanged }) {
   );
 }
 
+/** Ročni popust na naročilo (npr. prijateljem) — pred izdajo računa. */
+function DiscountBox({ o, onDone }) {
+  const [open, setOpen] = useState(false);
+  const [pct, setPct] = useState(String(o.manual_pct || 30));
+  const [free, setFree] = useState(o.orig_shipping_cents != null ? !o.shipping_cents : true);
+  const [mail, setMail] = useState(true);
+  const [busy, setBusy] = useState(false);
+  if (o.payment === "card") return null;
+  async function go(remove) {
+    setBusy(true);
+    const r = await fetch("/api/admin/orders", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: o.id, action: "discount", percent: remove ? 0 : Number(pct), freeShip: remove ? false : free, mail: remove ? false : mail }) })
+      .then((x) => x.json()).catch(() => null);
+    setBusy(false);
+    if (r?.ok) setOpen(false);
+    await onDone({ ok: !!r?.ok, t: r?.message || "Ni uspelo." });
+  }
+  if (!open) return (
+    <div style={{ marginTop: 10 }}>
+      <button className="adm-btn" onClick={() => setOpen(true)}>🎁 {o.manual_pct || o.orig_shipping_cents != null ? "Spremeni popust" : "Popust"}</button>
+    </div>
+  );
+  return (
+    <div className="adm-card" style={{ marginTop: 10, padding: 14, border: "1px solid #6ee7b7", background: "#f0fdf9" }}>
+      <div style={{ fontWeight: 800, marginBottom: 8 }}>🎁 Popust na to naročilo</div>
+      <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
+        Popust na izdelke
+        <input type="number" min="0" max="90" value={pct} onChange={(e) => setPct(e.target.value)}
+          style={{ width: 70, padding: "6px 8px", border: "1px solid #e0e0e0", borderRadius: 10, fontSize: 14 }} /> %
+      </label>
+      <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, marginTop: 8 }}>
+        <input type="checkbox" checked={free} onChange={(e) => setFree(e.target.checked)} /> brezplačna poštnina
+      </label>
+      <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, marginTop: 6 }}>
+        <input type="checkbox" checked={mail} onChange={(e) => setMail(e.target.checked)} /> pošlji kupcu popravljeno potrditev
+      </label>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
+        <button className="adm-btn" disabled={busy} style={{ background: "#0a0a0a", color: "#fff" }} onClick={() => go(false)}>{busy ? "Shranjujem …" : "Uporabi popust"}</button>
+        {(o.manual_pct || o.orig_shipping_cents != null) && <button className="adm-btn" disabled={busy} onClick={() => go(true)}>Odstrani popust</button>}
+        <button className="adm-btn" disabled={busy} onClick={() => setOpen(false)}>Prekliči</button>
+      </div>
+      <div className="muted" style={{ marginTop: 8, fontSize: 12.5 }}>Velja do izdaje računa. Dobavnica, predračun in znesek odkupnine pri Pošti se popravijo sami.</div>
+    </div>
+  );
+}
+
 function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [trk, setTrk] = useState(o.tracking || "");
@@ -736,7 +782,7 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
                   </div>
                 </div>
                 <span style={{ color: "var(--a-muted)" }}>{it.qty}×</span>
-                <b className="num">{eur(it.price_cents)}</b>
+                <span style={{ textAlign: "right" }}>{it.orig_price_cents && it.orig_price_cents !== it.price_cents ? <s className="muted" style={{ display: "block", fontSize: 12 }}>{eur(it.orig_price_cents)}</s> : null}<b className="num">{eur(it.price_cents)}</b></span>
               </div>
             )) : <div className="row" style={{ color: "var(--a-muted)" }}>Ni postavk.</div>}
           </div>
@@ -746,6 +792,10 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
             {o.cod_fee_cents ? <div><span>Odkupnina</span><span>{eur(o.cod_fee_cents)}</span></div> : null}
             <div className="all"><span>Skupaj</span><span>{eur(o.total_cents)}</span></div>
           </div>
+          {(o.manual_pct || o.orig_shipping_cents != null) && (
+            <div className="adm-note ok" style={{ marginTop: 8 }}>🎁 {o.manual_pct ? `Popust ${o.manual_pct} %` : ""}{o.manual_pct && o.orig_shipping_cents != null && !o.shipping_cents ? " + " : ""}{o.orig_shipping_cents != null && !o.shipping_cents ? "brezplačna poštnina" : ""}</div>
+          )}
+          {o.source !== "shopify" && o.status !== "preklicano" && <DiscountBox o={o} onDone={async (m) => { setMailMsg(m); setRefresh((n) => n + 1); await onChanged?.(); }} />}
 
           {o.source !== "shopify" && (
             <div style={{ marginTop: 22, paddingTop: 14, borderTop: "1px solid var(--a-line, #eee)" }}>
