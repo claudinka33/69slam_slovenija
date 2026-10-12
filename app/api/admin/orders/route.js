@@ -35,7 +35,7 @@ export async function GET(req) {
       lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at, coupon_code, discount_cents,
       country, posta_sent_at, posta_status, posta_checked_at, pickup, manual_pct, orig_shipping_cents
     FROM orders ORDER BY created_at DESC, id DESC LIMIT 2000`;
-  const items = await sql`SELECT order_id, sku, name, size, qty, price_cents, bundle_key, orig_price_cents
+  const items = await sql`SELECT order_id, sku, name, size, qty, price_cents, bundle_key, orig_price_cents, list_price_cents
     FROM order_items WHERE order_id = ANY(${orders.map((o) => o.id)})`;
   // slike artiklov (prva slika iz kataloga)
   const imgs = {};

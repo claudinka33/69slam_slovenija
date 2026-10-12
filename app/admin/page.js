@@ -672,7 +672,7 @@ function DiscountBox({ o, onDone }) {
         {(o.manual_pct || o.orig_shipping_cents != null) && <button className="adm-btn" disabled={busy} onClick={() => go(true)}>Odstrani popust</button>}
         <button className="adm-btn" disabled={busy} onClick={() => setOpen(false)}>Prekliči</button>
       </div>
-      <div className="muted" style={{ marginTop: 8, fontSize: 12.5 }}>Velja do izdaje računa. Dobavnica, predračun in znesek odkupnine pri Pošti se popravijo sami.</div>
+      <div className="muted" style={{ marginTop: 8, fontSize: 12.5 }}>Popust se računa od polne cene (koda za popust, paket in odprodaja ne veljajo več). Velja do izdaje računa. Dobavnica in predračun se popravita sama.</div>
     </div>
   );
 }
@@ -765,7 +765,7 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
               {o.pickup.n}<br />{o.pickup.a}, {o.pickup.z} {o.pickup.c}</dd></>}
             <dt>{o.pickup?.id ? "Naslov kupca" : "Naslov"}</dt><dd>{o.address}<br />{o.zip} {o.city}{o.country && o.country !== "SI" ? `, ${o.country}` : ""}</dd>
             <dt>Plačilo</dt><dd>{PAY[o.payment] || o.payment}{o.paid_at ? " · ✓ plačano" : ""}</dd>
-            {o.coupon_code && <><dt>Koda</dt><dd><b>{o.coupon_code}</b> (popust {eur(o.discount_cents)})</dd></>}
+            {o.coupon_code && <><dt>Koda</dt><dd><b>{o.coupon_code}</b>{o.manual_pct ? <span className="muted"> — ne velja, nadomeščena z ročnim popustom {o.manual_pct} %</span> : <> (popust {eur(o.discount_cents)})</>}</dd></>}
             {o.source === "shopify" && <><dt>Izvor</dt><dd><span className="adm-tag">uvoz iz Shopifyja</span></dd></>}
           </dl>
 
@@ -782,7 +782,7 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
                   </div>
                 </div>
                 <span style={{ color: "var(--a-muted)" }}>{it.qty}×</span>
-                <span style={{ textAlign: "right" }}>{it.orig_price_cents && it.orig_price_cents !== it.price_cents ? <s className="muted" style={{ display: "block", fontSize: 12 }}>{eur(it.orig_price_cents)}</s> : null}<b className="num">{eur(it.price_cents)}</b></span>
+                <span style={{ textAlign: "right" }}>{(() => { const was = o.manual_pct ? (it.list_price_cents || it.orig_price_cents) : it.orig_price_cents; return was && was !== it.price_cents ? <s className="muted" style={{ display: "block", fontSize: 12 }}>{eur(was)}{o.manual_pct ? ` −${o.manual_pct} %` : ""}</s> : null; })()}<b className="num">{eur(it.price_cents)}</b></span>
               </div>
             )) : <div className="row" style={{ color: "var(--a-muted)" }}>Ni postavk.</div>}
           </div>
