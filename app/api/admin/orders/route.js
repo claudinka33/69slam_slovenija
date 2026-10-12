@@ -71,6 +71,15 @@ export async function POST(req) {
   if (!o) return NextResponse.json({ ok: false, message: "Naročilo ne obstaja." }, { status: 404 });
   const msgs = [];
 
+  if (body.action === "refreshdocs") {
+    // osveži opise na vseh odprtih dobavnicah/predračunih spletnih naročil (izdani računi se ne spreminjajo)
+    const { refreshOrderDocs } = await import("../../../../lib/invoices");
+    const rows = await sql`SELECT DISTINCT order_id FROM invoices WHERE order_id IS NOT NULL AND kind IN ('dobavnica','predracun') AND status = 'izdan' AND converted_to IS NULL`;
+    let n = 0;
+    for (const r of rows) n += (await refreshOrderDocs(r.order_id)).length;
+    return NextResponse.json({ ok: true, message: `Osveženih dokumentov: ${n}.` });
+  }
+
   if (body.action === "discount") {
     const { applyManualDiscount } = await import("../../../../lib/orderDiscount");
     const r = await applyManualDiscount(id, body.percent, !!body.freeShip);
