@@ -47,9 +47,18 @@ export async function GET(req) {
   if (!dbConfigured()) return NextResponse.json({ ok: false }, { status: 503 });
   await ensureSchema();
   const sql = db();
-  const id = Number(new URL(req.url).searchParams.get("id"));
+  const qp = new URL(req.url).searchParams;
+  const id = Number(qp.get("id"));
   const [o] = await sql`SELECT id, number, status, created_at, posta_ref, posta_sent_at FROM orders WHERE id = ${id}`;
   if (!o) return NextResponse.json({ ok: false, message: "Naročilo ne obstaja." }, { status: 404 });
+  if (qp.get("diag")) {
+    const { postaDiag, postaRef } = await import("../../../../lib/posta");
+    const r = postaRef(o);
+    const d = r.date;
+    const vars = [r, { id: r.id, date: d.slice(0, 16) }, { id: r.id, date: d.slice(0, 10) }, { id: r.id, date: d.replace(" ", "T") },
+      { id: "#" + r.id, date: d }, { id: "999999", date: d }];
+    return NextResponse.json({ ref: o.posta_ref, created_at: o.created_at, sent: o.posta_sent_at, results: await postaDiag(o, vars) });
+  }
   const st = await postaStatus(o);
   await sql`UPDATE orders SET posta_checked_at = now(), posta_status = ${st.text || null} WHERE id = ${id}`;
   let shipped = null;
