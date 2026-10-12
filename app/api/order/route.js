@@ -56,6 +56,17 @@ export async function POST(req) {
   if (!dbConfigured())
     return NextResponse.json({ ok: false, message: t.nodb }, { status: 503 });
 
+  // prevzemno mesto Pošte (samo Slovenija) — preverimo na strežniku, da obstaja in je aktivno
+  let pickup = null;
+  if (cc.code === "SI" && c.pickup && c.pickup.id) {
+    const { findPoint } = await import("../../../lib/postaPoints");
+    const p = await findPoint(c.pickup.v, c.pickup.id);
+    if (!p) return NextResponse.json({ ok: false, message: lang === "en" ? "The selected pick-up point is not available. Please choose another one." : lang === "hr" ? "Odabrano mjesto preuzimanja nije dostupno. Odaberi drugo." : "Izbrano prevzemno mesto ni na voljo. Izberi drugo." }, { status: 400 });
+    if (!String(c.phone || "").replace(/\D/g, "").match(/\d{8,}/))
+      return NextResponse.json({ ok: false, message: lang === "en" ? "Please enter your mobile number — Pošta sends the pick-up code by SMS." : lang === "hr" ? "Upiši broj mobitela — Pošta šalje kod za preuzimanje SMS-om." : "Vpiši mobilno številko — Pošta pošlje kodo za prevzem s SMS-om." }, { status: 400 });
+    pickup = { k: p.k, v: p.v, id: p.id, n: p.n, a: p.a, z: p.z, c: p.c };
+  }
+
   // ---- Preračun na strežniku (cen iz brskalnika NIKOLI ne verjamemo) ----
   // odprodaja zadnje velikosti se določi po živi zalogi v bazi
   const products = Object.fromEntries(getProducts({ withEmpty: true }).map((p) => [p.code, p]));
@@ -146,6 +157,7 @@ export async function POST(req) {
     VALUES ('novo', ${payment}, ${c.name}, ${c.email}, ${c.phone || null}, ${c.address},
             ${c.zip}, ${c.city}, ${cc.code}, ${lang}, ${subtotal}, ${shipping}, ${codFee}, ${total}, ${couponCode}, ${discount}, ${campaignId})
     RETURNING id, number`;
+  if (pickup) await sql`UPDATE orders SET pickup = ${JSON.stringify(pickup)}::jsonb WHERE id = ${order.id}`;
 
   // podatki za merjenje oglasov (samo ob oglaševalski privolitvi v obvestilu o piškotkih)
   const adMeta = requestMeta(req, body.ad);

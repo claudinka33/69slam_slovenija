@@ -853,3 +853,35 @@ html,body{overflow-x:clip;}
 
 /* velikosti s številko (L · 34, 36 (XL)) — širši gumb, manjša pisava */
 .size.wide{min-width:0;padding:10px 12px;font-size:.78rem;white-space:nowrap;letter-spacing:.01em;}
+
+/* ---------- Izbira dostave: na dom / paketomat / pošta / bencinski servis ---------- */
+.pk-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(min-width:620px){.pk-modes{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.pk-mode{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;border:2px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;font-family:inherit;color:inherit;min-width:0}
+.pk-mode b{font-size:.9rem;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.pk-mode small{font-size:.74rem;color:var(--gray);line-height:1.3}
+.pk-mode .pk-ico{font-size:1.25rem;line-height:1}
+.pk-mode.on{border-color:#0a0a0a;background:#0a0a0a;color:#fff}
+.pk-mode.on small{color:#ddd}
+.pk-box{margin-top:10px;border:1px solid var(--line);border-radius:16px;padding:12px;background:#fafafa}
+.pk-search{display:flex;gap:8px;flex-wrap:wrap}
+.pk-search input{flex:1 1 180px;min-width:0;background:#fff}
+.pk-search button,.pk-more,.pk-change{border:1px solid #0a0a0a;background:#fff;color:#0a0a0a;border-radius:10px;padding:10px 12px;font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;font-family:inherit;white-space:nowrap}
+.pk-note{font-size:.84rem;color:var(--gray);margin:10px 2px 2px;line-height:1.45}
+.pk-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pk-list li{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.pk-list li>button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:10px 12px;cursor:pointer;font-family:inherit;color:inherit}
+.pk-list li>button:hover{background:#f5f5f7}
+.pk-main{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;font-size:.86rem;line-height:1.35}
+.pk-main b{font-size:.9rem;overflow-wrap:anywhere}
+.pk-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--gray);font-size:.76rem}
+.pk-meta em{font-style:normal}
+.pk-pick{flex:none;background:#0a0a0a;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em}
+.pk-map{display:block;font-size:.75rem;color:var(--gray);padding:0 12px 9px;text-decoration:underline}
+.pk-more{margin-top:10px;width:100%}
+.pk-chosen{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;font-size:.88rem;line-height:1.45}
+.pk-chosen b{font-size:.95rem}
+.pk-ok{color:#047857;font-weight:800;font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.pk-h{color:var(--gray);font-size:.8rem}
+.pk-foot{font-size:.76rem;color:var(--gray);margin-top:10px;line-height:1.45}
+.ckgrid>*,.ck2>*{min-width:0}

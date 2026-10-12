@@ -330,7 +330,7 @@ function Dashboard({ onOpenOrder, goOrders, toShip = 0, waiting = 0 }) {
                d.recent.map((o) => (
                 <tr key={o.id} className="click" onClick={() => onOpenOrder(o.id)}>
                   <td className="strong">{onum(o)}</td>
-                  <td>{o.name}<div className="muted">{o.email}</div></td>
+                  <td>{o.name}<div className="muted">{o.email}</div>{o.pickup?.id && <div className="muted" style={{ fontSize: 12 }}>{{ paketomat: "📦", posta: "🏤", bs: "⛽" }[o.pickup.k]} {o.pickup.n}</div>}</td>
                   <td className="muted">{dt(o.created_at)}</td>
                   <td><Pill s={o.status} /></td>
                   <td className="r strong num">{eur(o.total_cents)}</td>
@@ -486,7 +486,7 @@ function Orders({ orders, onOpen, reload }) {
                   <input type="checkbox" checked={!!sel[o.id]} onChange={() => setSel((x) => ({ ...x, [o.id]: !x[o.id] }))} style={{ width: 18, height: 18 }} />}</td>
                 <td className="strong">{onum(o)}{isNew(o) && o.source !== "shopify" && <span style={{ marginLeft: 6, background: "#e63946", color: "#fff", borderRadius: 50, padding: "2px 7px", fontSize: 10, fontWeight: 800 }}>NOVO</span>}</td>
                 <td className="muted">{dt(o.created_at)}</td>
-                <td>{o.name}<div className="muted">{o.email}</div></td>
+                <td>{o.name}<div className="muted">{o.email}</div>{o.pickup?.id && <div className="muted" style={{ fontSize: 12 }}>{{ paketomat: "📦", posta: "🏤", bs: "⛽" }[o.pickup.k]} {o.pickup.n}</div>}</td>
                 <td>{PAY[o.payment] || o.payment}{o.paid_at ? <div className="muted">✓ plačano</div> : null}</td>
                 <td><b style={{ fontSize: 13 }}>{STAGE_LBL[stageOf(o)]}</b>
                   {o.posta_sent_at && canPosta(o) && <div className="muted" style={{ fontSize: 12 }}>📮 v portalu Pošte · čaka oddajo</div>}
@@ -712,7 +712,10 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
               )}
             </dd>
             {o.phone && <><dt>Telefon</dt><dd>{o.phone}</dd></>}
-            <dt>Naslov</dt><dd>{o.address}<br />{o.zip} {o.city}{o.country && o.country !== "SI" ? `, ${o.country}` : ""}</dd>
+            {o.pickup?.id && <><dt>Prevzem</dt><dd style={{ background: "#fff8e1", borderRadius: 8, padding: "6px 8px" }}>
+              <b>{{ paketomat: "📦 Paketomat", posta: "🏤 Na pošti", bs: "⛽ Bencinski servis" }[o.pickup.k] || "Prevzemno mesto"}</b><br />
+              {o.pickup.n}<br />{o.pickup.a}, {o.pickup.z} {o.pickup.c}</dd></>}
+            <dt>{o.pickup?.id ? "Naslov kupca" : "Naslov"}</dt><dd>{o.address}<br />{o.zip} {o.city}{o.country && o.country !== "SI" ? `, ${o.country}` : ""}</dd>
             <dt>Plačilo</dt><dd>{PAY[o.payment] || o.payment}{o.paid_at ? " · ✓ plačano" : ""}</dd>
             {o.coupon_code && <><dt>Koda</dt><dd><b>{o.coupon_code}</b> (popust {eur(o.discount_cents)})</dd></>}
             {o.source === "shopify" && <><dt>Izvor</dt><dd><span className="adm-tag">uvoz iz Shopifyja</span></dd></>}

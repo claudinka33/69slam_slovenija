@@ -8,6 +8,7 @@ import PromoHint from "./PromoHint";
 import { COD_FEE, country as countryOf, countryOptions, shipFor } from "../lib/shipping";
 import { storedPromo } from "./usePromo";
 import { emailSuggestion } from "../lib/emailCheck";
+import PickupPicker from "./PickupPicker";
 
 
 export default function CheckoutForm({ lang, t }) {
@@ -15,6 +16,10 @@ export default function CheckoutForm({ lang, t }) {
   const cInfo = countryOf(shipCountry);
   const codOk = !!cInfo?.cod;
   const [pay, setPay] = useState("card");
+  const [dmode, setDmode] = useState("dom"); // dom | paketomat | posta | bs (samo SI)
+  const [pickup, setPickup] = useState(null);
+  const pickupOn = shipCountry === "SI" && dmode !== "dom";
+  const pickRef = useRef(null);
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(null); // številka naročila
@@ -102,9 +107,15 @@ export default function CheckoutForm({ lang, t }) {
       emailRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    if (pickupOn && !pickup) {
+      setMsg(tx(lang, "Izberi prevzemno mesto (ali dostavo na dom).", "Choose a pick-up point (or home delivery).", "Odaberi mjesto preuzimanja (ili dostavu na adresu)."));
+      pickRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setSending(true);
     setMsg("");
     const data = Object.fromEntries(new FormData(e.target));
+    if (pickupOn && pickup) data.pickup = { v: pickup.v, id: pickup.id };
     try {
       const res = await fetch("/api/order", {
         method: "POST",
@@ -196,8 +207,9 @@ export default function CheckoutForm({ lang, t }) {
             </div>
           </div>
         )}
-        <label>{t.ck_phone}</label>
-        <input name="phone" />
+        <label>{t.ck_phone}{pickupOn ? " *" : ""}</label>
+        <input name="phone" type="tel" required={pickupOn} />
+        {pickupOn && <div style={{ fontSize: ".78rem", color: "var(--gray)", marginTop: 4 }}>{tx(lang, "Na ta mobilni telefon dobiš SMS, ko paket prispe.", "You'll get an SMS on this mobile number when the parcel arrives.", "Na ovaj mobitel dobivaš SMS kad paket stigne.")}</div>}
         <label>{t.ck_addr}</label>
         <input name="address" required />
         <div className="ck2">
@@ -218,6 +230,13 @@ export default function CheckoutForm({ lang, t }) {
         {cInfo && <div style={{ fontSize: ".78rem", color: "var(--gray)", marginTop: 6 }}>
           🚚 {tx(lang, `Poštnina ${fmt(cInfo.ship)} · brezplačno nad ${cInfo.free} € · dostava ${cInfo.days} delovnih dni`, `Shipping ${fmt(cInfo.ship)} · free over €${cInfo.free} · delivery ${cInfo.days} working days`, `Poštarina ${fmt(cInfo.ship)} · besplatno iznad ${cInfo.free} € · dostava ${cInfo.days} radna dana`)}
         </div>}
+
+        {shipCountry === "SI" && (
+          <div ref={pickRef}>
+            <h3 style={{ marginTop: 22 }}>{tx(lang, "Kam dostavimo?", "Where should we deliver?", "Kamo dostavljamo?")}</h3>
+            <PickupPicker lang={lang} mode={dmode} setMode={setDmode} value={pickup} onChange={setPickup} />
+          </div>
+        )}
 
         <h3 style={{ marginTop: 22 }}>{t.ck_pay}</h3>
         {[
