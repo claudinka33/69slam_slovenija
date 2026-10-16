@@ -19,6 +19,12 @@ export async function GET(req) {
     const inv = await sql`SELECT number, sent_at, sent_to FROM invoices WHERE order_id = ${id} AND kind = 'racun' AND sent_at IS NOT NULL`;
     return NextResponse.json({ ok: true, log: rows, legacy: { confirm_at: o?.mailed_at || null, invoices: inv } });
   }
+  // artikel za dodajanje v naročilo: ime + trenutna prodajna cena (s popusti iz kataloga) + zaloga
+  if (qp.get("article")) {
+    const { articleForOrder } = await import("../../../../lib/orderEdit");
+    const a = await articleForOrder(qp.get("article"));
+    return NextResponse.json(a ? { ok: true, article: a } : { ok: false, message: "Artikel ne obstaja." });
+  }
   // diagnostika pred odprtjem: spletna naročila, števec, današnji premiki zaloge (?diag=1, ?diag=1&reset=1)
   if (qp.get("diag")) {
     if (qp.get("reset"))
@@ -33,9 +39,9 @@ export async function GET(req) {
   }
   const orders = await sql`SELECT id, number, status, payment, name, email, phone, address, zip, city,
       lang, subtotal_cents, shipping_cents, cod_fee_cents, total_cents, created_at, source, tracking, paid_at, coupon_code, discount_cents,
-      country, posta_sent_at, posta_status, posta_checked_at, pickup, manual_pct, orig_shipping_cents
+      country, posta_sent_at, posta_status, posta_checked_at, pickup, manual_pct, orig_shipping_cents, edit_log
     FROM orders ORDER BY created_at DESC, id DESC LIMIT 2000`;
-  const items = await sql`SELECT order_id, sku, name, size, qty, price_cents, bundle_key, orig_price_cents, list_price_cents
+  const items = await sql`SELECT id, order_id, sku, name, size, qty, price_cents, bundle_key, orig_price_cents, list_price_cents
     FROM order_items WHERE order_id = ANY(${orders.map((o) => o.id)})`;
   // slike artiklov (prva slika iz kataloga)
   const imgs = {};
@@ -78,6 +84,11 @@ export async function POST(req) {
     let n = 0;
     for (const r of rows) n += (await refreshOrderDocs(r.order_id)).length;
     return NextResponse.json({ ok: true, message: `Osveženih dokumentov: ${n}.` });
+  }
+
+  if (body.action === "edit") {
+    const { editOrderItems } = await import("../../../../lib/orderEdit");
+    return NextResponse.json(await editOrderItems(id, body.items, body.shipping_cents));
   }
 
   if (body.action === "discount") {
@@ -136,8 +147,8 @@ export async function POST(req) {
   } else {
     // potrditev (+ predračun, če gre za plačilo po predračunu)
     const [pre] = await sql`SELECT * FROM invoices WHERE order_id = ${id} AND kind = 'predracun' AND status = 'izdan' ORDER BY id LIMIT 1`;
-    await sendOrderConfirmation(id, pre ? [await docAttachment(pre)] : []);
-    msgs.push(`Potrditev naročila je poslana znova na ${cur.email}.`);
+    await sendOrderConfirmation(id, pre ? [await docAttachment(pre)] : [], body.updated ? { updated: true } : {});
+    msgs.push(body.updated ? `✉️ Popravljen ${pre ? "predračun" : "potrditev"} poslan na ${cur.email}.` : `Potrditev naročila je poslana znova na ${cur.email}.`);
   }
   return NextResponse.json({ ok: true, message: msgs.join(" ") });
 }

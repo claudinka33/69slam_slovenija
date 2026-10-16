@@ -677,6 +677,204 @@ function DiscountBox({ o, onDone }) {
   );
 }
 
+/** Urejanje postavk naročila (dokler ni poslano in račun ni izdan) — zaloga se popravi sama. */
+const nrm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const toCents = (v) => Math.round(Number(String(v).replace(",", ".")) * 100);
+const fromCents = (c) => (Number(c || 0) / 100).toFixed(2).replace(".", ",");
+function OrderEdit({ o, onDone }) {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [ship, setShip] = useState("");
+  const [arts, setArts] = useState(null);
+  const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [res, setRes] = useState(null); // rezultat zadnjega shranjevanja
+  const [mailMsg, setMailMsg] = useState(null);
+  const editable = o.source !== "shopify" && ["novo", "placano"].includes(o.status);
+  const stockOf = (sku) => {
+    for (const p of arts || []) for (const v of Object.values(p.sizes || {})) if (v.sku === sku) return v.stock;
+    return null;
+  };
+  function start() {
+    setRows((o.items || []).map((it) => ({ id: it.id, sku: it.sku, name: it.name, size: it.size, img: it.img, qty: it.qty, price: fromCents(it.price_cents), bundle: !!it.bundle_key })));
+    setShip(fromCents(o.shipping_cents)); setErr(""); setRes(null); setMailMsg(null); setQ(""); setOpen(true);
+    if (!arts) getJSON("/api/admin/stock").then((d) => setArts(d?.products || []));
+  }
+  const hits = useMemo(() => {
+    const t = nrm(q).trim();
+    if (t.length < 2 || !arts) return [];
+    const SZ = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "2xl", "3xl"];
+    const all = t.split(/\s+/);
+    const sizeW = all.filter((w) => SZ.includes(w));
+    const words = all.filter((w) => !SZ.includes(w));
+    if (!words.length) return [];
+    const out = [];
+    for (const p of arts) {
+      const h = nrm(`${p.code} ${p.name} ${p.type || ""} ${p.category || ""} ${p.material || ""}`);
+      for (const [size, v] of Object.entries(p.sizes || {})) {
+        if (sizeW.length && !sizeW.includes(nrm(size))) continue;
+        if (words.every((w) => `${h} ${nrm(v.sku)}`.includes(w))) out.push({ p, size, sku: v.sku, stock: v.stock });
+      }
+    }
+    out.sort((x, y) => (y.stock > 0) - (x.stock > 0) || x.p.name.localeCompare(y.p.name));
+    return out.slice(0, 30);
+  }, [q, arts]);
+  async function add(h) {
+    setQ("");
+    const ex = rows.findIndex((r) => !r.id && r.sku === h.sku);
+    if (ex > -1) { setRows((x) => x.map((r, j) => (j === ex ? { ...r, qty: r.qty + 1 } : r))); return; }
+    const d = await getJSON(`/api/admin/orders?article=${encodeURIComponent(h.sku)}`);
+    const a = d?.article;
+    setRows((x) => [...x, { id: null, sku: h.sku, name: a?.name || h.p.name, size: h.size, img: h.p.img, qty: 1, price: fromCents(a?.price_cents ?? h.p.price_cents), bundle: false }]);
+  }
+  const sub = rows.reduce((a, r) => a + (toCents(r.price) || 0) * r.qty, 0);
+  const shipC = toCents(ship) || 0;
+  const total = sub + shipC + (o.cod_fee_cents || 0);
+  async function save() {
+    setErr("");
+    if (!rows.length) { setErr("Naročilo mora imeti vsaj eno postavko. Če ga kupec ne želi več, ga prekliči."); return; }
+    if (rows.some((r) => !Number.isFinite(toCents(r.price)))) { setErr("Preveri cene — vpiši npr. 12,50."); return; }
+    if (!confirm(`Shranim popravljeno naročilo ${onum(o)}?\nNov znesek: ${eur(total)} (prej ${eur(o.total_cents)}).\nZaloga se popravi samodejno.`)) return;
+    setBusy(true);
+    const r = await getJSON("/api/admin/orders", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: o.id, action: "edit", shipping_cents: shipC,
+        items: rows.map((x) => ({ id: x.id, sku: x.sku, qty: x.qty, price_cents: toCents(x.price) })) }) });
+    setBusy(false);
+    if (!r?.ok) { setErr(r?.message || "Shranjevanje ni uspelo."); return; }
+    setRes(r); setOpen(false);
+    await onDone?.();
+  }
+  async function zero(sku) {
+    setBusy(true);
+    const r = await getJSON("/api/admin/stock", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sku, set: 0, reason: "inventura", note: `Popravek na 0 po urejanju naročila ${onum(o)}` }) });
+    setBusy(false);
+    if (r?.ok) setRes((x) => ({ ...x, stock: (x?.stock || []).map((s) => (s.sku === sku ? { ...s, stock: r.stock } : s)) }));
+    else setErr(r?.message || "Zaloge ni bilo mogoče popraviti.");
+  }
+  async function mail() {
+    setBusy(true);
+    const r = await getJSON("/api/admin/orders", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: o.id, action: "resend", kind: "potrditev", updated: true }) });
+    setBusy(false);
+    setMailMsg({ ok: !!r?.ok, t: r?.message || "Pošiljanje ni uspelo." });
+    await onDone?.();
+  }
+  const log = Array.isArray(o.edit_log) ? o.edit_log : [];
+  const inp = { padding: "6px 8px", border: "1px solid #e0e0e0", borderRadius: 10, fontSize: 14 };
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      {!open && editable && (
+        <button className="adm-btn" onClick={start}>✏️ Uredi naročilo</button>
+      )}
+      {!open && !editable && o.source !== "shopify" && o.status !== "preklicano" && (
+        <div className="muted" style={{ fontSize: 12.5 }}>Naročilo je že poslano — postavk ni več mogoče spreminjati (uporabi dobropis).</div>
+      )}
+
+      {res && (
+        <div className="adm-note ok" style={{ marginTop: 10, marginBottom: 0 }}>
+          {res.message}
+          {(res.stock || []).filter((s) => s.stock < 0).map((s) => (
+            <div key={s.sku} style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <span>⚠️ <b>{s.sku}</b> je v minusu ({s.stock}).</span>
+              <button className="adm-btn" disabled={busy} onClick={() => zero(s.sku)}>Postavi zalogo na 0</button>
+            </div>
+          ))}
+          {o.source !== "shopify" && (
+            <div style={{ marginTop: 10 }}>
+              <button className="adm-btn" disabled={busy} style={{ background: "#0a0a0a", color: "#fff" }} onClick={mail}>
+                📧 Pošlji popravljen {o.payment === "proforma" ? "predračun" : "potrditev"} kupcu
+              </button>
+              <span className="muted" style={{ marginLeft: 8, fontSize: 12.5 }}>na {o.email}</span>
+            </div>
+          )}
+        </div>
+      )}
+      {mailMsg && <div className={`adm-note ${mailMsg.ok ? "ok" : "err"}`} style={{ marginTop: 8, marginBottom: 0 }}>{mailMsg.t}</div>}
+
+      {open && (
+        <div className="adm-card" style={{ marginTop: 10, padding: 14, border: "1px solid #0a0a0a", borderRadius: 16 }}>
+          <div style={{ fontWeight: 800, marginBottom: 10, textTransform: "uppercase" }}>✏️ Uredi naročilo {onum(o)}</div>
+          {rows.map((r, i) => {
+            const st = stockOf(r.sku);
+            return (
+              <div key={(r.id || "n") + r.sku + i} style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee", flexWrap: "wrap" }}>
+                {r.img ? <img src={r.img} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 8, background: "#f5f5f7" }} />
+                  : <div style={{ width: 40, height: 40, borderRadius: 8, background: "#f5f5f7" }} />}
+                <div style={{ flex: "1 1 140px", minWidth: 0 }}>
+                  <b style={{ fontSize: 13.5 }}>{r.name}</b>{!r.id && <span className="adm-tag" style={{ marginLeft: 6 }}>novo</span>}
+                  <div className="muted" style={{ fontSize: 12 }}>{r.sku} · vel. {r.size}{r.bundle ? " · Paket 3" : ""}{st != null ? ` · zaloga ${st}` : ""}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <button className="adm-btn" style={{ padding: "4px 10px" }} disabled={r.qty <= 1} onClick={() => setRows((x) => x.map((y, j) => (j === i ? { ...y, qty: y.qty - 1 } : y)))}>−</button>
+                  <b style={{ minWidth: 22, textAlign: "center" }}>{r.qty}</b>
+                  <button className="adm-btn" style={{ padding: "4px 10px" }} onClick={() => setRows((x) => x.map((y, j) => (j === i ? { ...y, qty: y.qty + 1 } : y)))}>+</button>
+                </div>
+                <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13 }}>
+                  <input value={r.price} onChange={(e) => setRows((x) => x.map((y, j) => (j === i ? { ...y, price: e.target.value } : y)))} style={{ ...inp, width: 72, textAlign: "right" }} /> €
+                </label>
+                <button className="adm-btn" title="Odstrani" style={{ color: "#e63946", borderColor: "#e63946", padding: "4px 10px" }} onClick={() => setRows((x) => x.filter((_, j) => j !== i))}>🗑️</button>
+              </div>
+            );
+          })}
+          {!rows.length && <div className="muted" style={{ padding: "8px 0" }}>Ni postavk — dodaj vsaj eno.</div>}
+
+          <div style={{ marginTop: 12, position: "relative" }}>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={arts ? "➕ Dodaj artikel: koda ali ime + velikost (npr. MBYKOR M)" : "Nalagam artikle …"}
+              disabled={!arts} style={{ ...inp, width: "100%", boxSizing: "border-box" }} />
+            {hits.length > 0 && (
+              <div style={{ border: "1px solid #e0e0e0", borderRadius: 10, marginTop: 4, maxHeight: 260, overflowY: "auto", background: "#fff" }}>
+                {hits.map((h) => (
+                  <button key={h.sku} onClick={() => add(h)} style={{ display: "flex", gap: 8, alignItems: "center", width: "100%", padding: "8px 10px", border: 0, borderBottom: "1px solid #f0f0f0", background: "#fff", textAlign: "left", cursor: "pointer", opacity: h.stock > 0 ? 1 : 0.55 }}>
+                    {h.p.img ? <img src={h.p.img} alt="" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 6 }} /> : <span style={{ width: 32 }} />}
+                    <span style={{ flex: 1, fontSize: 13 }}><b>{h.p.name}</b> · vel. {h.size}<br /><span className="muted" style={{ fontSize: 12 }}>{h.sku}</span></span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: h.stock > 0 ? "#05603A" : "#e63946" }}>zaloga {h.stock}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, fontSize: 14 }}>
+            <span>Dostava</span>
+            <label style={{ display: "flex", alignItems: "center", gap: 4 }}><input value={ship} onChange={(e) => setShip(e.target.value)} style={{ ...inp, width: 72, textAlign: "right" }} /> €</label>
+          </div>
+          {o.cod_fee_cents ? <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 14 }}><span>Odkupnina</span><span>{eur(o.cod_fee_cents)}</span></div> : null}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 16, fontWeight: 800 }}>
+            <span>Nov znesek</span><span>{eur(total)}</span>
+          </div>
+          {total !== o.total_cents && <div className="muted" style={{ textAlign: "right", fontSize: 12.5 }}>prej {eur(o.total_cents)}</div>}
+
+          {err && <div className="adm-note err" style={{ marginTop: 10, marginBottom: 0 }}>{err}</div>}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
+            <button className="adm-btn" disabled={busy} style={{ background: "#0a0a0a", color: "#fff" }} onClick={save}>{busy ? "Shranjujem …" : "Shrani spremembe"}</button>
+            <button className="adm-btn" disabled={busy} onClick={() => setOpen(false)}>Prekliči</button>
+          </div>
+          <div className="muted" style={{ marginTop: 8, fontSize: 12.5 }}>Odstranjeni kosi se vrnejo na zalogo, dodani se odštejejo. Dobavnica in predračun se popravita sama. Mail kupcu pošlješ šele, ko klikneš gumb po shranjevanju.</div>
+        </div>
+      )}
+
+      {log.length > 0 && (
+        <details style={{ marginTop: 10, fontSize: 12.5 }}>
+          <summary className="muted" style={{ cursor: "pointer" }}>Zgodovina sprememb ({log.length})</summary>
+          {log.map((e, i) => (
+            <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid #eee" }}>
+              <b>{dt(e.at)}</b>
+              {(e.removed || []).map((x, j) => <div key={"r" + j} style={{ color: "#e63946" }}>− {x.qty}× {x.name} ({x.sku})</div>)}
+              {(e.added || []).map((x, j) => <div key={"a" + j} style={{ color: "#05603A" }}>+ {x.qty}× {x.name} ({x.sku}) · {eur(x.price)}</div>)}
+              {(e.changed || []).map((x, j) => <div key={"c" + j}>✎ {x.name} ({x.sku}): {x.from.qty}× {eur(x.from.price)} → {x.to.qty}× {eur(x.to.price)}</div>)}
+              {e.ship && <div>✎ Dostava: {eur(e.ship.from)} → {eur(e.ship.to)}</div>}
+              {e.total && <div className="muted">Znesek: {eur(e.total.from)} → {eur(e.total.to)}</div>}
+            </div>
+          ))}
+        </details>
+      )}
+    </div>
+  );
+}
+
 function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [trk, setTrk] = useState(o.tracking || "");
@@ -795,6 +993,7 @@ function OrderPanel({ o, onClose, setStatus, onDeleted, onChanged }) {
           {(o.manual_pct || o.orig_shipping_cents != null) && (
             <div className="adm-note ok" style={{ marginTop: 8 }}>🎁 {o.manual_pct ? `Popust ${o.manual_pct} %` : ""}{o.manual_pct && o.orig_shipping_cents != null && !o.shipping_cents ? " + " : ""}{o.orig_shipping_cents != null && !o.shipping_cents ? "brezplačna poštnina" : ""}</div>
           )}
+          {o.source !== "shopify" && <OrderEdit o={o} onDone={async () => { setRefresh((n) => n + 1); await onChanged?.(); }} />}
           {o.source !== "shopify" && o.status !== "preklicano" && <DiscountBox o={o} onDone={async (m) => { setMailMsg(m); setRefresh((n) => n + 1); await onChanged?.(); }} />}
 
           {o.source !== "shopify" && (
