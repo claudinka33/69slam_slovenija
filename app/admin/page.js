@@ -3232,6 +3232,49 @@ function InvoiceForm({ onDone, draft, onDraft }) {
     setOpenA(-1);
   }
   const tot = calcInv(items, gross);
+  const [costs, setCosts] = useState(null);
+  useEffect(() => { getJSON("/api/admin/costs").then((d) => {
+    const m = {};
+    for (const p of d?.products || []) { if (p.cost_cents == null) continue; m[String(p.code).toUpperCase()] = p.cost_cents; for (const k of p.skus || []) if (k) m[String(k).toUpperCase()] = p.cost_cents; }
+    setCosts(m);
+  }); }, []);
+  const costOf = (code) => {
+    if (!costs) return null;
+    const k = String(code || "").trim().toUpperCase();
+    if (!k) return null;
+    if (costs[k] != null) return costs[k];
+    const b = k.replace(/-[A-Z0-9]+$/, "");
+    return costs[b] != null ? costs[b] : null;
+  };
+  const lineM = (it) => {
+    if (!String(it.desc || "").trim()) return null;
+    const c1 = costOf(it.code);
+    if (c1 == null) return null;
+    const q = numIn(it.qty); const rate = (Number(it.vat) || 0) / 100;
+    const full = Math.round(q * numIn(it.price) * 100);
+    const val = Math.round(full * (1 - Math.min(100, numIn(it.disc)) / 100));
+    const net = gross ? Math.round(val / (1 + rate)) : val;
+    const net0 = gross ? Math.round(full / (1 + rate)) : full;
+    const cost = Math.round(q * c1);
+    const rvc = net - cost;
+    return { cost, net, net0, rvc, m: net > 0 ? (rvc / net) * 100 : (rvc < 0 ? -100 : 0) };
+  };
+  const mCol = (m) => (m < 0 ? "#b91c1c" : m < 20 ? "#b45309" : "#047857");
+  const mBg = (m) => (m < 0 ? "#fee2e2" : m < 20 ? "#fff7ed" : "#d1fae5");
+  const pct = (v) => (Math.round(v * 10) / 10).toLocaleString("sl-SI") + " %";
+  const marg = (() => {
+    let cost = 0, net = 0, net0 = 0, n = 0, miss = 0;
+    for (const it of items) {
+      if (!String(it.desc || "").trim()) continue;
+      const l = lineM(it);
+      if (!l) { miss++; continue; }
+      cost += l.cost; net += l.net; net0 += l.net0; n++;
+    }
+    const rvc = net - cost;
+    return { n, miss, cost, net, rvc, m: net > 0 ? (rvc / net) * 100 : 0,
+      zero: net0 > 0 ? Math.max(0, (1 - cost / net0) * 100) : null,
+      m20: net0 > 0 ? Math.max(0, (1 - cost / (0.8 * net0)) * 100) : null };
+  })();
   const body = () => ({ kind, tracking, customer: ctype === "podjetje" ? c : { ...c, vat: "" }, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
   async function saveDraft() {
     setErr(""); setBusy(true);
@@ -3308,7 +3351,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
         </div>
         <div className="adm-scroll">
           <table className="adm-tbl inv-items">
-            <thead><tr><th style={{ width: 28 }}>#</th><th style={{ width: "34%" }}>Opis (lahko karkoli)</th><th>Šifra</th><th>Kol.</th><th>EM</th><th>{gross ? "Cena z DDV" : "Cena brez DDV"}</th><th>Pop. %</th><th>DDV %</th><th className="r">Vrednost</th><th></th></tr></thead>
+            <thead><tr><th style={{ width: 28 }}>#</th><th style={{ width: "34%" }}>Opis (lahko karkoli)</th><th>Šifra</th><th>Kol.</th><th>EM</th><th>{gross ? "Cena z DDV" : "Cena brez DDV"}</th><th>Pop. %</th><th>DDV %</th><th className="r">Vrednost</th><th className="r" title="Vidiš samo ti — na dokumentu se ne izpiše">Zaslužek</th><th></th></tr></thead>
             <tbody>
               {items.map((it, i) => (
                 <tr key={i}>
@@ -3338,6 +3381,9 @@ function InvoiceForm({ onDone, draft, onDraft }) {
                   <td><input value={it.disc} onChange={(e) => setI(i, "disc", e.target.value)} style={{ width: 52 }} inputMode="decimal" /></td>
                   <td><select value={it.vat} onChange={(e) => setI(i, "vat", Number(e.target.value))}>{VATS.map((v) => <option key={v} value={v}>{String(v).replace(".", ",")}</option>)}</select></td>
                   <td className="r num">{eur(Math.round(numIn(it.qty) * numIn(it.price) * 100 * (1 - Math.min(100, numIn(it.disc)) / 100)))}</td>
+                  <td className="r num" style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>{(() => { const l = lineM(it); if (!l) return <span className="muted">—</span>; return (<>
+                    <div className="strong" style={{ color: mCol(l.m) }}>{eur(l.rvc)} · {pct(l.m)}</div>
+                    <div className="muted" style={{ fontSize: 11 }}>nabavna {eur(l.cost)}</div></>); })()}</td>
                   <td><button className="adm-btn" onClick={() => setItems((x) => x.length > 1 ? x.filter((_, j) => j !== i) : [blankItem()])}>✕</button></td>
                 </tr>))}
             </tbody>
@@ -3352,11 +3398,32 @@ function InvoiceForm({ onDone, draft, onDraft }) {
           {[10, 15, 20, 30, 50].map((v) => <button key={v} className={"adm-btn" + (String(allDisc) === String(v) ? " pri" : "")} onClick={() => applyAll(String(v))}>{v} %</button>)}
           {allDisc !== "" && <button className="adm-btn" onClick={() => applyAll("")}>✕ brez</button>}
         </div>
-        <div className="inv-tot">
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginTop: 14 }}>
+        <div style={{ flex: "1 1 300px", maxWidth: 460, background: marg.n ? mBg(marg.m) : "#f5f5f7", border: "1px solid #e0e0e0", borderRadius: 16, padding: "14px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <b style={{ fontSize: 15 }}>💶 Tvoj zaslužek</b>
+            <span className="muted" style={{ fontSize: 11 }}>vidiš samo ti — ni na dokumentu</span>
+          </div>
+          {!marg.n ? <div className="muted" style={{ fontSize: 13 }}>{costs ? "Ni postavk z nabavno ceno (izberi artikel s šifro)." : "Nalagam nabavne cene …"}</div> : (<>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 12px", fontSize: 14 }}>
+              <span>Prodaja brez DDV</span><b className="num">{eur(marg.net)}</b>
+              <span>Nabavna vrednost</span><b className="num">− {eur(marg.cost)}</b>
+              <span style={{ fontWeight: 800 }}>RVC (ostane ti)</span><b className="num" style={{ color: mCol(marg.m), fontSize: 18 }}>{eur(marg.rvc)}</b>
+              <span>Marža</span><b className="num" style={{ color: mCol(marg.m) }}>{pct(marg.m)}{marg.m < 0 ? " ⚠️ izguba" : marg.m < 20 ? " ⚠️ tanko" : ""}</b>
+            </div>
+            <div style={{ borderTop: "1px solid rgba(0,0,0,.1)", marginTop: 10, paddingTop: 8, fontSize: 13 }}>
+              {marg.m20 != null && <div>Popust do <b>{pct(marg.m20)}</b> → marža ostane vsaj 20 %</div>}
+              {marg.zero != null && <div>Največji možni popust: <b style={{ color: "#b91c1c" }}>{pct(marg.zero)}</b> (pri tem si na ničli)</div>}
+              {marg.miss > 0 && <div className="muted" style={{ marginTop: 4 }}>{marg.miss} {marg.miss === 1 ? "postavka nima" : "postavke nimajo"} nabavne cene — ni vštet{marg.miss === 1 ? "a" : "e"}.</div>}
+            </div></>)}
+        </div>
+        <div className="grow" />
+        <div className="inv-tot" style={{ marginTop: 0, flex: "1 1 260px" }}>
           <div><span>Postavk / kosov</span><b>{items.filter((it) => String(it.desc || "").trim()).length} / {items.filter((it) => String(it.desc || "").trim() && String(it.code || "").trim()).reduce((a, it) => a + numIn(it.qty), 0)}</b></div>
           <div><span>Skupaj brez DDV</span><b>{eur(tot.net)}</b></div>
           <div><span>DDV</span><b>{eur(tot.vat)}</b></div>
           <div className="big"><span>Za plačilo</span><b>{eur(tot.total)}</b></div>
+        </div>
         </div>
       </div>
 
