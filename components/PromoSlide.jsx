@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { usePromo } from "./usePromo";
 import { tx } from "../lib/i18n";
+import { PROMO_CODE, PROMO_LABEL } from "../lib/promo";
 
-const SEEN = "promo69_seen";
+const SEEN = "promo69_seen_" + PROMO_CODE;
 
 /** Majhen drsnik v kotu po 15 s — enkrat na obiskovalca, dokler koda velja. */
 export default function PromoSlide({ lang }) {
@@ -41,7 +42,7 @@ export default function PromoSlide({ lang }) {
         <>
           <div className="pct">−{promo.percent} %</div>
           <p>
-            {tx(lang, "Odprli smo novo trgovino: ", "Opening of our new store: ", "Otvorili smo novu trgovinu: ")}
+            {tx(lang, ...PROMO_LABEL)}
             <b>−{promo.percent} %</b> {tx(lang, "s kodo", "with code", "s kodom")} <b>{promo.code}</b>
             {promo.min > 0 && <span className="small"> · {tx(lang, `nakup nad ${promo.min} €`, `orders over ${promo.min} €`, `kupnja iznad ${promo.min} €`)}</span>}
           </p>

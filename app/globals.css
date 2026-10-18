@@ -714,7 +714,7 @@ html,body{overflow-x:clip;}
 /* interna šifra artikla pod naslovom */
 .pdet .pcode{font-size:11px;color:#9a9a9a;letter-spacing:.06em;margin:6px 0 10px;font-weight:500}
 
-/* NOVA15 — drsnik v kotu + namig v košarici */
+/* Oglaševana koda (lib/promo.js) — drsnik v kotu + namig v košarici */
 .promoslide{position:fixed;left:16px;bottom:16px;z-index:60;width:min(300px,calc(100vw - 32px));background:#0a0a0a;color:#fff;border-radius:16px;padding:18px 18px 16px;box-shadow:0 12px 40px rgba(0,0,0,.25);animation:promoin .45s ease}
 .promoslide .x{position:absolute;top:8px;right:10px;background:none;border:0;color:#bbb;font-size:15px;cursor:pointer}
 .promoslide .pct{font-size:2rem;font-weight:900;color:#e63946;letter-spacing:-.02em;line-height:1}

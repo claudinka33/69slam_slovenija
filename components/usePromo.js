@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
+import { PROMO_CODE } from "../lib/promo";
 
 const KEY = "promo69";
 let _p = null;
 const load = () => (_p ||= fetch("/api/promo").then((r) => r.json()).catch(() => ({ ok: false })));
 
-export const storedPromo = () => { try { return localStorage.getItem(KEY) || ""; } catch { return ""; } };
+export const storedPromo = () => { try { const c = localStorage.getItem(KEY) || ""; return c === PROMO_CODE ? c : ""; } catch { return ""; } };
 
 /** Oglaševana koda: { promo, applied, apply() } */
 export function usePromo() {
