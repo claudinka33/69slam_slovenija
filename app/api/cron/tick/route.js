@@ -10,7 +10,7 @@ export const maxDuration = 60;
 
 /**
  * »Utrip« za samodejna opravila (maili, kampanje, FURS, sledilne številke Pošte) — brez ključa, ker obdela samo opravila, ki jim je že napočil čas.
- * Največ 1× na 4 minute (zapis v settings), da ga ni mogoče zlorabiti. Kliče ga GitHub Actions vsakih 30 min (da Neon baza vmes zaspi).
+ * Največ 1× na 4 minute (zapis v settings), da ga ni mogoče zlorabiti. Kliče ga GitHub Actions vsaki 2 uri (da Neon baza vmes zaspi).
  */
 export async function GET() {
   if (!dbConfigured()) return NextResponse.json({ ok: false }, { status: 503 });
