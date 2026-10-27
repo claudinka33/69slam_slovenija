@@ -117,7 +117,7 @@ export async function POST(req) {
       return NextResponse.json({ ok: true, invoice: inv, message });
     }
     const [inv] = b.id ? await sql`SELECT * FROM invoices WHERE id = ${b.id}` : [null];
-    if (inv?.series === "MK" && ["paid", "storno", "convert", "credit"].includes(b.action))
+    if (inv?.series === "MK" && ["paid", "storno", "convert"].includes(b.action))
       return NextResponse.json({ ok: false, message: "Arhivski račun iz Metakocke je samo za branje." }, { status: 400 });
     if (b.action === "update" && inv) {
       if (inv.kind !== "predracun" || inv.series === "MK" || inv.order_id || inv.converted_to || inv.status !== "izdan")

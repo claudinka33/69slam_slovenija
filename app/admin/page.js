@@ -517,7 +517,7 @@ function OrderInvoice({ orderId, status, shopify }) {
   useEffect(() => { load(); }, [load, status]);
   if (inv === undefined || (shopify && !inv && !crs.length)) return null;
   const credited = inv ? crs.filter((c) => String(c.source_id) === String(inv.id) || c.ref_number === inv.number).reduce((a, c) => a - c.total_cents, 0) : 0;
-  const canCredit = inv && inv.series !== "MK" && credited < inv.total_cents;
+  const canCredit = inv && credited < inv.total_cents;
   return (
     <div style={{ marginBottom: 14 }}>
       <div className="adm-note" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: crs.length || msg ? 6 : 0 }}>
@@ -3096,7 +3096,7 @@ function Invoices() {
                       ? (canShip ? <input className="adm-input" style={{ width: 150, padding: "6px 8px" }} placeholder="Št. pošiljke" value={trk[r.id] ?? r.tracking ?? ""} onChange={(e) => setTrk((x) => ({ ...x, [r.id]: e.target.value }))} /> : (r.tracking || "—"))
                       : <>{PAYL[r.payment] || r.payment}{r.payment === "trr" && r.kind === "racun" ? <div>{r.paid_at ? <span className="adm-tag sub">✓ plačano</span> : <span className="adm-tag">rok {dShort(r.due_date)}</span>}</div> : null}</>}</td>
                     <td>{!ark && r.furs_status && <div style={{ marginBottom: 4 }} title={r.eor ? `EOR ${r.eor}` : r.furs_error || ""}><span className="adm-tag sub" style={r.furs_status === "potrjen" ? {} : { background: "#fff8e1", color: "#5c4a00" }}>{r.furs_status === "potrjen" ? "FURS ✓" : r.furs_status === "caka" ? "⏳ FURS čaka" : "⚠️ FURS napaka"}</span></div>}
-                      {r.credited > 0 && r.kind === "racun" && !ark ? <span className="adm-tag">{r.credited >= r.total_cents ? "↩️ v celoti dobropisan" : `↩️ dobropis ${eur(r.credited)}`}</span> : ark ? <span className="adm-tag sub">{r.meta?.eor ? "🗄️ arhiv · FURS ✓" : "🗄️ arhiv"}</span> : r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
+                      {r.credited > 0 && r.kind === "racun" ? <span className="adm-tag">{r.credited >= r.total_cents ? "↩️ v celoti dobropisan" : `↩️ dobropis ${eur(r.credited)}`}</span> : ark ? <span className="adm-tag sub">{r.meta?.eor ? "🗄️ arhiv · FURS ✓" : "🗄️ arhiv"}</span> : r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
                       : r.converted_to ? <span className="adm-tag sub">→ račun {r.converted_to}</span> : r.sent_at ? <span className="adm-tag sub">✉️ poslan</span> : <span className="adm-tag">{r.kind === "dobavnica" ? "za pakiranje" : "ni poslan"}</span>}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       {canShip && <><button className="adm-btn pri" onClick={() => shipped(r)}>📦 Poslano</button>{" "}</>}
@@ -3106,7 +3106,7 @@ function Invoices() {
                       <button className="adm-btn" onClick={() => openPdfId(r.id, pdfName(r))}>📄 PDF</button>{" "}
                       <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "", note: mailTemplate(r) })}>✉️</button>{" "}
                       {!ark && r.payment === "trr" && r.kind === "racun" && r.status !== "storniran" && <><button className="adm-btn" onClick={() => act(r, "paid")}>{r.paid_at ? "Ni plačano" : "Plačano"}</button>{" "}</>}
-                      {!ark && r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <><button className="adm-btn" onClick={() => setCredit(r)}>↩️ Dobropis</button>{" "}</>}
+                      {r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <><button className="adm-btn" onClick={() => setCredit(r)}>↩️ Dobropis</button>{" "}</>}
                       {!ark && r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
                     </td>
                   </tr>); })}
