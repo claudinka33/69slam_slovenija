@@ -3027,10 +3027,14 @@ function Invoices() {
   const [dKey, setDKey] = useState(0);
   const [closeM, setCloseM] = useState(false);
   const listTab = ["racun", "dobropis", "predracun", "dobavnica", "arhiv"].includes(tab);
+  const invReq = useRef(0);
   const load = useCallback(async (qq = "", k = tab) => {
     if (!["racun", "dobropis", "predracun", "dobavnica", "arhiv"].includes(k)) return;
+    const my = ++invReq.current;
     setList(null);
-    const d = await getJSON(`/api/admin/invoices?kind=${k}&q=${encodeURIComponent(qq)}`); setList(d?.invoices || []); setMonth(d?.month || null);
+    const d = await getJSON(`/api/admin/invoices?kind=${k}&q=${encodeURIComponent(qq)}`);
+    if (my !== invReq.current) return; // novejše iskanje je že v teku — star odgovor zavrži
+    setList(d?.invoices || []); setMonth(d?.month || null);
   }, [tab]);
   useEffect(() => { const t = setTimeout(() => load(q, tab), 250); return () => clearTimeout(t); }, [q, tab, load]);
   async function act(inv, action) {
