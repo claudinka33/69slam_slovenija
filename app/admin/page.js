@@ -3082,7 +3082,7 @@ function Invoices() {
             {tab === "racun" && month && <span className="muted">Ta mesec: <b>{month.n}</b> računov · <b>{eur(month.total)}</b></span>}
           </div>
           <div className="adm-card adm-scroll">
-            <table className="adm-tbl">
+            <table className="adm-tbl inv-tbl">
               <thead><tr><th>Številka</th><th>Datum</th><th>Kupec</th><th className="r">Znesek</th><th>{tab === "dobavnica" ? "Pošiljka" : "Plačilo"}</th><th>Stanje</th><th></th></tr></thead>
               <tbody>
                 {list === null ? <tr><td colSpan={7} className="adm-empty">Nalagam …</td></tr> :
@@ -3100,13 +3100,13 @@ function Invoices() {
                       <button type="button" title={isOpen ? "Skrij artikle" : "Pokaži artikle"} onClick={() => setExp((x) => ({ ...x, [r.id]: !x[r.id] }))}
                         style={{ border: "1px solid #e0e0e0", background: isOpen ? "#0a0a0a" : "#fff", color: isOpen ? "#fff" : "#0a0a0a", borderRadius: 8, width: 26, height: 26, flex: "0 0 26px", cursor: "pointer", fontSize: 12, lineHeight: 1, marginTop: 1 }}>{isOpen ? "▲" : "▼"}</button>
                       <div><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}${r.meta?.shop ? ` · ${/^\d+$/.test(r.meta.shop) ? "#" : ""}${r.meta.shop}` : ""}` : r.order_number ? `Spletno naročilo #${r.order_number}` : ark ? (r.meta?.shop ? (/^\d{4,5}$/.test(r.meta.shop) ? `Shopify #${r.meta.shop} (ni v CMS)` : `Naročilo: ${r.meta.shop}`) : "Brez naročila (osebno / B2B)") : "Ročni dokument"}</div></div></div></td>
-                    <td className="muted">{dShort(r.issued_at)}</td>
-                    <td><div>{r.customer_name}</div>{r.customer_email && <div className="muted">{r.customer_email}</div>}</td>
-                    <td className="r num strong">{eur(r.total_cents)}</td>
-                    <td className="muted">{tab === "dobavnica"
+                    <td className="muted nw">{dShort(r.issued_at)}</td>
+                    <td className="cust"><div>{r.customer_name}</div>{r.customer_email && <div className="muted">{r.customer_email}</div>}</td>
+                    <td className="r num strong nw">{eur(r.total_cents)}</td>
+                    <td className="muted nw">{tab === "dobavnica"
                       ? (canShip ? <input className="adm-input" style={{ width: 150, padding: "6px 8px" }} placeholder="Št. pošiljke" value={trk[r.id] ?? r.tracking ?? ""} onChange={(e) => setTrk((x) => ({ ...x, [r.id]: e.target.value }))} /> : (r.tracking || "—"))
                       : <>{PAYL[r.payment] || r.payment}{r.payment === "trr" && r.kind === "racun" ? <div>{r.paid_at ? <span className="adm-tag sub">✓ plačano</span> : <span className="adm-tag">rok {dShort(r.due_date)}</span>}</div> : null}</>}</td>
-                    <td>{!ark && r.furs_status && <div style={{ marginBottom: 4 }} title={r.eor ? `EOR ${r.eor}` : r.furs_error || ""}><span className="adm-tag sub" style={r.furs_status === "potrjen" ? {} : { background: "#fff8e1", color: "#5c4a00" }}>{r.furs_status === "potrjen" ? "FURS ✓" : r.furs_status === "caka" ? "⏳ FURS čaka" : "⚠️ FURS napaka"}</span></div>}
+                    <td className="nw">{!ark && r.furs_status && <div style={{ marginBottom: 4 }} title={r.eor ? `EOR ${r.eor}` : r.furs_error || ""}><span className="adm-tag sub" style={r.furs_status === "potrjen" ? {} : { background: "#fff8e1", color: "#5c4a00" }}>{r.furs_status === "potrjen" ? "FURS ✓" : r.furs_status === "caka" ? "⏳ FURS čaka" : "⚠️ FURS napaka"}</span></div>}
                       {r.credited > 0 && r.kind === "racun" ? <span className="adm-tag">{r.credited >= r.total_cents ? "↩️ v celoti dobropisan" : `↩️ dobropis ${eur(r.credited)}`}</span> : ark ? <span className="adm-tag sub">{r.meta?.eor ? "🗄️ arhiv · FURS ✓" : "🗄️ arhiv"}</span> : r.status === "storniran" ? <span className="adm-tag">storniran</span> : r.status === "preklican" ? <span className="adm-tag">preklican</span>
                       : r.converted_to ? <span className="adm-tag sub">→ račun {r.converted_to}</span> : r.sent_at ? <span className="adm-tag sub">✉️ poslan</span> : <span className="adm-tag">{r.kind === "dobavnica" ? "za pakiranje" : "ni poslan"}</span>}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
