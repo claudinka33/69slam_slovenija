@@ -3015,6 +3015,7 @@ function Invoices() {
   const [credit, setCredit] = useState(null);
   const [draft, setDraft] = useState(null);
   const [formKey, setFormKey] = useState(0);
+  const [exp, setExp] = useState({});
   function editDoc(r) {
     setDraft({ id: null, edit: { id: r.id, number: r.number }, data: { kind: r.kind, ctype: r.customer_vat ? "podjetje" : "fizicna", gross: !!r.prices_gross, payment: r.payment,
       due_days: Math.max(0, Math.round((new Date(r.due_date) - new Date(String(r.issued_at).slice(0, 10))) / 86400000)) || 8,
@@ -3090,9 +3091,15 @@ function Invoices() {
                   const open = r.status === "izdan" && !r.converted_to;
                   const ark = r.series === "MK";
                   const canShip = r.kind === "dobavnica" && r.order_id && open && r.order_status !== "poslano" && r.order_status !== "preklicano";
+                  const isOpen = !!exp[r.id];
+                  const its = Array.isArray(r.items) ? r.items : [];
                   return (
-                  <tr key={r.id}>
-                    <td><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}${r.meta?.shop ? ` · ${/^\d+$/.test(r.meta.shop) ? "#" : ""}${r.meta.shop}` : ""}` : r.order_number ? `Spletno naročilo #${r.order_number}` : ark ? (r.meta?.shop ? (/^\d{4,5}$/.test(r.meta.shop) ? `Shopify #${r.meta.shop} (ni v CMS)` : `Naročilo: ${r.meta.shop}`) : "Brez naročila (osebno / B2B)") : "Ročni dokument"}</div></td>
+                  <Fragment key={r.id}>
+                  <tr>
+                    <td><div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                      <button type="button" title={isOpen ? "Skrij artikle" : "Pokaži artikle"} onClick={() => setExp((x) => ({ ...x, [r.id]: !x[r.id] }))}
+                        style={{ border: "1px solid #e0e0e0", background: isOpen ? "#0a0a0a" : "#fff", color: isOpen ? "#fff" : "#0a0a0a", borderRadius: 8, width: 26, height: 26, flex: "0 0 26px", cursor: "pointer", fontSize: 12, lineHeight: 1, marginTop: 1 }}>{isOpen ? "▲" : "▼"}</button>
+                      <div><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}${r.meta?.shop ? ` · ${/^\d+$/.test(r.meta.shop) ? "#" : ""}${r.meta.shop}` : ""}` : r.order_number ? `Spletno naročilo #${r.order_number}` : ark ? (r.meta?.shop ? (/^\d{4,5}$/.test(r.meta.shop) ? `Shopify #${r.meta.shop} (ni v CMS)` : `Naročilo: ${r.meta.shop}`) : "Brez naročila (osebno / B2B)") : "Ročni dokument"}</div></div></div></td>
                     <td className="muted">{dShort(r.issued_at)}</td>
                     <td><div>{r.customer_name}</div>{r.customer_email && <div className="muted">{r.customer_email}</div>}</td>
                     <td className="r num strong">{eur(r.total_cents)}</td>
@@ -3105,7 +3112,7 @@ function Invoices() {
                     <td style={{ whiteSpace: "nowrap" }}>
                       {canShip && <><button className="adm-btn pri" onClick={() => shipped(r)}>📦 Poslano</button>{" "}</>}
                       {!canShip && open && (r.kind === "predracun" || r.kind === "dobavnica") && <><button className="adm-btn pri" onClick={() => act(r, "convert")}>🧾 Ustvari račun</button>{" "}</>}
-                      {open && r.kind === "predracun" && !r.order_id && <><button className="adm-btn" onClick={async () => { const x = await getJSON(`/api/admin/invoices?credit=${r.id}`); if (x?.invoice) editDoc(x.invoice); }}>✏️ Uredi</button>{" "}</>}
+                      {open && !ark && (r.kind === "predracun" || r.kind === "dobavnica") && !r.order_id && <><button className="adm-btn" onClick={async () => { const x = await getJSON(`/api/admin/invoices?credit=${r.id}`); if (x?.invoice) editDoc(x.invoice); }}>✏️ Uredi</button>{" "}</>}
                       {!ark && ["caka", "napaka"].includes(r.furs_status) && <><button className="adm-btn pri" title={r.furs_error || ""} onClick={async () => { const x = await post("/api/admin/furs", { action: "retry", id: r.id }); setMsg({ ok: !!x?.ok, t: x?.message || "Napaka." }); load(q, tab); }}>↻ FURS</button>{" "}</>}
                       <button className="adm-btn" onClick={() => openPdfId(r.id, pdfName(r))}>📄 PDF</button>{" "}
                       <button className="adm-btn" onClick={() => setSend({ inv: r, to: r.sent_to || r.customer_email || "", note: mailTemplate(r) })}>✉️</button>{" "}
@@ -3113,7 +3120,27 @@ function Invoices() {
                       {r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <><button className="adm-btn" onClick={() => setCredit(r)}>↩️ Dobropis</button>{" "}</>}
                       {!ark && r.kind === "racun" && r.status !== "storniran" && !(r.credited >= r.total_cents) && <button className="adm-btn" onClick={() => act(r, "storno")}>Storno</button>}
                     </td>
-                  </tr>); })}
+                  </tr>
+                  {isOpen && <tr><td colSpan={7} style={{ background: "#f5f5f7", padding: "10px 14px 14px 48px" }}>
+                    {!its.length ? <span className="muted">Na dokumentu ni postavk.</span> :
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead><tr style={{ color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em" }}>
+                        <th style={{ textAlign: "left", padding: "4px 8px" }}>Šifra</th><th style={{ textAlign: "left", padding: "4px 8px" }}>Artikel</th>
+                        <th style={{ textAlign: "right", padding: "4px 8px" }}>Kol.</th><th style={{ textAlign: "right", padding: "4px 8px" }}>Cena</th>
+                        <th style={{ textAlign: "right", padding: "4px 8px" }}>Popust</th><th style={{ textAlign: "right", padding: "4px 8px" }}>Znesek</th></tr></thead>
+                      <tbody>{its.map((it, k) => {
+                        const qn = Number(it.qty) || 0, pr = Number(it.price) || 0, ds = Number(it.disc) || 0;
+                        return (<tr key={k} style={{ borderTop: "1px solid #e0e0e0" }}>
+                          <td style={{ padding: "6px 8px", whiteSpace: "nowrap", fontWeight: 700 }}>{it.code || "—"}</td>
+                          <td style={{ padding: "6px 8px" }}>{it.desc}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}>{String(qn).replace(".", ",")} {it.unit || "kos"}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}>{eur(Math.round(pr * 100))}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right" }}>{ds ? `${String(ds).replace(".", ",")} %` : ""}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 700 }}>{eur(Math.round(qn * pr * 100 * (1 - ds / 100)))}</td></tr>);
+                      })}</tbody>
+                    </table>}
+                  </td></tr>}
+                  </Fragment>); })}
               </tbody>
             </table>
           </div>

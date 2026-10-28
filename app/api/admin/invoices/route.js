@@ -63,7 +63,7 @@ export async function GET(req) {
         COUNT(*) FILTER (WHERE kind = 'dobropis')::int AS dbp, COUNT(order_id)::int AS linked FROM invoices WHERE series = 'MK'`
     : await sql`SELECT COALESCE(SUM(total_cents),0)::int AS total, COUNT(*)::int AS n FROM invoices
     WHERE status <> 'storniran' AND kind = 'racun' AND series <> 'MK' AND date_trunc('month', issued_at) = date_trunc('month', now())`;
-  return NextResponse.json({ ok: true, invoices: order ? rows : rows.map(({ items, ...r }) => r), month: sum });
+  return NextResponse.json({ ok: true, invoices: rows, month: sum });
 }
 
 /** { action: "issue" | "preview" | "send" | "storno" | "paid" | "order" | "settings", ... } */
@@ -120,20 +120,27 @@ export async function POST(req) {
     if (inv?.series === "MK" && ["paid", "storno", "convert"].includes(b.action))
       return NextResponse.json({ ok: false, message: "Arhivski račun iz Metakocke je samo za branje." }, { status: 400 });
     if (b.action === "update" && inv) {
-      if (inv.kind !== "predracun" || inv.series === "MK" || inv.order_id || inv.converted_to || inv.status !== "izdan")
-        return NextResponse.json({ ok: false, message: "Urejati je mogoče samo ročni predračun, iz katerega še ni narejen račun." }, { status: 400 });
+      if (!["predracun", "dobavnica"].includes(inv.kind) || inv.series === "MK" || inv.order_id || inv.converted_to || inv.status !== "izdan")
+        return NextResponse.json({ ok: false, message: "Urejati je mogoče samo ročni predračun ali dobavnico, iz katere še ni narejen račun." }, { status: 400 });
       const items = (b.items || []).filter((i) => String(i.desc || "").trim());
       if (!items.length) return NextResponse.json({ ok: false, message: "Dodaj vsaj eno postavko." }, { status: 400 });
       const calc = computeInvoice(items, !!b.gross);
       const c = b.customer || {};
       const dueDays = b.due_days != null ? Number(b.due_days) : 8;
       const due = new Date(new Date(inv.issued_at).getTime() + dueDays * 86400000).toISOString().slice(0, 10);
-      const [u] = await sql`UPDATE invoices SET customer_name = ${String(c.name || "").slice(0, 200)}, customer_address = ${c.address || null}, customer_zip_city = ${c.zip_city || null},
+      const isDob = inv.kind === "dobavnica";
+      if (isDob) { await returnTakenStock(inv, `Dobavnica ${inv.number} (popravek)`); await sql`UPDATE invoices SET meta = COALESCE(meta, '{}'::jsonb) - 'stock' WHERE id = ${inv.id}`; }
+      const [u] = await sql`UPDATE invoices SET tracking = ${isDob ? (String(b.tracking || "").trim() || null) : inv.tracking}, customer_name = ${String(c.name || "").slice(0, 200)}, customer_address = ${c.address || null}, customer_zip_city = ${c.zip_city || null},
           customer_country = ${c.country || "Slovenija"}, customer_vat = ${c.vat || null}, customer_email = ${c.email || null},
           items = ${JSON.stringify(calc.lines.map(({ amount, ...x }) => x))}::jsonb, prices_gross = ${!!b.gross}, payment = ${b.payment || "trr"}, notes = ${b.notes || null},
           service_date = ${b.service_date || inv.service_date}, due_date = ${due}, net_cents = ${calc.net}, vat_cents = ${calc.vat}, total_cents = ${calc.total}
         WHERE id = ${inv.id} RETURNING *`;
       let message = `${u.number} posodobljen ✓`;
+      if (isDob) {
+        const st = await takeStock(u, `Dobavnica ${u.number} (popravek)`);
+        if (st.ok.length) message += ` · zaloga: ${st.ok.join(", ")}`;
+        if (st.unknown.length) message += ` · ⚠️ ni v zalogi (popravi ročno): ${st.unknown.join(", ")}`;
+      }
       if (b.send && u.customer_email) {
         const r = await emailInvoice(u);
         message += r.error ? ` — pošiljanje ni uspelo: ${r.error.message || r.error.name}` : r.skipped ? " (Resend ni nastavljen)" : ` in poslan na ${u.customer_email}`;
