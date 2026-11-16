@@ -1695,6 +1695,35 @@ function Inventory({ stock, reload }) {
   const [review, setReview] = useState(false);
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [onlyTodo, setOnlyTodo] = useState(false);
+  const [tab, setTab] = useState(null); // štetje s tablice (Katarina)
+  const [tabLoadedAt, setTabLoadedAt] = useState(null);
+  const [pin, setPin] = useState("");
+
+  const loadTab = useCallback(async () => {
+    const d = await getJSON("/api/admin/inventura");
+    setTab(d || { ok: false });
+  }, []);
+  useEffect(() => { loadTab(); }, [loadTab]);
+
+  function takeTablet() {
+    if (!tab?.ok) return;
+    const n = Object.keys(tab.sums).length;
+    if (!n) { setMsg({ ok: false, t: "Na tablici še ni preštetih artiklov." }); return; }
+    setCounts((c) => {
+      const next = { ...c };
+      for (const [sku, q] of Object.entries(tab.sums)) next[sku] = String(q);
+      return next;
+    });
+    setTabLoadedAt(new Date().toISOString());
+    setOnlyStock(false);
+    setMsg({ ok: true, t: `✓ Prenesenih ${n} preštetih velikosti s tablice. Preglej razlike in potrdi.${tab.manual.length ? ` Pozor: ${tab.manual.length} ročnih vnosov čaka na pregled (spodaj).` : ""}` });
+  }
+  async function savePin() {
+    const d = await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "pin", pin }) });
+    setMsg({ ok: Boolean(d?.ok), t: d?.message || "Napaka pri shranjevanju PIN-a." });
+    if (d?.ok) { setPin(""); loadTab(); }
+  }
 
   // osnutek preštetih količin ostane shranjen v tem brskalniku
   useEffect(() => {
@@ -1719,7 +1748,8 @@ function Inventory({ stock, reload }) {
   const bySku = useMemo(() => Object.fromEntries(allRows.map((r) => [r.sku, r])), [allRows]);
   const groupsPresent = GROUP_ORDER.filter((g) => allRows.some((r) => r.gk === g));
 
-  const scoped = allRows.filter((r) => (grp === "all" || r.gk === grp) && (!onlyStock || r.stock > 0 || counts[r.sku] !== undefined));
+  const scoped = allRows.filter((r) => (grp === "all" || r.gk === grp) && (!onlyStock || r.stock > 0 || counts[r.sku] !== undefined)
+    && (!onlyTodo || counts[r.sku] === undefined || counts[r.sku] === ""));
   const t = q.trim().toLowerCase();
   const shown = t ? scoped.filter((r) => `${r.name} ${r.sku} ${r.type || ""}`.toLowerCase().includes(t)) : scoped;
 
@@ -1807,7 +1837,14 @@ function Inventory({ stock, reload }) {
     setBusy(false);
     setReview(false);
     if (!d?.ok) { setMsg({ ok: false, t: d?.message || "Napaka pri shranjevanju inventure." }); return; }
-    setMsg({ ok: true, t: `✓ ${d.message}` });
+    let extra = "";
+    if (tabLoadedAt) {
+      const c = await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "close", before: tabLoadedAt }) });
+      if (c?.ok) extra = ` Štetje na tablici je zaključeno (${c.closed} vnosov arhiviranih) — tablica začne na novo.`;
+      setTabLoadedAt(null);
+      loadTab();
+    }
+    setMsg({ ok: true, t: `✓ ${d.message}${extra}` });
     setCounts({});
     await reload();
   }
@@ -1824,6 +1861,65 @@ function Inventory({ stock, reload }) {
         </div>
       </div>
       {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+
+      <div className="adm-card" style={{ padding: 16, marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div style={{ minWidth: 240, flex: 1 }}>
+            <b style={{ fontSize: 15 }}>📱 Štetje s tablice</b>
+            <div style={{ color: "var(--a-muted)", fontSize: 12.5, marginTop: 4 }}>
+              Katarina šteje na <a href="/inventura" target="_blank" rel="noreferrer"><b>69slam.si/inventura</b></a> — zaloga se ne spremeni, dokler tukaj ne potrdiš.
+            </div>
+            {tab?.ok ? (
+              <div style={{ fontSize: 13, marginTop: 8 }}>
+                {tab.entries ? <>
+                  <b>{Object.keys(tab.sums).length}</b> preštetih velikosti · <b>{Object.values(tab.sums).reduce((a, b) => a + b, 0)}</b> kosov
+                  {tab.manual.length > 0 && <> · <b style={{ color: "#b45309" }}>❓ {tab.manual.length} ročnih vnosov</b></>}
+                  {tab.last && <span style={{ color: "var(--a-muted)" }}> · zadnji vnos {dt(tab.last)}</span>}
+                </> : <span style={{ color: "var(--a-muted)" }}>Na tablici še ni vnosov.</span>}
+              </div>
+            ) : tab && <div className="adm-note err" style={{ margin: "8px 0 0" }}>{tab.message || "Štetja s tablice ni bilo mogoče naložiti."}</div>}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+              <button className="adm-btn pri" onClick={takeTablet} disabled={!tab?.ok || !tab.entries}>⬇ Prenesi štetje v tabelo</button>
+              <button className="adm-btn" onClick={loadTab}>🔄 Osveži</button>
+            </div>
+          </div>
+          <div style={{ minWidth: 220 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>
+              PIN za tablico {tab?.ok && (tab.pinSet ? <span style={{ color: "var(--a-green)" }}>✓ nastavljen</span> : <span style={{ color: "var(--a-red)" }}>· še ni nastavljen</span>)}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input className="adm-input" inputMode="numeric" placeholder="npr. 2580" value={pin} style={{ width: 120 }}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))} />
+              <button className="adm-btn" onClick={savePin} disabled={pin.length < 4}>Shrani PIN</button>
+            </div>
+            <div style={{ color: "var(--a-muted)", fontSize: 11.5, marginTop: 6 }}>4–8 številk. Ob spremembi se tablica odjavi.</div>
+          </div>
+        </div>
+        {tab?.ok && tab.manual.length > 0 && (
+          <div style={{ marginTop: 14, background: "#fff8e1", borderRadius: 12, padding: 12 }}>
+            <b style={{ fontSize: 13, color: "#5c4a00" }}>❓ Ročni vnosi za pregled (šifre, ki jih ni bilo na seznamu)</b>
+            <table className="adm-tbl" style={{ marginTop: 8 }}>
+              <thead><tr><th>Vpisana šifra</th><th>Vel.</th><th className="r">Količina</th><th>Opomba</th><th>Kdaj</th><th></th></tr></thead>
+              <tbody>
+                {tab.manual.map((m) => (
+                  <tr key={m.cid}>
+                    <td className="strong">{m.sku}</td>
+                    <td>{m.size || "—"}</td>
+                    <td className="r num strong">{m.qty}</td>
+                    <td className="muted">{m.note || ""}</td>
+                    <td className="muted">{dt(m.at)}</td>
+                    <td className="r"><button className="adm-btn" onClick={async () => {
+                      await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "resolve", cid: m.cid }) });
+                      loadTab();
+                    }}>✓ Urejeno</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ color: "#5c4a00", fontSize: 12, marginTop: 6 }}>Teh artiklov ni v zalogi — dodaj jih ročno (Zaloga / Prevzem) ali popravi šifro. Potrditev inventure jih ne spremeni — ko artikel urediš, klikni »✓ Urejeno«.</div>
+          </div>
+        )}
+      </div>
 
       <div className="adm-inv-steps">
         <div className="adm-card adm-step">
@@ -1870,6 +1966,7 @@ function Inventory({ stock, reload }) {
           ))}
         </div>
         <label className="adm-check"><input type="checkbox" checked={onlyStock} onChange={(e) => setOnlyStock(e.target.checked)} /> Samo artikli na zalogi</label>
+        <label className="adm-check"><input type="checkbox" checked={onlyTodo} onChange={(e) => setOnlyTodo(e.target.checked)} /> Samo še nepreštete</label>
         <div className="adm-search"><input placeholder="Išči: ime ali SKU …" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       </div>
       <div className="adm-progress"><i style={{ width: `${scoped.length ? (doneInScope / scoped.length) * 100 : 0}%` }} /><span>Vpisano {doneInScope} od {scoped.length}</span></div>
@@ -1934,7 +2031,7 @@ function Inventory({ stock, reload }) {
                   ))}
                 </div>
               ) : <div className="adm-note ok" style={{ margin: 0 }}>Vse vpisane količine se ujemajo s sistemom 👌</div>}
-              <p style={{ fontSize: 12.5, color: "var(--a-muted)", marginTop: 12 }}>Artikli brez vpisane količine ostanejo nespremenjeni. Vsaka sprememba se zapiše v zgodovino zaloge (razlog: inventura).</p>
+              <p style={{ fontSize: 12.5, color: "var(--a-muted)", marginTop: 12 }}>Artikli brez vpisane količine ostanejo nespremenjeni. Vsaka sprememba se zapiše v zgodovino zaloge (razlog: inventura).{tabLoadedAt ? " Štetje na tablici se ob potrditvi zaključi (tablica začne na novo)." : ""}</p>
             </div>
             <div className="adm-mf">
               <button className="adm-btn" onClick={() => setReview(false)}>Nazaj</button>
