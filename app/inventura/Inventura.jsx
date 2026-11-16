@@ -1,6 +1,7 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./inventura.css";
+import { LOGO_WHITE } from "../../lib/brand";
 
 /* Inventura za tablico — vsak vnos se takoj shrani na tablico IN v bazo.
    Zaloge ne spreminja: razlike potrdi Claudia v adminu → Inventura. */
@@ -22,10 +23,11 @@ export default function Inventura() {
   const [auth, setAuth] = useState(null); // null = nalagam, false = PIN, true = notri
   const [articles, setArticles] = useState([]);
   const [entries, setEntries] = useState({}); // cid → vnos
-  const [ui, setUi] = useState({ q: "", kind: "all", show: "stock", tab: "list", open: null });
+  const [ui, setUi] = useState({ q: "", kind: "all", show: "stock", tab: "list" });
   const [online, setOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [pad, setPad] = useState(null); // { sku, code, size, name, stock, cid?, val }
+  const [menu, setMenu] = useState(false);
   const [manual, setManual] = useState(null);
   const [toast, setToast] = useState(null);
   const [ready, setReady] = useState(false);
@@ -138,64 +140,62 @@ export default function Inventura() {
     for (const k in m) m[k].sort((a, b) => new Date(a.at) - new Date(b.at));
     return m;
   }, [live]);
+  const sumOf = (sku) => (bySku[sku] || []).reduce((a, e) => a + e.qty, 0);
 
-  const groups = useMemo(() => {
-    const m = {};
-    for (const a of articles) {
-      const g = (m[a.code] = m[a.code] || { code: a.code, name: a.name, type: a.type, kind: a.kind, img: a.img, sizes: [], stock: 0 });
-      g.sizes.push(a);
-      g.stock += a.stock;
-    }
-    const list = Object.values(m);
-    for (const g of list) {
-      g.sizes.sort((a, b) => sizeRank(a.size) - sizeRank(b.size));
-      g.hay = fold(`${g.code} ${g.name} ${g.type} ${g.sizes.map((s) => s.sku).join(" ")}`);
-    }
-    // vrstni red skupin: moški → ženske → otroci → ostalo, znotraj tega največje skupine najprej
-    const size = {};
-    for (const g of list) size[g.kind] = (size[g.kind] || 0) + 1;
-    list.sort((a, b) => kindRank(a.kind) - kindRank(b.kind) || size[b.kind] - size[a.kind] || a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name) || a.code.localeCompare(b.code));
+  // ena vrstica = ena velikost (SKU); vrstni red: moški → ženske → otroci → ostalo, večje skupine najprej
+  const rows = useMemo(() => {
+    const cnt = {};
+    const codes = {};
+    for (const a of articles) if (!codes[a.code]) { codes[a.code] = 1; cnt[a.kind] = (cnt[a.kind] || 0) + 1; }
+    const list = articles.map((a) => ({ ...a, hay: fold(`${a.sku} ${a.code} ${a.name} ${a.type}`) }));
+    list.sort((a, b) => kindRank(a.kind) - kindRank(b.kind) || cnt[b.kind] - cnt[a.kind] || a.kind.localeCompare(b.kind)
+      || a.name.localeCompare(b.name) || a.code.localeCompare(b.code) || sizeRank(a.size) - sizeRank(b.size));
     return list;
   }, [articles]);
-  const groupByCode = useMemo(() => Object.fromEntries(groups.map((g) => [g.code, g])), [groups]);
   const skuInfo = useMemo(() => Object.fromEntries(articles.map((a) => [a.sku, a])), [articles]);
 
-  const counted = (g) => g.sizes.some((s) => bySku[s.sku]?.length);
+  const isDone = (r) => Boolean(bySku[r.sku]?.length);
+  const inStockScope = (r) => r.stock > 0 || isDone(r);
   const kinds = useMemo(() => {
     const m = {};
-    for (const g of groups) if (ui.show !== "stock" || g.stock > 0 || counted(g)) m[g.kind] = (m[g.kind] || 0) + 1;
-    return Object.entries(m); // že v vrstnem redu skupin
-  }, [groups, ui.show, bySku]); // eslint-disable-line
+    for (const r of rows) {
+      if (!inStockScope(r)) continue;
+      const k = (m[r.kind] = m[r.kind] || { n: 0, d: 0 });
+      k.n++; if (isDone(r)) k.d++;
+    }
+    return Object.entries(m);
+  }, [rows, bySku]); // eslint-disable-line
 
   const tokens = fold(ui.q).split(/\s+/).filter(Boolean);
-  const shown = groups.filter((g) => {
-    if (tokens.length) return tokens.every((t) => g.hay.includes(t)); // iskanje vedno po celotni bazi
-    if (ui.kind !== "all" && g.kind !== ui.kind) return false;
-    if (ui.show === "stock" && !(g.stock > 0 || counted(g))) return false;
-    if (ui.show === "todo" && counted(g)) return false;
-    if (ui.show === "done" && !counted(g)) return false;
+  const shown = rows.filter((r) => {
+    if (tokens.length) return tokens.every((t) => r.hay.includes(t)); // iskanje vedno po celotni bazi
+    if (ui.kind !== "all" && r.kind !== ui.kind) return false;
+    if (ui.show === "stock") return inStockScope(r);
+    if (ui.show === "todo") return !isDone(r) && r.stock > 0;
+    if (ui.show === "done") return isDone(r);
     return true;
   });
 
-  const scope = groups.filter((g) => (ui.kind === "all" || g.kind === ui.kind) && (g.stock > 0 || counted(g)));
-  const doneN = scope.filter(counted).length;
+  const scope = rows.filter(inStockScope);
+  const doneN = scope.filter(isDone).length;
   const pieces = live.reduce((a, e) => a + e.qty, 0);
   const manualN = live.filter((e) => e.manual).length;
+  const diffN = scope.filter((r) => isDone(r) && sumOf(r.sku) !== r.stock).length;
 
   /* ---------- obnovi pozicijo seznama ---------- */
   const restored = useRef(false);
+  const scrollRef = useRef(null);
   useEffect(() => {
-    if (auth !== true || restored.current || !groups.length) return;
+    if (auth !== true || restored.current || !rows.length || !scrollRef.current) return;
     restored.current = true;
     const y = load(K_UI, {}).y || 0;
-    requestAnimationFrame(() => window.scrollTo(0, y));
-  }, [auth, groups.length]);
-  useEffect(() => {
-    let t;
-    const f = () => { clearTimeout(t); t = setTimeout(() => save(K_UI, { ...load(K_UI, {}), y: window.scrollY }), 200); };
-    window.addEventListener("scroll", f, { passive: true });
-    return () => window.removeEventListener("scroll", f);
-  }, []);
+    requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop = y; });
+  }, [auth, rows.length]);
+  const onScroll = (e) => {
+    const y = e.currentTarget.scrollTop;
+    clearTimeout(onScroll._t);
+    onScroll._t = setTimeout(() => save(K_UI, { ...load(K_UI, {}), y }), 200);
+  };
 
   /* ---------- vnosi ---------- */
   function putEntry(e) {
@@ -205,153 +205,168 @@ export default function Inventura() {
   function addCount(a, qty) {
     putEntry({ cid: uid(), sku: a.sku, code: a.code, size: a.size, qty, manual: false, note: null, deleted: false, at: new Date().toISOString() });
     if (navigator.vibrate) navigator.vibrate(30);
-    flash(`✓ Dodano ${qty} × ${a.name} · ${a.size}`);
+    flash(`✓ +${qty} · ${a.sku}`);
   }
-  function editCount(cid, qty) {
-    putEntry({ cid, qty });
-    flash("✓ Popravljeno");
-  }
+  function editCount(cid, qty) { putEntry({ cid, qty }); flash("✓ Popravljeno"); }
   function delEntry(cid) {
-    if (!window.confirm("Izbrišem ta vnos?")) return;
+    if (!window.confirm("Izbrišem ta vnos?")) return false;
     putEntry({ cid, deleted: true });
     flash("Vnos izbrisan");
+    return true;
   }
 
-  if (auth === null) return <div className="tb"><div className="tb-center"><div className="tb-spin" /></div></div>;
+  if (auth === null) return <div className="iv iv-center"><div className="iv-spin" /></div>;
   if (auth === false) return <Login onOk={() => { setAuth(null); loadAll(); }} />;
 
-  const openG = ui.open ? groupByCode[ui.open] : null;
-  const setQ = (q) => { setUi((u) => ({ ...u, q })); window.scrollTo(0, 0); };
+  const setQ = (q) => { setUi((u) => ({ ...u, q, tab: "list" })); if (scrollRef.current) scrollRef.current.scrollTop = 0; };
+  const pickKind = (k) => { setUi((u) => ({ ...u, kind: k, q: "", tab: "list" })); setMenu(false); if (scrollRef.current) scrollRef.current.scrollTop = 0; };
+  const pct = scope.length ? (doneN / scope.length) * 100 : 0;
 
   return (
-    <div className="tb">
-      <div className="tb-sticky">
-      <header className="tb-top">
-        <div className="tb-brand"><b>69SLAM</b> INVENTURA</div>
-        <div className="tb-stats">
-          <span><b>{doneN}</b> / {scope.length} artiklov</span>
-          <span><b>{pieces}</b> kosov</span>
-          {manualN > 0 && <span className="tb-y">❓ {manualN} za pregled</span>}
+    <div className="iv">
+      {/* ---------- stranski meni ---------- */}
+      <aside className={`iv-side${menu ? " open" : ""}`}>
+        <div className="iv-brand">
+          <img src={LOGO_WHITE} alt="69SLAM" />
+          <small>INVENTURA · SKLADIŠČE</small>
         </div>
-        <div className={`tb-sync ${!online ? "off" : pendingCount ? "wait" : "ok"}`}>
-          {!online ? `📴 Ni interneta — ${pendingCount} shranjenih na tablici` : pendingCount || syncing ? "⏳ Shranjujem …" : "✓ Vse shranjeno"}
+        <nav className="iv-nav">
+          <button className={ui.kind === "all" && ui.tab === "list" ? "on" : ""} onClick={() => pickKind("all")}>
+            <span className="lbl">Vse skupine</span><span className="cnt">{doneN}/{scope.length}</span>
+          </button>
+          <div className="iv-sep" />
+          {kinds.map(([k, v]) => (
+            <button key={k} className={ui.kind === k && ui.tab === "list" ? "on" : ""} onClick={() => pickKind(k)}>
+              <span className="lbl">{k}</span>
+              <span className={`cnt${v.d === v.n ? " full" : ""}`}>{v.d}/{v.n}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="iv-sidefoot">
+          <div className="iv-meter"><i style={{ width: `${pct}%` }} /></div>
+          <div className="iv-kpis">
+            <div><small>Prešteto</small><b>{doneN}<span style={{ fontSize: 12, opacity: 0.55 }}> / {scope.length}</span></b></div>
+            <div><small>Kosov</small><b>{pieces}</b></div>
+          </div>
         </div>
-      </header>
-      <div className="tb-prog"><i style={{ width: `${scope.length ? (doneN / scope.length) * 100 : 0}%` }} /></div>
-      {ui.tab === "list" && (
-        <div className="tb-searchbar">
-          <div className="tb-search">
-            <span>🔍</span>
+      </aside>
+      {menu && <div className="iv-scrim" onClick={() => setMenu(false)} />}
+
+      {/* ---------- glavni del ---------- */}
+      <main className="iv-main">
+        <div className="iv-top">
+          <button className="iv-burger" onClick={() => setMenu(true)} aria-label="Skupine">☰</button>
+          <div className="iv-title">
+            <h1>{ui.tab === "log" ? "Moji vnosi" : ui.kind === "all" ? "Inventura" : ui.kind}</h1>
+            <div className="sub">Vnosi se shranjujejo sproti · zaloga se spremeni šele ob potrditvi v adminu</div>
+          </div>
+          <div className={`iv-sync ${!online ? "off" : pendingCount || syncing ? "wait" : "ok"}`}>
+            <i />{!online ? `Brez povezave · ${pendingCount} na tablici` : pendingCount || syncing ? "Shranjujem …" : "Vse shranjeno"}
+          </div>
+        </div>
+
+        <div className="iv-kpirow">
+          <div className="iv-kpi"><small>Preštete velikosti</small><b>{doneN}<span> / {scope.length}</span></b></div>
+          <div className="iv-kpi"><small>Preštetih kosov</small><b>{pieces}</b></div>
+          <div className="iv-kpi"><small>Z razliko</small><b className={diffN ? "red" : ""}>{diffN}</b></div>
+          <div className="iv-kpi"><small>Ročni vnosi</small><b className={manualN ? "orange" : ""}>{manualN}</b></div>
+        </div>
+
+        <div className="iv-bar">
+          <div className="iv-search">
+            <span>⌕</span>
             <input value={ui.q} onChange={(e) => setQ(e.target.value)} placeholder="Išči po šifri ali nazivu …"
               autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="search" />
             {ui.q && <button onClick={() => setQ("")} aria-label="Počisti">✕</button>}
           </div>
+          <div className="iv-seg">
+            {[["stock", "Z zalogo"], ["todo", "Neprešteto"], ["done", "Prešteto"], ["all", "Vse"]].map(([k, l]) => (
+              <button key={k} className={ui.tab === "list" && ui.show === k ? "on" : ""} onClick={() => setUi((u) => ({ ...u, show: k, tab: "list" }))}>{l}</button>
+            ))}
+            <button className={ui.tab === "log" ? "on" : ""} onClick={() => setUi((u) => ({ ...u, tab: "log" }))}>Moji vnosi · {live.length}</button>
+          </div>
+          <button className="iv-btn pri" onClick={() => setManual({ sku: ui.q.trim().toUpperCase(), size: "", qty: "", note: "" })}>＋ Ročni vnos</button>
         </div>
-      )}
-      </div>
 
-      <div className="tb-tabs">
-        <button className={ui.tab === "list" ? "on" : ""} onClick={() => setUi((u) => ({ ...u, tab: "list" }))}>📦 Artikli</button>
-        <button className={ui.tab === "log" ? "on" : ""} onClick={() => setUi((u) => ({ ...u, tab: "log" }))}>🕘 Moji vnosi ({live.length})</button>
-      </div>
-
-      {ui.tab === "list" ? (
-        <>
-          <div className="tb-filters">
-            {!tokens.length && (
-              <>
-                <div className="tb-chips">
-                  <button className={ui.kind === "all" ? "on" : ""} onClick={() => setUi((u) => ({ ...u, kind: "all" }))}>Vse</button>
-                  {kinds.map(([k, n]) => (
-                    <button key={k} className={ui.kind === k ? "on" : ""} onClick={() => { setUi((u) => ({ ...u, kind: k })); window.scrollTo(0, 0); }}>
-                      {k} <small>{n}</small>
-                    </button>
-                  ))}
-                </div>
-                <div className="tb-seg">
-                  {[["stock", "Z zalogo"], ["todo", "Še ne prešteto"], ["done", "Prešteto"], ["all", "Vsi artikli"]].map(([k, l]) => (
-                    <button key={k} className={ui.show === k ? "on" : ""} onClick={() => setUi((u) => ({ ...u, show: k }))}>{l}</button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="tb-list">
-            {!articles.length && <div className="tb-empty">Nalagam artikle …</div>}
-            {articles.length > 0 && !shown.length && (
-              <div className="tb-empty">
-                {tokens.length ? <>Za »{ui.q}« ni artikla.</> : "Ni artiklov za ta izbor."}
-              </div>
-            )}
-            {shown.slice(0, 400).map((g) => {
-              const any = counted(g);
-              return (
-                <button key={g.code} className={`tb-card${any ? " done" : ""}`} onClick={() => setUi((u) => ({ ...u, open: g.code }))}>
-                  <Img src={g.img} />
-                  <div className="tb-cmain">
-                    <div className="tb-ctype">{g.type || g.kind}</div>
-                    <div className="tb-cname">{g.name}</div>
-                    <div className="tb-ccode">{g.code}</div>
-                    <div className="tb-sizes">
-                      {g.sizes.map((s) => {
-                        const c = (bySku[s.sku] || []).reduce((a, e) => a + e.qty, 0);
-                        const has = bySku[s.sku]?.length;
-                        return (
-                          <span key={s.sku} className={has ? "c" : ""}>
-                            <b>{s.size}</b> {has ? c : "–"}<em>/{s.stock}</em>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="tb-go">{any ? "✓" : "›"}</div>
-                </button>
-              );
-            })}
-            {shown.length > 400 && <div className="tb-empty">Prikazanih prvih 400 — zoži iskanje ali izberi skupino.</div>}
-            <button className="tb-unknown" onClick={() => setManual({ sku: ui.q.trim().toUpperCase(), size: "", qty: "", note: "" })}>
-              ➕ Artikla ni na seznamu — vpiši ročno
-            </button>
-          </div>
-        </>
-      ) : (
-        <Log live={live} skuInfo={skuInfo} groupByCode={groupByCode}
-          onEdit={(e) => {
-            const a = skuInfo[e.sku];
-            if (e.manual || !a) setManual({ cid: e.cid, sku: e.sku, size: e.size || "", qty: String(e.qty), note: e.note || "" });
-            else setPad({ ...a, cid: e.cid, val: String(e.qty) });
-          }}
-          onDel={delEntry} />
-      )}
-
-      {openG && (
-        <Sheet g={openG} bySku={bySku} onClose={() => setUi((u) => ({ ...u, open: null }))}
-          onAdd={(s) => setPad({ ...s, name: openG.name, val: "" })}
-          onEdit={(s, e) => setPad({ ...s, name: openG.name, cid: e.cid, val: String(e.qty) })} />
-      )}
+        <div className="iv-card" ref={scrollRef} onScroll={onScroll}>
+          {ui.tab === "list" ? (
+            <table className="iv-tbl">
+              <thead>
+                <tr><th>Artikel</th><th>Šifra</th><th className="c">Vel.</th><th className="r">Sistem</th><th className="r">Prešteto</th><th className="r">Razlika</th><th /></tr>
+              </thead>
+              <tbody>
+                {!articles.length ? <tr><td colSpan={7} className="iv-empty">Nalagam artikle …</td></tr> :
+                 !shown.length ? (
+                  <tr><td colSpan={7} className="iv-empty">
+                    {tokens.length ? <>Za »{ui.q}« ni artikla. <button className="iv-link" onClick={() => setManual({ sku: ui.q.trim().toUpperCase(), size: "", qty: "", note: "" })}>Vpiši ročno →</button></> : "Ni artiklov za ta izbor."}
+                  </td></tr>
+                 ) : shown.slice(0, 600).map((r, i) => {
+                  const done = isDone(r);
+                  const sum = sumOf(r.sku);
+                  const diff = sum - r.stock;
+                  const head = !tokens.length && ui.kind === "all" && (i === 0 || shown[i - 1].kind !== r.kind);
+                  const same = i > 0 && shown[i - 1].code === r.code;
+                  return (
+                    <Fragment key={r.sku}>
+                      {head && <tr className="iv-grp"><td colSpan={7}>{r.kind}</td></tr>}
+                      <tr className={`${done ? (diff ? "diff" : "ok") : ""}${same ? " same" : ""}`} onClick={() => setPad({ ...r, val: "" })}>
+                        <td>
+                          {same ? <span className="iv-cont">↳</span> : (
+                            <div className="iv-art">
+                              <Img src={r.img} />
+                              <div><div className="nm">{r.name}</div><div className="ty">{r.type || r.kind}</div></div>
+                            </div>
+                          )}
+                        </td>
+                        <td className="mono">{r.sku}</td>
+                        <td className="c"><span className="iv-size">{r.size}</span></td>
+                        <td className="r num">{r.stock}</td>
+                        <td className="r num strong">{done ? <>{sum}{bySku[r.sku].length > 1 && <small> ({bySku[r.sku].length}×)</small>}</> : <span className="dash">—</span>}</td>
+                        <td className="r num">
+                          {done ? <span className={`iv-pill ${diff > 0 ? "g" : diff < 0 ? "r" : "ok"}`}>{diff === 0 ? "✓" : diff > 0 ? `+${diff}` : diff}</span> : null}
+                        </td>
+                        <td className="r"><span className="iv-plus">＋</span></td>
+                      </tr>
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <Log live={live} skuInfo={skuInfo}
+              onEdit={(e) => {
+                const a = skuInfo[e.sku];
+                if (e.manual || !a) setManual({ cid: e.cid, sku: e.sku, size: e.size || "", qty: String(e.qty), note: e.note || "" });
+                else setPad({ ...a, cid: e.cid, val: String(e.qty) });
+              }}
+              onDel={delEntry} />
+          )}
+          {ui.tab === "list" && shown.length > 600 && <div className="iv-empty">Prikazanih prvih 600 vrstic — izberi skupino ali zoži iskanje.</div>}
+        </div>
+      </main>
 
       {pad && (
-        <Pad pad={pad} total={(bySku[pad.sku] || []).reduce((a, e) => a + e.qty, 0)} onClose={() => setPad(null)}
+        <Pad pad={pad} entries={bySku[pad.sku] || []} onClose={() => setPad(null)}
           onSave={(n) => { if (pad.cid) editCount(pad.cid, n); else addCount(pad, n); setPad(null); }}
-          onDelete={pad.cid ? () => { delEntry(pad.cid); setPad(null); } : null} />
+          onPick={(e) => setPad({ ...pad, cid: e.cid, val: String(e.qty) })}
+          onDelete={pad.cid ? () => { if (delEntry(pad.cid)) setPad(null); } : null} />
       )}
 
       {manual && (
         <Manual m={manual} onClose={() => setManual(null)}
-          onDelete={manual.cid ? () => { delEntry(manual.cid); setManual(null); } : null}
+          onDelete={manual.cid ? () => { if (delEntry(manual.cid)) setManual(null); } : null}
           onSave={(m) => {
             const known = skuInfo[m.sku];
             putEntry({
               cid: m.cid || uid(), sku: m.sku, code: known?.code || null, size: m.size || known?.size || null,
               qty: m.qty, manual: !known, note: m.note || null, deleted: false, at: new Date().toISOString(),
             });
-            flash(known ? `✓ Šifra obstaja — dodano k ${known.name} · ${known.size}` : "✓ Shranjeno za pregled");
+            flash(known ? `✓ Šifra obstaja — prišteto k ${known.sku}` : "✓ Shranjeno za pregled");
             setManual(null);
           }} />
       )}
 
-      {toast && <div className="tb-toast">{toast}</div>}
+      {toast && <div className="iv-toast">{toast}</div>}
     </div>
   );
 }
@@ -359,8 +374,8 @@ export default function Inventura() {
 /* ---------- sličica ---------- */
 function Img({ src }) {
   const [bad, setBad] = useState(false);
-  if (!src || bad) return <div className="tb-img none">69</div>;
-  return <img className="tb-img" src={src} alt="" loading="lazy" onError={() => setBad(true)} />;
+  if (!src || bad) return <div className="iv-thumb none" />;
+  return <img className="iv-thumb" src={src} alt="" loading="lazy" onError={() => setBad(true)} />;
 }
 
 /* ---------- prijava s PIN-om ---------- */
@@ -368,11 +383,11 @@ function Login({ onOk }) {
   const [pin, setPin] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  async function go(p = pin) {
-    if (p.length < 4 || busy) return;
+  async function go() {
+    if (pin.length < 4 || busy) return;
     setBusy(true); setErr("");
     try {
-      const r = await fetch("/api/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "login", pin: p }) });
+      const r = await fetch("/api/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "login", pin }) });
       const d = await r.json();
       if (d.ok) onOk();
       else { setErr(d.message || "Napačen PIN."); setPin(""); }
@@ -385,72 +400,30 @@ function Login({ onOk }) {
     setPin((p) => (p.length < 8 ? p + k : p));
   };
   return (
-    <div className="tb tb-login">
-      <div className="tb-lbox">
-        <div className="tb-brand big"><b>69SLAM</b> INVENTURA</div>
-        <p>Vpiši PIN kodo</p>
-        <div className="tb-dots">{Array.from({ length: Math.max(4, pin.length) }).map((_, i) => <i key={i} className={i < pin.length ? "on" : ""} />)}</div>
-        {err && <div className="tb-err">{err}</div>}
-        <div className="tb-keys">
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0"].map((k) => <button key={k} onClick={() => key(k)}>{k}</button>)}
-          <button className="ok" disabled={pin.length < 4 || busy} onClick={() => go()}>{busy ? "…" : "VSTOPI"}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- artikel: vse velikosti ---------- */
-function Sheet({ g, bySku, onClose, onAdd, onEdit }) {
-  useEffect(() => {
-    const k = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", k);
-    return () => window.removeEventListener("keydown", k);
-  }, [onClose]);
-  return (
-    <div className="tb-ov" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="tb-sheet">
-        <div className="tb-shead">
-          <Img src={g.img} />
-          <div>
-            <div className="tb-ctype">{g.type || g.kind}</div>
-            <h2>{g.name}</h2>
-            <div className="tb-ccode">{g.code}</div>
+    <div className="iv iv-login">
+      <div className="iv-lbox">
+        <div className="iv-lhead"><img src={LOGO_WHITE} alt="69SLAM" /><small>INVENTURA · SKLADIŠČE</small></div>
+        <div className="iv-lbody">
+          <div className="iv-label">Vpiši PIN kodo</div>
+          <div className="iv-dots">{Array.from({ length: Math.max(4, pin.length) }).map((_, i) => <i key={i} className={i < pin.length ? "on" : ""} />)}</div>
+          {err && <div className="iv-err">{err}</div>}
+          <div className="iv-keys">
+            {["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0"].map((k) => <button key={k} onClick={() => key(k)}>{k}</button>)}
+            <button className="ok" disabled={pin.length < 4 || busy} onClick={go}>{busy ? "…" : "Vstopi"}</button>
           </div>
-          <button className="tb-x" onClick={onClose}>✕</button>
         </div>
-        <div className="tb-srows">
-          {g.sizes.map((s) => {
-            const list = bySku[s.sku] || [];
-            const sum = list.reduce((a, e) => a + e.qty, 0);
-            const diff = sum - s.stock;
-            return (
-              <div key={s.sku} className={`tb-srow${list.length ? " done" : ""}`}>
-                <div className="tb-sz">{s.size}</div>
-                <div className="tb-snum">
-                  <div><small>V sistemu</small><b>{s.stock}</b></div>
-                  <div><small>Prešteto</small><b>{list.length ? sum : "–"}</b></div>
-                  {list.length > 0 && <div className={`tb-diff ${diff > 0 ? "p" : diff < 0 ? "m" : "z"}`}>{diff === 0 ? "✓" : diff > 0 ? `+${diff}` : diff}</div>}
-                </div>
-                <div className="tb-ents">
-                  {list.map((e) => <button key={e.cid} onClick={() => onEdit(s, e)}>{e.qty} <span>✎</span></button>)}
-                </div>
-                <button className="tb-add" onClick={() => onAdd(s)}>＋ VPIŠI</button>
-              </div>
-            );
-          })}
-        </div>
-        <button className="tb-done" onClick={onClose}>KONČANO</button>
       </div>
     </div>
   );
 }
 
 /* ---------- številčnica ---------- */
-function Pad({ pad, total, onClose, onSave, onDelete }) {
+function Pad({ pad, entries, onClose, onSave, onPick, onDelete }) {
   const [v, setV] = useState(pad.val || "");
+  useEffect(() => setV(pad.val || ""), [pad.cid, pad.val]);
   const n = parseInt(v, 10);
   const ok = Number.isFinite(n) && n >= 0 && v !== "";
+  const total = entries.reduce((a, e) => a + e.qty, 0);
   const key = (k) => {
     if (k === "⌫") return setV((x) => x.slice(0, -1));
     if (k === "C") return setV("");
@@ -467,26 +440,41 @@ function Pad({ pad, total, onClose, onSave, onDelete }) {
     window.addEventListener("keydown", kd);
     return () => window.removeEventListener("keydown", kd);
   });
+  const after = pad.cid ? total - (entries.find((e) => e.cid === pad.cid)?.qty || 0) + (ok ? n : 0) : total + (ok ? n : 0);
   return (
-    <div className="tb-ov top" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="tb-pad">
-        <div className="tb-phead">
+    <div className="iv-ov" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="iv-modal">
+        <div className="iv-mh">
           <div>
-            <b>{pad.name}</b>
-            <span>Velikost <b>{pad.size}</b> · {pad.sku}</span>
-            <span>V sistemu: <b>{pad.stock}</b>{!pad.cid && total > 0 ? <> · že prešteto: <b>{total}</b> (prišteje se)</> : null}</span>
+            <h3>{pad.name} · <span className="iv-size">{pad.size}</span></h3>
+            <div className="sub mono">{pad.sku}{pad.type ? ` · ${pad.type}` : ""}</div>
           </div>
-          <button className="tb-x" onClick={onClose}>✕</button>
+          <button className="x" onClick={onClose}>✕</button>
         </div>
-        <div className="tb-val">{v || <em>0</em>}<small>kosov</small></div>
-        <div className="tb-plus">
-          {[1, 5, 10].map((d) => <button key={d} onClick={() => plus(d)}>+{d}</button>)}
+        <div className="iv-mb">
+          <div className="iv-stats3">
+            <div><small>V sistemu</small><b>{pad.stock}</b></div>
+            <div><small>Prešteto doslej</small><b>{entries.length ? total : "—"}</b></div>
+            <div><small>Po vnosu</small><b className={after - pad.stock > 0 ? "green" : after - pad.stock < 0 ? "red" : ""}>{after}</b></div>
+          </div>
+          {entries.length > 0 && (
+            <div className="iv-ents">
+              <small>Vnosi:</small>
+              {entries.map((e) => (
+                <button key={e.cid} className={pad.cid === e.cid ? "on" : ""} onClick={() => onPick(e)}>{e.qty}<span> · {hhmm(e.at)}</span></button>
+              ))}
+            </div>
+          )}
+          <div className="iv-val"><span>{pad.cid ? "Popravi vnos" : "Dodaj kosov"}</span><b>{v || <em>0</em>}</b></div>
+          <div className="iv-quick">{[1, 5, 10].map((d) => <button key={d} onClick={() => plus(d)}>+{d}</button>)}</div>
+          <div className="iv-keys">
+            {["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"].map((k) => <button key={k} onClick={() => key(k)}>{k}</button>)}
+          </div>
         </div>
-        <div className="tb-keys">
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"].map((k) => <button key={k} onClick={() => key(k)}>{k}</button>)}
+        <div className="iv-mf">
+          {onDelete ? <button className="iv-btn danger" onClick={onDelete}>Izbriši vnos</button> : <span />}
+          <button className="iv-btn pri lg" disabled={!ok} onClick={() => onSave(n)}>{pad.cid ? "Shrani popravek" : `Dodaj ${ok ? n : ""}`}</button>
         </div>
-        <button className="tb-save" disabled={!ok} onClick={() => onSave(n)}>{pad.cid ? "SHRANI POPRAVEK" : `DODAJ ${ok ? n : ""}`}</button>
-        {onDelete && <button className="tb-delb" onClick={onDelete}>🗑 Izbriši ta vnos</button>}
       </div>
     </div>
   );
@@ -501,27 +489,31 @@ function Manual({ m, onClose, onSave, onDelete }) {
   const n = parseInt(qty, 10);
   const ok = sku.trim().length >= 2 && Number.isFinite(n) && n >= 0;
   return (
-    <div className="tb-ov top" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="tb-pad tb-man">
-        <div className="tb-phead">
-          <div><b>Artikla ni na seznamu</b><span>Vpiši šifro s kosa in količino — Claudia bo pregledala.</span></div>
-          <button className="tb-x" onClick={onClose}>✕</button>
+    <div className="iv-ov" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="iv-modal">
+        <div className="iv-mh">
+          <div><h3>Ročni vnos</h3><div className="sub">Artikla ni na seznamu — vpiši šifro s kosa. Claudia bo pregledala.</div></div>
+          <button className="x" onClick={onClose}>✕</button>
         </div>
-        <label>Šifra artikla
-          <input value={sku} onChange={(e) => setSku(e.target.value.toUpperCase())} autoCapitalize="characters" autoCorrect="off" spellCheck={false} placeholder="npr. MBYCDR-M" autoFocus />
-        </label>
-        <label>Velikost</label>
-        <div className="tb-szpick">
-          {["", ...SIZES].map((s) => <button key={s || "x"} className={size === s ? "on" : ""} onClick={() => setSize(s)}>{s || "brez"}</button>)}
+        <div className="iv-mb iv-form">
+          <label>Šifra artikla
+            <input value={sku} onChange={(e) => setSku(e.target.value.toUpperCase())} autoCapitalize="characters" autoCorrect="off" spellCheck={false} placeholder="npr. MBYCDR-M" autoFocus />
+          </label>
+          <label>Velikost</label>
+          <div className="iv-szpick">
+            {["", ...SIZES].map((s) => <button key={s || "x"} className={size === s ? "on" : ""} onClick={() => setSize(s)}>{s || "brez"}</button>)}
+          </div>
+          <label>Količina
+            <input value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, "").slice(0, 5))} inputMode="numeric" pattern="[0-9]*" placeholder="0" />
+          </label>
+          <label>Opomba (neobvezno)
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="npr. ime na etiketi, barva …" />
+          </label>
         </div>
-        <label>Količina
-          <input value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, "").slice(0, 5))} inputMode="numeric" pattern="[0-9]*" placeholder="0" />
-        </label>
-        <label>Opomba (neobvezno)
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="npr. ime na etiketi, barva …" />
-        </label>
-        <button className="tb-save" disabled={!ok} onClick={() => onSave({ cid: m.cid, sku: sku.trim(), size, qty: n, note: note.trim() })}>SHRANI</button>
-        {onDelete && <button className="tb-delb" onClick={onDelete}>🗑 Izbriši ta vnos</button>}
+        <div className="iv-mf">
+          {onDelete ? <button className="iv-btn danger" onClick={onDelete}>Izbriši vnos</button> : <span />}
+          <button className="iv-btn pri lg" disabled={!ok} onClick={() => onSave({ cid: m.cid, sku: sku.trim(), size, qty: n, note: note.trim() })}>Shrani</button>
+        </div>
       </div>
     </div>
   );
@@ -530,23 +522,28 @@ function Manual({ m, onClose, onSave, onDelete }) {
 /* ---------- zadnji vnosi ---------- */
 function Log({ live, skuInfo, onEdit, onDel }) {
   const list = [...live].sort((a, b) => new Date(b.at) - new Date(a.at));
-  if (!list.length) return <div className="tb-list"><div className="tb-empty">Še ni vnosov. Začni na zavihku »Artikli«.</div></div>;
   return (
-    <div className="tb-list">
-      {list.map((e) => {
-        const a = skuInfo[e.sku];
-        return (
-          <div key={e.cid} className={`tb-log${e.manual ? " man" : ""}`}>
-            <div className="tb-ltime">{hhmm(e.at)}{!e.synced && <span title="Čaka na internet"> ⏳</span>}</div>
-            <div className="tb-lmain" onClick={() => onEdit(e)}>
-              <b>{e.manual ? `❓ ${e.sku}` : a ? a.name : e.sku}</b>
-              <span>{e.manual ? `ročni vnos · za pregled${e.size ? ` · ${e.size}` : ""}${e.note ? ` · ${e.note}` : ""}` : `${e.sku}${a ? ` · ${a.size}` : ""}`}</span>
-            </div>
-            <div className="tb-lqty" onClick={() => onEdit(e)}>{e.qty}</div>
-            <button className="tb-ldel" onClick={() => onDel(e.cid)}>🗑</button>
-          </div>
-        );
-      })}
-    </div>
+    <table className="iv-tbl">
+      <thead><tr><th>Čas</th><th>Artikel</th><th>Šifra</th><th className="c">Vel.</th><th className="r">Količina</th><th>Stanje</th><th /></tr></thead>
+      <tbody>
+        {!list.length ? <tr><td colSpan={7} className="iv-empty">Še ni vnosov.</td></tr> : list.map((e) => {
+          const a = skuInfo[e.sku];
+          return (
+            <tr key={e.cid} className={e.manual ? "man" : ""} onClick={() => onEdit(e)}>
+              <td className="muted num">{hhmm(e.at)}</td>
+              <td><div className="nm">{e.manual ? "Ročni vnos" : a ? a.name : "—"}</div>{e.note && <div className="ty">{e.note}</div>}</td>
+              <td className="mono">{e.sku}</td>
+              <td className="c">{(a?.size || e.size) ? <span className="iv-size">{a?.size || e.size}</span> : "—"}</td>
+              <td className="r num strong">{e.qty}</td>
+              <td>
+                {e.manual ? <span className="iv-pill o">Za pregled</span> : null}{" "}
+                {e.synced ? <span className="iv-pill ok">Shranjeno</span> : <span className="iv-pill w">Čaka internet</span>}
+              </td>
+              <td className="r"><button className="iv-icon" onClick={(ev) => { ev.stopPropagation(); onDel(e.cid); }} aria-label="Izbriši">🗑</button></td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
