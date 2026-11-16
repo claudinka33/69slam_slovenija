@@ -256,7 +256,7 @@ export default function Inventura() {
       {/* ---------- glavni del ---------- */}
       <main className="iv-main">
         <div className="iv-top">
-          <button className="iv-burger" onClick={() => setMenu(true)} aria-label="Skupine">☰</button>
+          <button className="iv-burger" onClick={() => setMenu(true)} aria-label="Skupine">☰ <span>Skupine</span></button>
           <div className="iv-title">
             <h1>{ui.tab === "log" ? "Moji vnosi" : ui.kind === "all" ? "Inventura" : ui.kind}</h1>
             <div className="sub">Vnosi se shranjujejo sproti · zaloga se spremeni šele ob potrditvi v adminu</div>
@@ -292,13 +292,14 @@ export default function Inventura() {
         <div className="iv-card" ref={scrollRef} onScroll={onScroll}>
           {ui.tab === "list" ? (
             <table className="iv-tbl">
+              <colgroup><col /><col style={{ width: 84 }} /><col style={{ width: 92 }} /><col style={{ width: 112 }} /><col style={{ width: 96 }} /></colgroup>
               <thead>
-                <tr><th>Artikel</th><th>Šifra</th><th className="c">Vel.</th><th className="r">Sistem</th><th className="r">Prešteto</th><th className="r">Razlika</th><th /></tr>
+                <tr><th>Artikel · šifra</th><th className="c">Vel.</th><th className="r">Sistem</th><th className="r">Prešteto</th><th className="r">Razl.</th></tr>
               </thead>
               <tbody>
-                {!articles.length ? <tr><td colSpan={7} className="iv-empty">Nalagam artikle …</td></tr> :
+                {!articles.length ? <tr><td colSpan={5} className="iv-empty">Nalagam artikle …</td></tr> :
                  !shown.length ? (
-                  <tr><td colSpan={7} className="iv-empty">
+                  <tr><td colSpan={5} className="iv-empty">
                     {tokens.length ? <>Za »{ui.q}« ni artikla. <button className="iv-link" onClick={() => setManual({ sku: ui.q.trim().toUpperCase(), size: "", qty: "", note: "" })}>Vpiši ročno →</button></> : "Ni artiklov za ta izbor."}
                   </td></tr>
                  ) : shown.slice(0, 600).map((r, i) => {
@@ -309,24 +310,26 @@ export default function Inventura() {
                   const same = i > 0 && shown[i - 1].code === r.code;
                   return (
                     <Fragment key={r.sku}>
-                      {head && <tr className="iv-grp"><td colSpan={7}>{r.kind}</td></tr>}
+                      {head && <tr className="iv-grp"><td colSpan={5}>{r.kind}</td></tr>}
                       <tr className={`${done ? (diff ? "diff" : "ok") : ""}${same ? " same" : ""}`} onClick={() => setPad({ ...r, val: "" })}>
                         <td>
-                          {same ? <span className="iv-cont">↳</span> : (
+                          {same ? <div className="iv-cont"><span>↳</span><span className="mono">{r.sku}</span></div> : (
                             <div className="iv-art">
                               <Img src={r.img} />
-                              <div><div className="nm">{r.name}</div><div className="ty">{r.type || r.kind}</div></div>
+                              <div>
+                                <div className="nm">{r.name}</div>
+                                <div className="ty">{r.type || r.kind}</div>
+                                <div className="mono">{r.sku}</div>
+                              </div>
                             </div>
                           )}
                         </td>
-                        <td className="mono">{r.sku}</td>
                         <td className="c"><span className="iv-size">{r.size}</span></td>
                         <td className="r num">{r.stock}</td>
                         <td className="r num strong">{done ? <>{sum}{bySku[r.sku].length > 1 && <small> ({bySku[r.sku].length}×)</small>}</> : <span className="dash">—</span>}</td>
                         <td className="r num">
                           {done ? <span className={`iv-pill ${diff > 0 ? "g" : diff < 0 ? "r" : "ok"}`}>{diff === 0 ? "✓" : diff > 0 ? `+${diff}` : diff}</span> : null}
                         </td>
-                        <td className="r"><span className="iv-plus">＋</span></td>
                       </tr>
                     </Fragment>
                   );
@@ -534,21 +537,25 @@ function Log({ live, skuInfo, onEdit, onDel }) {
   const list = [...live].sort((a, b) => new Date(b.at) - new Date(a.at));
   return (
     <table className="iv-tbl">
-      <thead><tr><th>Čas</th><th>Artikel</th><th>Šifra</th><th className="c">Vel.</th><th className="r">Količina</th><th>Stanje</th><th /></tr></thead>
+      <colgroup><col style={{ width: 92 }} /><col /><col style={{ width: 84 }} /><col style={{ width: 80 }} /><col style={{ width: 76 }} /></colgroup>
+      <thead><tr><th>Čas</th><th>Artikel · šifra</th><th className="c">Vel.</th><th className="r">Kos</th><th /></tr></thead>
       <tbody>
-        {!list.length ? <tr><td colSpan={7} className="iv-empty">Še ni vnosov.</td></tr> : list.map((e) => {
+        {!list.length ? <tr><td colSpan={5} className="iv-empty">Še ni vnosov.</td></tr> : list.map((e) => {
           const a = skuInfo[e.sku];
           return (
             <tr key={e.cid} className={e.manual ? "man" : ""} onClick={() => onEdit(e)}>
               <td className="muted num">{hhmm(e.at)}</td>
-              <td><div className="nm">{e.manual ? "Ročni vnos" : a ? a.name : "—"}</div>{e.note && <div className="ty">{e.note}</div>}</td>
-              <td className="mono">{e.sku}</td>
+              <td>
+                <div className="nm">{e.manual ? "Ročni vnos" : a ? a.name : "—"}</div>
+                <div className="mono">{e.sku}</div>
+                {e.note && <div className="ty">{e.note}</div>}
+                <div className="iv-st">
+                  {e.manual ? <span className="iv-pill o">Za pregled</span> : null}
+                  {e.synced ? <span className="iv-pill ok">Shranjeno</span> : <span className="iv-pill w">Čaka internet</span>}
+                </div>
+              </td>
               <td className="c">{(a?.size || e.size) ? <span className="iv-size">{a?.size || e.size}</span> : "—"}</td>
               <td className="r num strong">{e.qty}</td>
-              <td>
-                {e.manual ? <span className="iv-pill o">Za pregled</span> : null}{" "}
-                {e.synced ? <span className="iv-pill ok">Shranjeno</span> : <span className="iv-pill w">Čaka internet</span>}
-              </td>
               <td className="r"><button className="iv-icon" onClick={(ev) => { ev.stopPropagation(); onDel(e.cid); }} aria-label="Izbriši">🗑</button></td>
             </tr>
           );
