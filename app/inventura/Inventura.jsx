@@ -10,6 +10,7 @@ const K_ART = "inv69-articles";
 const K_ENT = "inv69-entries";
 const K_UI = "inv69-ui";
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+const QUICK = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
@@ -429,7 +430,6 @@ function Pad({ pad, entries, onClose, onSave, onPick, onDelete }) {
     if (k === "C") return setV("");
     setV((x) => (x === "0" ? k : (x + k).slice(0, 5)));
   };
-  const plus = (d) => setV((x) => String((parseInt(x, 10) || 0) + d));
   useEffect(() => {
     const kd = (e) => {
       if (/^\d$/.test(e.key)) key(e.key);
@@ -465,8 +465,12 @@ function Pad({ pad, entries, onClose, onSave, onPick, onDelete }) {
               ))}
             </div>
           )}
+          <div className="iv-qlabel">{pad.cid ? "Tapni pravilno količino — takoj shrani" : "Tapni količino — takoj shrani"}</div>
+          <div className="iv-quick">
+            {QUICK.map((d) => <button key={d} onClick={() => onSave(d)}>{d}</button>)}
+          </div>
+          <div className="iv-qlabel">Več kot 10? Vpiši in potrdi:</div>
           <div className="iv-val"><span>{pad.cid ? "Popravi vnos" : "Dodaj kosov"}</span><b>{v || <em>0</em>}</b></div>
-          <div className="iv-quick">{[1, 5, 10].map((d) => <button key={d} onClick={() => plus(d)}>+{d}</button>)}</div>
           <div className="iv-keys">
             {["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"].map((k) => <button key={k} onClick={() => key(k)}>{k}</button>)}
           </div>
@@ -484,6 +488,7 @@ function Pad({ pad, entries, onClose, onSave, onPick, onDelete }) {
 function Manual({ m, onClose, onSave, onDelete }) {
   const [sku, setSku] = useState(m.sku || "");
   const [size, setSize] = useState(m.size || "");
+  const [other, setOther] = useState(m.size && !SIZES.includes(m.size) ? m.size : "");
   const [qty, setQty] = useState(m.qty || "");
   const [note, setNote] = useState(m.note || "");
   const n = parseInt(qty, 10);
@@ -501,11 +506,16 @@ function Manual({ m, onClose, onSave, onDelete }) {
           </label>
           <label>Velikost</label>
           <div className="iv-szpick">
-            {["", ...SIZES].map((s) => <button key={s || "x"} className={size === s ? "on" : ""} onClick={() => setSize(s)}>{s || "brez"}</button>)}
+            {["", ...SIZES].map((s) => <button key={s || "x"} className={size === s && !other ? "on" : ""} onClick={() => { setSize(s); setOther(""); }}>{s || "brez"}</button>)}
+            <input className={`iv-other${other ? " on" : ""}`} value={other} placeholder="Druga velikost (npr. 42, 40-41, 32)"
+              onChange={(e) => { const x = e.target.value.toUpperCase().slice(0, 20); setOther(x); setSize(x); }}
+              autoCapitalize="characters" autoCorrect="off" spellCheck={false} />
           </div>
-          <label>Količina
-            <input value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, "").slice(0, 5))} inputMode="numeric" pattern="[0-9]*" placeholder="0" />
-          </label>
+          <label>Količina</label>
+          <div className="iv-quick sm">
+            {QUICK.map((d) => <button key={d} className={qty === String(d) ? "on" : ""} onClick={() => setQty(String(d))}>{d}</button>)}
+          </div>
+          <input value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, "").slice(0, 5))} inputMode="numeric" pattern="[0-9]*" placeholder="ali vpiši več kot 10" />
           <label>Opomba (neobvezno)
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="npr. ime na etiketi, barva …" />
           </label>
