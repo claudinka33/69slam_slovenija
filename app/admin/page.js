@@ -100,6 +100,7 @@ export default function Admin() {
     { id: "racuni", ico: "🧾", lbl: "Računi & dokumenti" },
     { id: "prevzemi", ico: "📥", lbl: "Prevzemi" },
     { id: "inventura", ico: "📋", lbl: "Inventura" },
+    { id: "samana", ico: "🏪", lbl: "Konsignacija Samana" },
     { id: "cenik", ico: "💶", lbl: "Cenik & RVC" },
     { sep: 2 },
     { id: "maili", ico: "✉️", lbl: "E-maili" },
@@ -151,6 +152,7 @@ export default function Admin() {
         {view === "narocila" && <Orders orders={orders} onOpen={setOpenOrder} reload={loadOrders} />}
         {view === "zaloga" && <Stock stock={stock} reload={loadStock} />}
         {view === "inventura" && <Inventory stock={stock} reload={loadStock} />}
+        {view === "samana" && <Consign wh="samana" />}
         {view === "prevzemi" && <Receipts stock={stock} reloadStock={loadStock} />}
         {view === "cenik" && <PriceList />}
         {view === "kode" && <Coupons />}
@@ -3181,7 +3183,7 @@ function Invoices() {
   const [formKey, setFormKey] = useState(0);
   const [exp, setExp] = useState({});
   function editDoc(r) {
-    setDraft({ id: null, edit: { id: r.id, number: r.number }, data: { kind: r.kind, ctype: r.customer_vat ? "podjetje" : "fizicna", gross: !!r.prices_gross, payment: r.payment,
+    setDraft({ id: null, edit: { id: r.id, number: r.number }, data: { kind: r.kind, warehouse: r.meta?.warehouse, ctype: r.customer_vat ? "podjetje" : "fizicna", gross: !!r.prices_gross, payment: r.payment,
       due_days: Math.max(0, Math.round((new Date(r.due_date) - new Date(String(r.issued_at).slice(0, 10))) / 86400000)) || 8,
       service_date: String(r.service_date || "").slice(0, 10), notes: r.notes || "", tracking: r.tracking || "",
       customer: { name: r.customer_name || "", address: r.customer_address || "", zip_city: r.customer_zip_city || "", country: r.customer_country || "Slovenija", vat: r.customer_vat || "", email: r.customer_email || "" },
@@ -3263,7 +3265,7 @@ function Invoices() {
                     <td><div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                       <button type="button" title={isOpen ? "Skrij artikle" : "Pokaži artikle"} onClick={() => setExp((x) => ({ ...x, [r.id]: !x[r.id] }))}
                         style={{ border: "1px solid #e0e0e0", background: isOpen ? "#0a0a0a" : "#fff", color: isOpen ? "#fff" : "#0a0a0a", borderRadius: 8, width: 26, height: 26, flex: "0 0 26px", cursor: "pointer", fontSize: 12, lineHeight: 1, marginTop: 1 }}>{isOpen ? "▲" : "▼"}</button>
-                      <div><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}${r.meta?.shop ? ` · ${/^\d+$/.test(r.meta.shop) ? "#" : ""}${r.meta.shop}` : ""}` : r.order_number ? `Spletno naročilo #${r.order_number}` : ark ? (r.meta?.shop ? (/^\d{4,5}$/.test(r.meta.shop) ? `Shopify #${r.meta.shop} (ni v CMS)` : `Naročilo: ${r.meta.shop}`) : "Brez naročila (osebno / B2B)") : "Ročni dokument"}</div></div></div></td>
+                      <div><div className="strong">{r.number}</div><div className="muted">{r.kind === "dobropis" ? `Dobropis k ${r.ref_number}${r.meta?.shop ? ` · ${/^\d+$/.test(r.meta.shop) ? "#" : ""}${r.meta.shop}` : ""}` : r.order_number ? `Spletno naročilo #${r.order_number}` : ark ? (r.meta?.shop ? (/^\d{4,5}$/.test(r.meta.shop) ? `Shopify #${r.meta.shop} (ni v CMS)` : `Naročilo: ${r.meta.shop}`) : "Brez naročila (osebno / B2B)") : "Ročni dokument"}{r.meta?.warehouse ? " · 🏪 Samana" : ""}</div></div></div></td>
                     <td className="muted nw">{dShort(r.issued_at)}</td>
                     <td className="cust"><div>{r.customer_name}</div>{r.customer_email && <div className="muted">{r.customer_email}</div>}</td>
                     <td className="r num strong nw">{eur(r.total_cents)}</td>
@@ -3339,6 +3341,9 @@ function InvoiceForm({ onDone, draft, onDraft }) {
   const [draftId, setDraftId] = useState(draft?.id || null);
   const [kind, setKind] = useState(D.kind || "racun");
   const [tracking, setTracking] = useState(D.tracking || "");
+  const [wh, setWh] = useState(D.warehouse || "glavno");
+  const [cons, setCons] = useState([]);
+  useEffect(() => { if (wh !== "glavno") getJSON(`/api/admin/consign?wh=${wh}`).then((d) => setCons(d?.rows || [])); }, [wh]);
   const blankItem = () => ({ code: "", desc: "", qty: "1", unit: "kos", price: "", disc: "", vat: 22 });
   const [c, setC] = useState({ name: "", address: "", zip_city: "", country: "Slovenija", vat: "", email: "", ...(D.customer || {}) });
   const [items, setItems] = useState(D.items?.length ? D.items : [blankItem()]);
@@ -3407,6 +3412,18 @@ function InvoiceForm({ onDone, draft, onDraft }) {
     const words = all.filter((w) => !SZ.includes(w));
     if (!words.length) return [];
     const out = [];
+    if (wh !== "glavno") {
+      const byCode = Object.fromEntries(arts.map((p) => [String(p.code).toUpperCase(), p]));
+      for (const r of cons) {
+        const p0 = byCode[String(r.code || "").toUpperCase()];
+        const p = { ...(p0 || {}), name: p0?.name || r.name, code: r.code, price_cents: r.price_cents || p0?.price_cents || 0, consName: r.name };
+        if (sizeW.length && !sizeW.includes(norm(r.size))) continue;
+        const hs = norm(`${r.sku} ${r.src_code} ${r.name} ${p0?.name || ""} ${p0?.type || ""}`);
+        if (words.every((w) => hs.includes(w))) out.push({ p, size: r.size, sku: r.sku, stock: r.qty, cons: true });
+      }
+      out.sort((x, y) => (y.stock > 0) - (x.stock > 0) || x.p.name.localeCompare(y.p.name));
+      return out.slice(0, 40);
+    }
     for (const p of arts) {
       const h = norm(`${p.code} ${p.name} ${p.type || ""} ${p.category || ""} ${p.material || ""}`);
       const sz = Object.entries(p.sizes || {});
@@ -3420,6 +3437,12 @@ function InvoiceForm({ onDone, draft, onDraft }) {
     return out.slice(0, 40);
   };
   function pickArt(i, h) {
+    if (h.cons) {
+      const label = h.p.type || h.p.category ? [h.p.type || h.p.category, h.p.name].join(" | ") + (h.size && h.size !== "ONE" ? ` | ${h.size}` : "") : h.p.consName;
+      setItems((x) => x.map((it, j) => (j === i ? { ...it, desc: label, code: h.sku, unit: "kos", vat: 22, disc: allDisc || it.disc } : it)));
+      setOpenA(-1);
+      return;
+    }
     const cents = h.p.price_cents || 0;
     const price = gross ? cents / 100 : Math.round(cents / 1.22) / 100;
     const label = [h.p.type || h.p.category, h.p.name].filter(Boolean).join(" | ") + (h.size && h.size !== "ONE" ? ` | ${h.size}` : "");
@@ -3470,7 +3493,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
       zero: net0 > 0 ? Math.max(0, (1 - cost / net0) * 100) : null,
       m20: net0 > 0 ? Math.max(0, (1 - cost / (0.8 * net0)) * 100) : null };
   })();
-  const body = () => ({ kind, tracking, customer: ctype === "podjetje" ? c : { ...c, vat: "" }, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
+  const body = () => ({ kind, tracking, warehouse: wh, customer: ctype === "podjetje" ? c : { ...c, vat: "" }, items, gross, payment, due_days: payment === "trr" ? numIn(dueDays) : 0, service_date: serviceDate, notes });
   async function saveDraft() {
     setErr(""); setBusy(true);
     const d = await post("/api/admin/invoices", { action: "draft_save", draft_id: draftId, data: { ...body(), customer: c, ctype, due_days: dueDays } });
@@ -3490,7 +3513,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
     if (edit) return saveEdit(send);
     setErr("");
     if (send && !c.email.trim()) { setErr("Za pošiljanje vpiši e-mail kupca."); return; }
-    if (!confirm(`Izdam ${DOC1[kind]} za ${c.name || "kupca"} v znesku ${eur(tot.total)}?${send ? `\nPoslan bo na ${c.email}.` : ""}\n\nIzdanega dokumenta ni mogoče spreminjati.`)) return;
+    if (!confirm(`Izdam ${DOC1[kind]} za ${c.name || "kupca"} v znesku ${eur(tot.total)}?${wh !== "glavno" && kind !== "predracun" ? "\nZaloga se odšteje iz skladišča SAMANA (konsignacija)." : ""}${send ? `\nPoslan bo na ${c.email}.` : ""}\n\nIzdanega dokumenta ni mogoče spreminjati.`)) return;
     setBusy(true);
     const d = await post("/api/admin/invoices", { action: "issue", ...body(), send, draft_id: draftId });
     setBusy(false);
@@ -3502,6 +3525,8 @@ function InvoiceForm({ onDone, draft, onDraft }) {
         <b>Vrsta dokumenta</b>
         {edit ? <b style={{ color: "#b45309" }}>✏️ Urejaš {edit.number} — številka ostane ista</b> : <div className="adm-seg">{[["predracun", "Predračun"], ["dobavnica", "Dobavnica"], ["racun", "Račun"]].map(([k, l]) => <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>)}</div>}
         {kind === "dobavnica" && <input className="adm-input" style={{ minWidth: 200 }} value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Št. pošiljke (neobvezno)" />}
+        {!edit && kind !== "predracun" && <><b style={{ marginLeft: 8 }}>Skladišče</b><div className="adm-seg">{[["glavno", "Glavno"], ["samana", "🏪 Samana (konsignacija)"]].map(([k, l]) => <button key={k} className={wh === k ? "on" : ""} onClick={() => setWh(k)}>{l}</button>)}</div></>}
+        {edit && wh !== "glavno" && <b>🏪 Skladišče: Samana</b>}
         <span className="muted">{kind === "racun" ? "Uradni račun — številka 2026-…" : kind === "predracun" ? "PR-2026-… z UPN QR kodo; kasneje »Ustvari račun«." : "DOB-2026-… s cenami; kasneje »Ustvari račun«."}</span>
       </div>
       <div className="adm-card" style={{ padding: 16 }}>
@@ -3564,7 +3589,7 @@ function InvoiceForm({ onDone, draft, onDraft }) {
                             </div>
                             <div style={{ textAlign: "right", fontSize: 12, flex: "none" }}>
                               <div className="strong">{eur(h.p.price_cents || 0)}</div>
-                              <div style={{ color: h.stock > 0 ? "#047857" : "#b91c1c" }}>zaloga {h.stock}</div>
+                              <div style={{ color: h.stock > 0 ? "#047857" : "#b91c1c" }}>{h.cons ? "pri Samani" : "zaloga"} {h.stock}</div>
                             </div>
                           </div>))}
                       </div>)}
@@ -4204,6 +4229,137 @@ function Stats() {
         Šteje vse obiskovalce brez piškotkov: obiskovalec je prepoznan samo znotraj istega dne (anonimen odtis, ki ga ne moremo povezati z osebo), zato isti človek v dveh dneh šteje dvakrat.
         Roboti in iskalniki niso šteti. Nakupi štejejo naročila, ki niso preklicana.
         {d?.startedAt && ` Merjenje teče od ${new Date(d.startedAt).toLocaleDateString("sl-SI")}.`}
+      </div>
+    </>
+  );
+}
+
+/* =========================== KONSIGNACIJA (npr. Samana) =========================== */
+function Consign({ wh = "samana" }) {
+  const [d, setD] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const [q, setQ] = useState("");
+  const [ret, setRet] = useState(null); // { sku: qty } — način vračila
+  const [preview, setPreview] = useState(null);
+  const [showMoves, setShowMoves] = useState(false);
+  const load = useCallback(async () => { setD(await getJSON(`/api/admin/consign?wh=${wh}`)); }, [wh]);
+  useEffect(() => { load(); }, [load]);
+  const rows = d?.rows || [];
+  const name = d?.name || "Konsignacija";
+  const nq = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const shown = rows.filter((r) => { const w = nq(q).trim().split(/\s+/).filter(Boolean); const h = nq(`${r.sku} ${r.src_code} ${r.name}`); return w.every((x) => h.includes(x)); });
+  const onStock = rows.filter((r) => r.qty > 0);
+  const pcs = onStock.reduce((a, r) => a + r.qty, 0);
+  const value = onStock.reduce((a, r) => a + r.qty * (r.price_cents || 0), 0);
+
+  async function readFile(file) {
+    if (!file) return;
+    const XLSX = await import("xlsx");
+    const isText = /\.csv$/i.test(file.name) || !/\.xls/i.test(file.name);
+    const wb = isText ? XLSX.read(await file.text(), { type: "string" }) : XLSX.read(await file.arrayBuffer(), { type: "array" });
+    const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false });
+    const nk = (k) => nq(k).replace(/[^a-z0-9]+/g, " ").trim();
+    const out = [];
+    for (const row of raw) {
+      const g = (...n) => { for (const k of Object.keys(row)) if (n.some((x) => nk(k) === x || nk(k).startsWith(x))) return row[k]; return ""; };
+      const code = String(g("sifra artikla", "sifra", "sku", "koda")).trim();
+      if (!code) continue;
+      out.push({ code, name: String(g("naziv artikla", "naziv", "artikel", "opis")).trim(), qty: g("zaloga", "kolicina", "kol"),
+        price: String(g("prod cena z ddv", "mpc z ddv", "cena z ddv")).trim() });
+    }
+    if (!out.length) { setMsg({ ok: false, t: "V datoteki ni stolpcev »Šifra artikla« in »Zaloga«." }); return; }
+    setPreview({ file: file.name, rows: out });
+  }
+  async function doImport() {
+    const r = await post("/api/admin/consign", { action: "import", wh, rows: preview.rows, note: `Uvoz iz ${preview.file}` });
+    setPreview(null); setMsg({ ok: !!r?.ok, t: r?.message || "Napaka." }); load();
+  }
+  async function setQty(r) {
+    const v = prompt(`${r.sku} — ${r.name}\nKoliko kosov je res pri ${name}?`, String(r.qty));
+    if (v === null) return;
+    const n = parseInt(v, 10);
+    if (!Number.isFinite(n) || n < 0) return;
+    const x = await post("/api/admin/consign", { action: "set", wh, sku: r.sku, qty: n });
+    setMsg({ ok: !!x?.ok, t: x?.message || "Napaka." }); load();
+  }
+  async function doReturn() {
+    const items = Object.entries(ret || {}).map(([sku, qty]) => ({ sku, qty: parseInt(qty, 10) || 0 })).filter((i) => i.qty > 0);
+    const n = items.reduce((a, i) => a + i.qty, 0);
+    if (!n) { setMsg({ ok: false, t: "Označi kose, ki jih je Samana vrnila." }); return; }
+    if (!confirm(`Prenesem ${n} kos iz skladišča ${name} nazaj v glavno skladišče?`)) return;
+    const r = await post("/api/admin/consign", { action: "return", wh, items });
+    setMsg({ ok: !!r?.ok, t: r?.message || "Napaka." }); setRet(null); load();
+  }
+  async function exportXlsx() {
+    const XLSX = await import("xlsx");
+    const ws = XLSX.utils.json_to_sheet(rows.map((r) => ({ "Šifra (Metakocka)": r.src_code, SKU: r.sku, Artikel: r.name, Velikost: r.size, Zaloga: r.qty,
+      "MPC z DDV": r.price_cents != null ? r.price_cents / 100 : "", "Nabavna brez DDV": r.cost_cents != null ? r.cost_cents / 100 : "" })));
+    ws["!cols"] = [{ wch: 20 }, { wch: 14 }, { wch: 44 }, { wch: 9 }, { wch: 8 }, { wch: 11 }, { wch: 16 }];
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Zaloga");
+    XLSX.writeFile(wb, `zaloga-${wh}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
+  return (
+    <>
+      <div className="adm-top">
+        <div><h1>🏪 {name}</h1><div className="sub">Blago, ki je pri stranki na zalogi. Ločeno od glavnega skladišča — trgovina ga ne vidi. Račun: Računi & dokumenti → Skladišče »Samana«.</div></div>
+        <div className="grow" />
+        <label className="adm-btn">⬆ Uvozi tabelo (Excel/CSV)<input type="file" accept=".xlsx,.xls,.csv,text/csv" hidden onChange={(e) => { readFile(e.target.files?.[0]); e.target.value = ""; }} /></label>
+        <button className="adm-btn" onClick={exportXlsx} disabled={!rows.length}>⬇ Excel</button>
+        {ret ? <><button className="adm-btn" onClick={() => setRet(null)}>Prekliči</button><button className="adm-btn pri" onClick={doReturn}>✓ Potrdi vračilo</button></>
+          : <button className="adm-btn pri" disabled={!pcs} onClick={() => setRet({})}>↩ Vračilo v glavno skladišče</button>}
+      </div>
+      {msg && <div className={`adm-note ${msg.ok ? "ok" : "err"}`}>{msg.t}</div>}
+      {preview && (
+        <div className="adm-card" style={{ padding: 16, marginBottom: 12, border: "2px solid #0a0a0a" }}>
+          <b>Uvoz iz »{preview.file}«: {preview.rows.length} vrstic · {preview.rows.reduce((a, r) => a + (parseInt(r.qty, 10) || 0), 0)} kos</b>
+          <div className="muted" style={{ margin: "6px 0 10px", fontSize: 13 }}>Za artikle iz tabele se nastavi točno to stanje (kot inventura). Artikli, ki jih v tabeli ni, ostanejo, kot so.</div>
+          <div style={{ display: "flex", gap: 8 }}><button className="adm-btn" onClick={() => setPreview(null)}>Prekliči</button><button className="adm-btn pri" onClick={doImport}>✓ Uvozi na zalogo {name}</button></div>
+        </div>)}
+      {ret && <div className="adm-note">↩ Pri vsakem vrnjenem artiklu vpiši število kosov (ali klikni »Vse«), nato »✓ Potrdi vračilo«. Kosi gredo iz {name} v glavno skladišče.</div>}
+      <div className="adm-card" style={{ padding: 12, marginBottom: 12, display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
+        <span>Artiklov na zalogi: <b>{onStock.length}</b></span>
+        <span>Kosov: <b>{pcs}</b></span>
+        <span>Vrednost (MPC z DDV): <b>{eur(value)}</b></span>
+        <div className="grow" />
+        {ret && <button className="adm-btn" onClick={() => setRet(Object.fromEntries(onStock.map((r) => [r.sku, String(r.qty)])))}>Vrni vse, kar je ostalo</button>}
+        <input className="adm-input" placeholder="Išči šifro ali ime …" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 220 }} />
+      </div>
+      <div className="adm-card adm-scroll">
+        <table className="adm-tbl">
+          <thead><tr><th>Šifra (Metakocka)</th><th>SKU</th><th>Artikel</th><th>Vel.</th><th className="r">Zaloga</th><th className="r">MPC z DDV</th><th className="r">Nabavna</th>{ret && <th className="r">Vrni kos</th>}</tr></thead>
+          <tbody>
+            {d === null ? <tr><td colSpan={8} className="adm-empty">Nalagam …</td></tr> :
+             !rows.length ? <tr><td colSpan={8} className="adm-empty">Zaloga je prazna. Klikni »⬆ Uvozi tabelo« in izberi Excel/CSV zaloge pri stranki.</td></tr> :
+             shown.map((r) => (
+              <tr key={r.sku} style={{ opacity: r.qty > 0 ? 1 : 0.45 }}>
+                <td className="muted">{r.src_code}</td>
+                <td className="strong">{r.sku}</td>
+                <td>{r.name}</td>
+                <td>{r.size}</td>
+                <td className="r num strong click" title="Klikni za popravek stanja" onClick={() => setQty(r)} style={{ cursor: "pointer", color: r.qty < 0 ? "#b91c1c" : undefined }}>{r.qty} ✎</td>
+                <td className="r num">{r.price_cents != null ? eur(r.price_cents) : "—"}</td>
+                <td className="r num muted">{r.cost_cents != null ? eur(r.cost_cents) : "—"}</td>
+                {ret && <td className="r">{r.qty > 0 ? <span style={{ display: "inline-flex", gap: 4 }}>
+                  <input value={ret[r.sku] || ""} onChange={(e) => setRet((x) => ({ ...x, [r.sku]: e.target.value }))} style={{ width: 48, textAlign: "right" }} inputMode="numeric" placeholder="0" />
+                  <button className="adm-btn" onClick={() => setRet((x) => ({ ...x, [r.sku]: String(r.qty) }))}>Vse</button></span> : null}</td>}
+              </tr>))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <button className="adm-btn" onClick={() => setShowMoves((v) => !v)}>{showMoves ? "▲ Skrij premike" : "▼ Premiki zaloge"}</button>
+        {showMoves && (
+          <div className="adm-card adm-scroll" style={{ marginTop: 8 }}>
+            <table className="adm-tbl">
+              <thead><tr><th>Datum</th><th>SKU</th><th className="r">Sprememba</th><th>Vrsta</th><th>Opomba</th></tr></thead>
+              <tbody>{(d?.moves || []).map((m, i) => (
+                <tr key={i}><td className="muted">{dt(m.created_at)}</td><td className="strong">{m.sku}</td>
+                  <td className="r num strong" style={{ color: m.delta < 0 ? "#b91c1c" : "#047857" }}>{m.delta > 0 ? "+" : ""}{m.delta}</td>
+                  <td>{{ uvoz: "Uvoz", prodaja: "Prodaja (račun)", vracilo: m.delta < 0 ? "Vračilo v glavno" : "Storno/dobropis", rocno: "Ročni popravek" }[m.reason] || m.reason}</td>
+                  <td className="muted">{m.note}</td></tr>))}</tbody>
+            </table>
+          </div>)}
       </div>
     </>
   );
