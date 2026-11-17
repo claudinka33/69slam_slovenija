@@ -4,7 +4,7 @@ const nextConfig = {
   // PDF računi: pdfkit iz node_modules (s pisavami in podatki) + naše pisave
   serverExternalPackages: ["pdfkit"],
   outputFileTracingIncludes: {
-    "/api/**/*": ["./data/catalog.json", "./assets/fonts/**/*", "./public/brand/**/*", "./node_modules/pdfkit/js/data/**/*"],
+    "/api/**/*": ["./data/catalog.json", "./data/samana-zaloga-*.json", "./assets/fonts/**/*", "./public/brand/**/*", "./node_modules/pdfkit/js/data/**/*"],
   },
   // stara Shopify trgovina → nova (SEO): vse stare poti gredo v /api/legacy, ki vrne 301 na pravi novi naslov
   async rewrites() {
