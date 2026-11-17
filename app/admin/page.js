@@ -1273,6 +1273,7 @@ async function shrinkImage(file) {
   return await new Promise((r) => c.toBlob(r, "image/jpeg", 0.86));
 }
 function ArticlePanel({ sp, onClose, onStock, onSaved }) {
+  const [view, setView] = useState("uredi");
   const [d, setD] = useState(null);
   const [f, setF] = useState(null);
   const [imgs, setImgs] = useState([]);
@@ -1331,7 +1332,7 @@ function ArticlePanel({ sp, onClose, onStock, onSaved }) {
 
   return (
     <div className="adm-ov side" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="adm-panel" style={{ maxWidth: 620 }}>
+      <div className="adm-panel" style={{ maxWidth: view === "kartica" ? 980 : 620 }}>
         <div className="adm-mh">
           <div>
             <h3>{P?.name || sp.name}</h3>
@@ -1343,7 +1344,11 @@ function ArticlePanel({ sp, onClose, onStock, onSaved }) {
           </div>
           <button className="x" onClick={onClose}>✕</button>
         </div>
+        <div style={{ padding: "0 20px" }}><div className="adm-seg">
+          {[["uredi", "✏️ Uredi"], ["kartica", "📇 Kartica artikla"]].map(([k, l]) => <button key={k} className={view === k ? "on" : ""} onClick={() => setView(k)}>{l}</button>)}
+        </div></div>
         <div className="adm-mb">
+          {view === "kartica" ? <ArticleCard code={sp.code} /> : <>
           {note && <div className={`adm-note ${note.ok ? "ok" : "err"}`}>{note.t}</div>}
           {!d ? <div className="adm-empty">Nalagam …</div> : !d.ok ? <div className="adm-note err">{d.message}</div> : <>
             <div className="adm-sec">Zaloga po velikostih <span className="muted" style={{ fontWeight: 500, textTransform: "none" }}>· klikni za popravek</span></div>
@@ -1395,10 +1400,72 @@ function ArticlePanel({ sp, onClose, onStock, onSaved }) {
               </label>
             </div>
           </>}
+          </>}
         </div>
       </div>
     </div>
   );
+}
+
+/* ---------- Kartica artikla: premiki zaloge + zgodovina iz Metakocke ---------- */
+const CARD_TYPES = { prevzem: ["#d1fae5", "#064e3b"], prodaja: ["#fde2e4", "#9b1c2c"], vracilo: ["#e0ecff", "#1e3a8a"], inventura: ["#fff8e1", "#5c4a00"], zacetna: ["#f5f5f7", "#333"], popravek: ["#f5f5f7", "#333"] };
+function ArticleCard({ code }) {
+  const [size, setSize] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [src, setSrc] = useState("vse");
+  const [d, setD] = useState(null);
+  const qs = `code=${encodeURIComponent(code)}${size ? `&size=${encodeURIComponent(size)}` : ""}${from ? `&from=${from}` : ""}${to ? `&to=${to}` : ""}`;
+  useEffect(() => { setD(null); getJSON(`/api/admin/article/card?${qs}`).then((x) => setD(x || { ok: false, message: "Napaka pri nalaganju." })); }, [qs]);
+  const fmt = (x) => new Date(x).toLocaleDateString("sl-SI", { timeZone: "Europe/Ljubljana" });
+  const sizes = d?.variants ? sortSizes(d.variants.map((v) => v.size)) : [];
+  const rows = (d?.rows || []).filter((r) => src === "vse" || (src === "mk" ? r.src === "mk" : r.src === "nova"));
+  const S = d?.summary;
+  const box = (lbl, val, sub) => (
+    <div style={{ flex: "1 1 130px", border: "1px solid #e0e0e0", borderRadius: 12, padding: "10px 12px", background: "#fff" }}>
+      <div className="muted" style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>{lbl}</div>
+      <div style={{ fontSize: 20, fontWeight: 800, marginTop: 2 }}>{val}</div>
+      {sub && <div className="muted" style={{ fontSize: 12 }}>{sub}</div>}
+    </div>);
+  return <>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "flex-end", marginBottom: 14 }}>
+      <div className="adm-field" style={{ margin: 0 }}><label>Velikost</label>
+        <select className="adm-input" value={size} onChange={(e) => setSize(e.target.value)}>
+          <option value="">Vse velikosti</option>{sizes.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+      <div className="adm-field" style={{ margin: 0 }}><label>Od</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+      <div className="adm-field" style={{ margin: 0 }}><label>Do</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+      <div className="adm-seg" style={{ marginBottom: 2 }}>
+        {[["vse", "Vse"], ["nova", "Nova trgovina"], ["mk", "Metakocka"]].map(([k, l]) => <button key={k} className={src === k ? "on" : ""} onClick={() => setSrc(k)}>{l}</button>)}
+      </div>
+      <a className="adm-btn" href={`/api/admin/article/card?${qs}&format=xlsx`} style={{ marginLeft: "auto" }}>⬇️ Excel</a>
+    </div>
+    {!d ? <div className="adm-empty">Nalagam …</div> : !d.ok ? <div className="adm-note err">{d.message}</div> : <>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        {box("Zaloga zdaj", `${d.stockNow} kos`, size ? `velikost ${size}` : sizes.map((s) => `${s}: ${d.variants.find((v) => v.size === s)?.stock ?? 0}`).join(" · "))}
+        {box("Prevzeto", `${S.prevzeto} kos`, S.zadnjiPrevzem ? `zadnji ${fmt(S.zadnjiPrevzem)}` : "")}
+        {box("Prodano", `${S.prodano} kos`, `${S.kupcev} kupcev${S.zadnjaProdaja ? ` · zadnja ${fmt(S.zadnjaProdaja)}` : ""}`)}
+        {box("Vrnjeno", `${S.vrnjeno} kos`)}
+        {box("Nabavna cena", d.product.cost_cents != null ? eur(d.product.cost_cents) : "—", "povprečna, brez DDV")}
+      </div>
+      <div className="muted" style={{ marginBottom: 8 }}>{rows.length} premikov{(from || to) ? " v izbranem obdobju" : ""}. »Stanje po« je izračunano samo za premike nove trgovine (od odprtja); vrstice iz Metakocke so zgodovina in ne spreminjajo zaloge.</div>
+      {!rows.length ? <div className="adm-empty">Ni premikov.</div> :
+      <div style={{ overflowX: "auto", border: "1px solid #e0e0e0", borderRadius: 12 }}>
+        <table className="adm-tbl" style={{ fontSize: 13 }}>
+          <thead><tr><th>Datum</th><th>Vel.</th><th style={{ textAlign: "right" }}>Kol.</th><th>Vrsta</th><th>Kupec / dobavitelj</th><th>Dokument</th><th style={{ textAlign: "right" }}>Stanje po</th></tr></thead>
+          <tbody>{rows.map((r) => { const c = CARD_TYPES[r.type] || CARD_TYPES.popravek; return (
+            <tr key={r.id}>
+              <td className="num" style={{ whiteSpace: "nowrap" }}>{fmt(r.date)}</td>
+              <td>{r.size || "—"}</td>
+              <td className="num" style={{ textAlign: "right", fontWeight: 700, color: r.delta > 0 ? "#047857" : r.delta < 0 ? "#b91c1c" : undefined }}>{r.delta > 0 ? "+" : ""}{r.delta}</td>
+              <td><span style={{ background: c[0], color: c[1], borderRadius: 50, padding: "2px 9px", fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap" }}>{r.label}</span></td>
+              <td>{r.who || <span className="muted">—</span>}</td>
+              <td className="muted" style={{ fontSize: 12 }}>{r.doc}{r.price_cents != null ? ` · ${eur(r.price_cents)}/kos` : ""}</td>
+              <td className="num" style={{ textAlign: "right" }}>{r.after ?? <span className="muted">—</span>}</td>
+            </tr>); })}</tbody>
+        </table>
+      </div>}
+    </>}
+  </>;
 }
 
 function StockModal({ p, size, onClose, onSaved }) {
