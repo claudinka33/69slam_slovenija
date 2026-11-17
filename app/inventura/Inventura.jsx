@@ -24,7 +24,7 @@ export default function Inventura() {
   const [auth, setAuth] = useState(null); // null = nalagam, false = PIN, true = notri
   const [articles, setArticles] = useState([]);
   const [entries, setEntries] = useState({}); // cid → vnos
-  const [ui, setUi] = useState({ q: "", kind: "all", show: "stock", tab: "list" });
+  const [ui, setUi] = useState({ q: "", kind: "all", show: "stock", tab: "list", view: "vzorec", size: "all" });
   const [online, setOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [pad, setPad] = useState(null); // { sku, code, size, name, stock, cid?, val }
@@ -149,10 +149,21 @@ export default function Inventura() {
     const codes = {};
     for (const a of articles) if (!codes[a.code]) { codes[a.code] = 1; cnt[a.kind] = (cnt[a.kind] || 0) + 1; }
     const list = articles.map((a) => ({ ...a, hay: fold(`${a.sku} ${a.code} ${a.name} ${a.type}`) }));
-    list.sort((a, b) => kindRank(a.kind) - kindRank(b.kind) || cnt[b.kind] - cnt[a.kind] || a.kind.localeCompare(b.kind)
-      || a.name.localeCompare(b.name) || a.code.localeCompare(b.code) || sizeRank(a.size) - sizeRank(b.size));
+    const byKind = (a, b) => kindRank(a.kind) - kindRank(b.kind) || cnt[b.kind] - cnt[a.kind] || a.kind.localeCompare(b.kind);
+    if (ui.view === "velikost") {
+      // po velikosti: vse L skupaj, znotraj tega po šifri (MBY…, MCY…) — kot je v škatli
+      list.sort((a, b) => byKind(a, b) || sizeRank(a.size) - sizeRank(b.size) || String(a.size).localeCompare(String(b.size))
+        || a.code.slice(0, 3).localeCompare(b.code.slice(0, 3)) || a.name.localeCompare(b.name) || a.code.localeCompare(b.code));
+    } else {
+      list.sort((a, b) => byKind(a, b) || a.name.localeCompare(b.name) || a.code.localeCompare(b.code) || sizeRank(a.size) - sizeRank(b.size));
+    }
     return list;
-  }, [articles]);
+  }, [articles, ui.view]);
+  const sizeList = useMemo(() => {
+    const m = new Set();
+    for (const a of articles) if (a.size && (ui.kind === "all" || a.kind === ui.kind)) m.add(a.size);
+    return [...m].sort((a, b) => sizeRank(a) - sizeRank(b) || String(a).localeCompare(String(b)));
+  }, [articles, ui.kind]);
   const skuInfo = useMemo(() => Object.fromEntries(articles.map((a) => [a.sku, a])), [articles]);
 
   const isDone = (r) => Boolean(bySku[r.sku]?.length);
@@ -168,7 +179,9 @@ export default function Inventura() {
   }, [rows, bySku]); // eslint-disable-line
 
   const tokens = fold(ui.q).split(/\s+/).filter(Boolean);
+  const bySize = ui.view === "velikost";
   const shown = rows.filter((r) => {
+    if (bySize && ui.size !== "all" && r.size !== ui.size) return false;
     if (tokens.length) return tokens.every((t) => r.hay.includes(t)); // iskanje vedno po celotni bazi
     if (ui.kind !== "all" && r.kind !== ui.kind) return false;
     if (ui.show === "stock") return inStockScope(r);
@@ -288,6 +301,22 @@ export default function Inventura() {
           </div>
           <button className="iv-btn pri" onClick={() => setManual({ sku: ui.q.trim().toUpperCase(), size: "", qty: "", note: "" })}>＋ Ročni vnos</button>
         </div>
+        {ui.tab === "list" && (
+          <div className="iv-bar">
+            <div className="iv-seg iv-view">
+              <button className={!bySize ? "on" : ""} onClick={() => setUi((u) => ({ ...u, view: "vzorec", size: "all" }))}>👕 Po vzorcu</button>
+              <button className={bySize ? "on" : ""} onClick={() => setUi((u) => ({ ...u, view: "velikost" }))}>📏 Po velikosti</button>
+            </div>
+            {bySize && (
+              <div className="iv-sizes">
+                <button className={ui.size === "all" ? "on" : ""} onClick={() => setUi((u) => ({ ...u, size: "all" }))}>Vse</button>
+                {sizeList.map((z) => (
+                  <button key={z} className={ui.size === z ? "on" : ""} onClick={() => { setUi((u) => ({ ...u, size: z })); if (scrollRef.current) scrollRef.current.scrollTop = 0; }}>{z}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="iv-card" ref={scrollRef} onScroll={onScroll}>
           {ui.tab === "list" ? (
@@ -306,11 +335,12 @@ export default function Inventura() {
                   const done = isDone(r);
                   const sum = sumOf(r.sku);
                   const diff = sum - r.stock;
-                  const head = !tokens.length && ui.kind === "all" && (i === 0 || shown[i - 1].kind !== r.kind);
-                  const same = i > 0 && shown[i - 1].code === r.code;
+                  const gk = (x) => (bySize ? `${x.kind} · ${x.size}` : x.kind);
+                  const head = (bySize || (!tokens.length && ui.kind === "all")) && (i === 0 || gk(shown[i - 1]) !== gk(r));
+                  const same = !bySize && i > 0 && shown[i - 1].code === r.code;
                   return (
                     <Fragment key={r.sku}>
-                      {head && <tr className="iv-grp"><td colSpan={5}>{r.kind}</td></tr>}
+                      {head && <tr className="iv-grp"><td colSpan={5}>{gk(r)}</td></tr>}
                       <tr className={`${done ? (diff ? "diff" : "ok") : ""}${same ? " same" : ""}`} onClick={() => setPad({ ...r, val: "" })}>
                         <td>
                           {same ? <div className="iv-cont"><span>↳</span><span className="mono">{r.sku}</span></div> : (

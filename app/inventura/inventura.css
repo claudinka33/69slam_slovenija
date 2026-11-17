@@ -192,3 +192,10 @@ body:has(.iv){background:#F6F7F9;overscroll-behavior:none;-webkit-tap-highlight-
 }
 
 .iv-login .iv-keys button{height:72px;}
+
+.iv-view{flex:0 0 auto;}
+.iv-view button{padding:12px 18px;}
+.iv-sizes{flex:1 1 300px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.iv-sizes::-webkit-scrollbar{display:none;}
+.iv-sizes button{flex:none;min-width:58px;height:52px;padding:0 14px;border-radius:12px;background:#fff !important;border:2px solid var(--a-line) !important;font-weight:800;font-size:19px;}
+.iv-sizes button.on{background:var(--a-navy) !important;border-color:var(--a-navy) !important;color:#fff !important;}
