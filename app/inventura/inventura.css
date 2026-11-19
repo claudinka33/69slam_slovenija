@@ -199,3 +199,4 @@ body:has(.iv){background:#F6F7F9;overscroll-behavior:none;-webkit-tap-highlight-
 .iv-sizes::-webkit-scrollbar{display:none;}
 .iv-sizes button{flex:none;min-width:58px;height:52px;padding:0 14px;border-radius:12px;background:#fff !important;border:2px solid var(--a-line) !important;font-weight:800;font-size:19px;}
 .iv-sizes button.on{background:var(--a-navy) !important;border-color:var(--a-navy) !important;color:#fff !important;}
+.iv-note{background:var(--a-orange-soft);color:var(--a-orange);font-weight:700;font-size:16px;padding:10px 14px;border-radius:10px;}

@@ -1966,26 +1966,42 @@ function Inventory({ stock, reload }) {
         </div>
         {tab?.ok && tab.manual.length > 0 && (
           <div style={{ marginTop: 14, background: "#fff8e1", borderRadius: 12, padding: 12 }}>
-            <b style={{ fontSize: 13, color: "#5c4a00" }}>❓ Ročni vnosi za pregled (šifre, ki jih ni bilo na seznamu)</b>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <b style={{ fontSize: 13, color: "#5c4a00", flex: 1 }}>❓ Ročni vnosi za pregled (nove velikosti in šifre, ki jih ni bilo na seznamu)</b>
+              {tab.manual.some((m) => m.canCreate) && (
+                <button className="adm-btn pri" onClick={async () => {
+                  const d = await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create_size", all: true }) });
+                  setMsg({ ok: Boolean(d?.ok), t: d?.ok ? `✓ Ustvarjenih ${d.made} novih velikosti — vnosi so preneseni v štetje (klikni »Prenesi štetje v tabelo«).` : "Napaka pri ustvarjanju velikosti." });
+                  loadTab(); reload();
+                }}>➕ Ustvari vse nove velikosti ({tab.manual.filter((m) => m.canCreate).length})</button>
+              )}
+            </div>
             <table className="adm-tbl" style={{ marginTop: 8 }}>
-              <thead><tr><th>Vpisana šifra</th><th>Vel.</th><th className="r">Količina</th><th>Opomba</th><th>Kdaj</th><th></th></tr></thead>
+              <thead><tr><th>Vpisana šifra</th><th>Artikel</th><th>Vel.</th><th className="r">Količina</th><th>Opomba</th><th>Kdaj</th><th></th></tr></thead>
               <tbody>
                 {tab.manual.map((m) => (
                   <tr key={m.cid}>
                     <td className="strong">{m.sku}</td>
+                    <td>{m.product ? <>{m.product} <span className="adm-tag">nova velikost</span></> : <span className="muted">ni v CMS</span>}</td>
                     <td>{m.size || "—"}</td>
                     <td className="r num strong">{m.qty}</td>
                     <td className="muted">{m.note || ""}</td>
                     <td className="muted">{dt(m.at)}</td>
-                    <td className="r"><button className="adm-btn" onClick={async () => {
-                      await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "resolve", cid: m.cid }) });
-                      loadTab();
-                    }}>✓ Urejeno</button></td>
+                    <td className="r" style={{ whiteSpace: "nowrap" }}>
+                      {m.canCreate && <button className="adm-btn pri" style={{ marginRight: 6 }} onClick={async () => {
+                        await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create_size", cid: m.cid }) });
+                        loadTab(); reload();
+                      }}>➕ Ustvari velikost</button>}
+                      <button className="adm-btn" onClick={async () => {
+                        await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "resolve", cid: m.cid }) });
+                        loadTab();
+                      }}>✓ Urejeno</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div style={{ color: "#5c4a00", fontSize: 12, marginTop: 6 }}>Teh artiklov ni v zalogi — dodaj jih ročno (Zaloga / Prevzem) ali popravi šifro. Potrditev inventure jih ne spremeni — ko artikel urediš, klikni »✓ Urejeno«.</div>
+            <div style={{ color: "#5c4a00", fontSize: 12, marginTop: 6 }}>»➕ Ustvari velikost« doda novo velikost obstoječemu artiklu (zaloga 0) in vnos prenese v štetje — zaloga se nastavi ob potrditvi inventure. Šifre, ki jih v CMS ni, uredi ročno in klikni »✓ Urejeno«.</div>
           </div>
         )}
       </div>

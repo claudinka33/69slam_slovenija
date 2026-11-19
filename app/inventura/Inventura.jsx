@@ -165,6 +165,11 @@ export default function Inventura() {
     return [...m].sort((a, b) => sizeRank(a) - sizeRank(b) || String(a).localeCompare(String(b)));
   }, [articles, ui.kind]);
   const skuInfo = useMemo(() => Object.fromEntries(articles.map((a) => [a.sku, a])), [articles]);
+  const codeInfo = useMemo(() => {
+    const m = {};
+    for (const a of articles) (m[a.code] = m[a.code] || { code: a.code, name: a.name, type: a.type, sizes: [] }).sizes.push(a.size);
+    return m;
+  }, [articles]);
 
   const isDone = (r) => Boolean(bySku[r.sku]?.length);
   const inStockScope = (r) => r.stock > 0 || isDone(r);
@@ -178,11 +183,20 @@ export default function Inventura() {
     return Object.entries(m);
   }, [rows, bySku]); // eslint-disable-line
 
-  const tokens = fold(ui.q).split(/\s+/).filter(Boolean);
+  // šifra z etikete (MBYCDR-PO L, AGSALS-AT 44, AGSALSAT44) → osnovna šifra artikla
+  let tokens = fold(ui.q).split(/\s+/).filter(Boolean).map((t) => {
+    const m = t.match(/^([a-z]{6})-?([a-z]{2})(?:[-\s]?[a-z0-9]+)?$/);
+    return m && !rows.some((r) => r.hay.includes(t)) ? m[1] : t;
+  });
+  // »AGSALS-AT 44«, ko velikosti 44 še ni: pokaži vsaj artikel AGSALS
+  if (tokens.length > 1 && !rows.some((r) => tokens.every((t) => r.hay.includes(t)))) tokens = [tokens[0]];
   const bySize = ui.view === "velikost";
+  const match = (r) => tokens.every((t) => r.hay.includes(t));
+  // če izbrana velikost nima zadetkov za iskanje, pokaži vse velikosti (da artikel vedno najde)
+  const sizeMiss = bySize && ui.size !== "all" && tokens.length > 0 && !rows.some((r) => r.size === ui.size && match(r));
   const shown = rows.filter((r) => {
-    if (bySize && ui.size !== "all" && r.size !== ui.size) return false;
-    if (tokens.length) return tokens.every((t) => r.hay.includes(t)); // iskanje vedno po celotni bazi
+    if (bySize && ui.size !== "all" && !sizeMiss && r.size !== ui.size) return false;
+    if (tokens.length) return match(r); // iskanje vedno po celotni bazi
     if (ui.kind !== "all" && r.kind !== ui.kind) return false;
     if (ui.show === "stock") return inStockScope(r);
     if (ui.show === "todo") return !isDone(r) && r.stock > 0;
@@ -318,6 +332,9 @@ export default function Inventura() {
           </div>
         )}
 
+        {ui.tab === "list" && sizeMiss && shown.length > 0 && (
+          <div className="iv-note">V velikosti <b>{ui.size}</b> tega ni — prikazujem vse velikosti.</div>
+        )}
         <div className="iv-card" ref={scrollRef} onScroll={onScroll}>
           {ui.tab === "list" ? (
             <table className="iv-tbl">
@@ -383,19 +400,24 @@ export default function Inventura() {
         <Pad pad={pad} entries={bySku[pad.sku] || []} onClose={() => setPad(null)}
           onSave={(n) => { if (pad.cid) editCount(pad.cid, n); else addCount(pad, n); setPad(null); }}
           onPick={(e) => setPad({ ...pad, cid: e.cid, val: String(e.qty) })}
-          onDelete={pad.cid ? () => { if (delEntry(pad.cid)) setPad(null); } : null} />
+          onDelete={pad.cid ? () => { if (delEntry(pad.cid)) setPad(null); } : null}
+          onNewSize={() => { const c = codeInfo[pad.code]; setPad(null); setManual({ code: pad.code, name: pad.name, have: c?.sizes || [], size: "", qty: "", note: "" }); }} />
       )}
 
       {manual && (
         <Manual m={manual} onClose={() => setManual(null)}
           onDelete={manual.cid ? () => { if (delEntry(manual.cid)) setManual(null); } : null}
           onSave={(m) => {
-            const known = skuInfo[m.sku];
+            const typed = m.sku.toUpperCase();
+            const code = m.code || (codeInfo[typed] ? typed : null);
+            const sz = String(m.size || "").replace(/\s+/g, "").toUpperCase();
+            const sku = code && sz ? `${code}-${sz}` : typed;
+            const known = skuInfo[sku];
             putEntry({
-              cid: m.cid || uid(), sku: m.sku, code: known?.code || null, size: m.size || known?.size || null,
+              cid: m.cid || uid(), sku, code: known?.code || code || null, size: m.size || known?.size || null,
               qty: m.qty, manual: !known, note: m.note || null, deleted: false, at: new Date().toISOString(),
             });
-            flash(known ? `✓ Šifra obstaja — prišteto k ${known.sku}` : "✓ Shranjeno za pregled");
+            flash(known ? `✓ Velikost obstaja — prišteto k ${known.sku}` : code ? `✓ Nova velikost ${sz} shranjena — Claudia jo potrdi` : "✓ Shranjeno za pregled");
             setManual(null);
           }} />
       )}
@@ -452,7 +474,7 @@ function Login({ onOk }) {
 }
 
 /* ---------- številčnica ---------- */
-function Pad({ pad, entries, onClose, onSave, onPick, onDelete }) {
+function Pad({ pad, entries, onClose, onSave, onPick, onDelete, onNewSize }) {
   const [v, setV] = useState(pad.val || "");
   useEffect(() => setV(pad.val || ""), [pad.cid, pad.val]);
   const n = parseInt(v, 10);
@@ -509,7 +531,8 @@ function Pad({ pad, entries, onClose, onSave, onPick, onDelete }) {
           </div>
         </div>
         <div className="iv-mf">
-          {onDelete ? <button className="iv-btn danger" onClick={onDelete}>Izbriši vnos</button> : <span />}
+          {onDelete ? <button className="iv-btn danger" onClick={onDelete}>Izbriši vnos</button>
+            : <button className="iv-btn" onClick={onNewSize}>＋ Druga velikost</button>}
           <button className="iv-btn pri lg" disabled={!ok} onClick={() => onSave(n)}>{pad.cid ? "Shrani popravek" : `Dodaj ${ok ? n : ""}`}</button>
         </div>
       </div>
@@ -519,27 +542,43 @@ function Pad({ pad, entries, onClose, onSave, onPick, onDelete }) {
 
 /* ---------- ročni vnos (artikla ni na seznamu) ---------- */
 function Manual({ m, onClose, onSave, onDelete }) {
-  const [sku, setSku] = useState(m.sku || "");
+  const newSize = Boolean(m.code);
+  const have = m.have || [];
+  const numeric = have.length > 0 && have.every((x) => /^\d+$/.test(x));
+  let chips = ["", ...SIZES];
+  if (newSize) {
+    if (numeric) {
+      const ns = have.map(Number);
+      const lo = Math.max(0, Math.min(...ns) - 4), hi = Math.max(...ns) + 4;
+      chips = Array.from({ length: hi - lo + 1 }, (_, i) => String(lo + i));
+    } else chips = SIZES;
+    chips = chips.filter((x) => !have.includes(x));
+  }
+  const [sku, setSku] = useState(m.code || m.sku || "");
   const [size, setSize] = useState(m.size || "");
   const [other, setOther] = useState(m.size && !SIZES.includes(m.size) ? m.size : "");
   const [qty, setQty] = useState(m.qty || "");
   const [note, setNote] = useState(m.note || "");
   const n = parseInt(qty, 10);
-  const ok = sku.trim().length >= 2 && Number.isFinite(n) && n >= 0;
+  const ok = sku.trim().length >= 2 && Number.isFinite(n) && n >= 0 && (!newSize || size.trim());
   return (
     <div className="iv-ov" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="iv-modal">
         <div className="iv-mh">
-          <div><h3>Ročni vnos</h3><div className="sub">Artikla ni na seznamu — vpiši šifro s kosa. Claudia bo pregledala.</div></div>
+          {newSize
+            ? <div><h3>Nova velikost · {m.name}</h3><div className="sub"><span className="mono">{m.code}</span> · v sistemu so: {have.join(", ") || "—"}. Izberi velikost, ki je ni na seznamu.</div></div>
+            : <div><h3>Ročni vnos</h3><div className="sub">Artikla ni na seznamu — vpiši šifro s kosa. Claudia bo pregledala.</div></div>}
           <button className="x" onClick={onClose}>✕</button>
         </div>
         <div className="iv-mb iv-form">
-          <label>Šifra artikla
-            <input value={sku} onChange={(e) => setSku(e.target.value.toUpperCase())} autoCapitalize="characters" autoCorrect="off" spellCheck={false} placeholder="npr. MBYCDR-M" autoFocus />
-          </label>
+          {!newSize && (
+            <label>Šifra artikla
+              <input value={sku} onChange={(e) => setSku(e.target.value.toUpperCase())} autoCapitalize="characters" autoCorrect="off" spellCheck={false} placeholder="npr. MBYCDR-M" autoFocus />
+            </label>
+          )}
           <label>Velikost</label>
           <div className="iv-szpick">
-            {["", ...SIZES].map((s) => <button key={s || "x"} className={size === s && !other ? "on" : ""} onClick={() => { setSize(s); setOther(""); }}>{s || "brez"}</button>)}
+            {chips.map((s) => <button key={s || "x"} className={size === s && !other ? "on" : ""} onClick={() => { setSize(s); setOther(""); }}>{s || "brez"}</button>)}
             <input className={`iv-other${other ? " on" : ""}`} value={other} placeholder="Druga velikost (npr. 42, 40-41, 32)"
               onChange={(e) => { const x = e.target.value.toUpperCase().slice(0, 20); setOther(x); setSize(x); }}
               autoCapitalize="characters" autoCorrect="off" spellCheck={false} />
