@@ -2032,8 +2032,11 @@ function Inventory({ stock, reload }) {
                     <td className="muted">{dt(m.at)}</td>
                     <td className="r" style={{ whiteSpace: "nowrap" }}>
                       {m.canCreate && <button className="adm-btn pri" style={{ marginRight: 6 }} onClick={async () => {
-                        await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create_size", cid: m.cid }) });
+                        const d = await invPost({ action: "create_size", cid: m.cid });
+                        const sku = `${m.code}-${String(m.size || "").replace(/\s+/g, "").toUpperCase()}`;
+                        setMsg({ ok: Boolean(d?.ok), t: d?.ok ? `✓ Ustvarjena velikost ${sku} (${m.product}) — kos (${m.qty}) je prenesen v štetje. Klikni »⬇ Prenesi štetje v tabelo« in jo poišči spodaj; na tablici osveži stran.` : "Napaka pri ustvarjanju velikosti." });
                         loadTab(); reload();
+                        window.scrollTo({ top: 0, behavior: "smooth" });
                       }}>➕ Ustvari velikost</button>}
                       <button className="adm-btn" style={{ marginRight: 6 }} onClick={() => setEdit({ cid: m.cid, sku: m.sku, size: m.size || "", name: m.name || "" })}>✏️ Uredi</button>
                       <button className="adm-btn" onClick={async () => {
