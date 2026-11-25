@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 /** Šifra artikla iz ročnega vnosa (»SLLSY-PO S« → SLLSY, »MWSHB-M« z velikostjo M → MWSHB). */
 function baseCode(sku, size) {
   let s = String(sku || "").toUpperCase().replace(/\s+/g, " ").trim();
-  const lab = s.match(/^([A-Z0-9]{4,10})-[A-Z]{2}(?:\s+\S+)?$/);
-  if (lab) return lab[1];
+  const lab = s.match(/^([A-Z0-9]{4,10})-([A-Z]{2})(?:\s+\S+)?$/);
+  if (lab) return lab[1].slice(3, 6) === "PLN" && lab[1].length === 6 ? lab[1] + lab[2] : lab[1];
   s = s.replace(/\s+/g, "");
   const z = String(size || "").replace(/\s+/g, "").toUpperCase();
   if (z && s.endsWith(`-${z}`)) s = s.slice(0, -z.length - 1);
@@ -28,7 +28,18 @@ async function suggestFor(sql, code) {
   const pre = code.slice(0, 3);
   const sib = await sql`SELECT price_cents, COUNT(*)::int AS n FROM products WHERE code LIKE ${pre + "%"} GROUP BY price_cents ORDER BY n DESC LIMIT 1`;
   const pm = prefixMeta(code);
-  return { code, type: pm?.type || "", price_cents: sib[0]?.price_cents ?? null, cost_cents: mkCost(code) };
+  // ime vzorca: zadnje 3 črke šifre (DOF, HPE, CAB …) imajo isti vzorec tudi pri drugih artiklih
+  let name = "";
+  if (code.length >= 6) {
+    const des = code.slice(3, 6);
+    const COL = { BK: "BLACK", WH: "WHITE", NV: "NAVY", RD: "RED", GR: "GREY", DG: "DARK GREY", AG: "AQUA GREEN", BL: "BLUE" };
+    if (des === "PLN") name = COL[code.slice(6, 8)] ? `PLAIN ${COL[code.slice(6, 8)]}` : "";
+    else {
+      const r = await sql`SELECT name, COUNT(*)::int AS n FROM products WHERE substr(code, 4, 3) = ${des} GROUP BY name ORDER BY n DESC LIMIT 1`;
+      name = r[0]?.name || "";
+    }
+  }
+  return { code, name, type: pm?.type || "", price_cents: sib[0]?.price_cents ?? null, cost_cents: mkCost(code) };
 }
 
 /** Admin: pregled štetja s tablice (seštevki po SKU + ročni vnosi neznanih šifer). */

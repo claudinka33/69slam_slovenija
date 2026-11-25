@@ -2046,7 +2046,7 @@ function Inventory({ stock, reload }) {
                 ) : (
                   <tr key={m.cid}>
                     <td className="strong">{m.sku}</td>
-                    <td>{m.product ? <>{m.product} <span className="adm-tag">nova velikost</span></> : <>{m.name ? <b>{m.name} </b> : null}<span className="muted">ni v CMS</span></>}</td>
+                    <td>{m.product ? <>{m.product} <span className="adm-tag">nova velikost</span></> : <>{m.name ? <b>{m.name} </b> : m.suggest?.name ? <span title="predlog po vzorcu iz šifre">{m.suggest.name}? </span> : null}<span className="muted">ni v CMS</span></>}</td>
                     <td>{m.size || "—"}</td>
                     <td className="r num strong">{m.qty}</td>
                     <td className="muted">{m.note || ""}</td>
@@ -2060,7 +2060,7 @@ function Inventory({ stock, reload }) {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}>➕ Ustvari velikost</button>}
                       {!m.code && <button className="adm-btn pri" style={{ marginRight: 6 }} onClick={() => setMk({
-                        cid: m.cid, code: m.suggest?.code || m.sku, name: m.name || "", size: m.size || "",
+                        cid: m.cid, code: m.suggest?.code || m.sku, name: m.name || m.suggest?.name || "", size: m.size || "",
                         type: m.suggest?.type || "", price: m.suggest?.price_cents != null ? (m.suggest.price_cents / 100).toFixed(2).replace(".", ",") : "",
                       })}>➕ Ustvari artikel</button>}
                       <button className="adm-btn" style={{ marginRight: 6 }} onClick={() => setEdit({ cid: m.cid, sku: m.sku, size: m.size || "", name: m.name || "" })}>✏️ Uredi</button>
