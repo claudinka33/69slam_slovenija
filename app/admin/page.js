@@ -1768,6 +1768,8 @@ function Inventory({ stock, reload }) {
   const [tab, setTab] = useState(null); // štetje s tablice (Katarina)
   const [tabLoadedAt, setTabLoadedAt] = useState(null);
   const [pin, setPin] = useState("");
+  const [edit, setEdit] = useState(null); // { cid, sku, size } — urejanje ročnega vnosa
+  const invPost = (body) => getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const [prices, setPrices] = useState({}); // code → { cost, price }
   useEffect(() => {
     getJSON("/api/admin/costs").then((c) => setPrices(Object.fromEntries((c?.products || []).map((p) => [p.code, { cost: p.cost_cents, price: p.price_cents }]))));
@@ -1997,7 +1999,27 @@ function Inventory({ stock, reload }) {
             <table className="adm-tbl" style={{ marginTop: 8 }}>
               <thead><tr><th>Vpisana šifra</th><th>Artikel</th><th>Vel.</th><th className="r">Količina</th><th>Opomba</th><th>Kdaj</th><th></th></tr></thead>
               <tbody>
-                {tab.manual.map((m) => (
+                {tab.manual.map((m) => edit?.cid === m.cid ? (
+                  <tr key={m.cid}>
+                    <td colSpan={7}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <span className="muted" style={{ fontSize: 12 }}>Šifra:</span>
+                        <input className="adm-input" style={{ width: 170 }} value={edit.sku} autoFocus
+                          onChange={(e) => setEdit({ ...edit, sku: e.target.value.toUpperCase() })} placeholder="npr. MWSCDR" />
+                        <span className="muted" style={{ fontSize: 12 }}>Velikost:</span>
+                        <input className="adm-input" style={{ width: 80 }} value={edit.size}
+                          onChange={(e) => setEdit({ ...edit, size: e.target.value.toUpperCase() })} placeholder="M" />
+                        <span className="muted" style={{ fontSize: 12 }}>· {m.qty} kos{m.note ? ` · ${m.note}` : ""}</span>
+                        <button className="adm-btn pri" onClick={async () => {
+                          const d = await invPost({ action: "edit", cid: m.cid, sku: edit.sku, size: edit.size });
+                          setMsg({ ok: Boolean(d?.ok), t: d?.ok ? (d.linked ? "✓ Šifra popravljena — obstaja v CMS, vnos je prenesen v štetje." : d.product ? "✓ Šifra popravljena — artikel obstaja, zdaj lahko klikneš »Ustvari velikost«." : "✓ Šifra popravljena — tega artikla v CMS še ni.") : (d?.message || "Napaka pri shranjevanju.") });
+                          setEdit(null); loadTab();
+                        }}>Shrani</button>
+                        <button className="adm-btn" onClick={() => setEdit(null)}>Prekliči</button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
                   <tr key={m.cid}>
                     <td className="strong">{m.sku}</td>
                     <td>{m.product ? <>{m.product} <span className="adm-tag">nova velikost</span></> : <span className="muted">ni v CMS</span>}</td>
@@ -2010,8 +2032,10 @@ function Inventory({ stock, reload }) {
                         await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create_size", cid: m.cid }) });
                         loadTab(); reload();
                       }}>➕ Ustvari velikost</button>}
+                      <button className="adm-btn" style={{ marginRight: 6 }} onClick={() => setEdit({ cid: m.cid, sku: m.sku, size: m.size || "" })}>✏️ Uredi</button>
                       <button className="adm-btn" onClick={async () => {
-                        await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "resolve", cid: m.cid }) });
+                        if (!window.confirm(`Skrijem vnos ${m.sku} s seznama? (Lahko ga kasneje vrneš spodaj.)`)) return;
+                        await invPost({ action: "resolve", cid: m.cid });
                         loadTab();
                       }}>✓ Urejeno</button>
                     </td>
@@ -2019,8 +2043,28 @@ function Inventory({ stock, reload }) {
                 ))}
               </tbody>
             </table>
-            <div style={{ color: "#5c4a00", fontSize: 12, marginTop: 6 }}>»➕ Ustvari velikost« doda novo velikost obstoječemu artiklu (zaloga 0) in vnos prenese v štetje — zaloga se nastavi ob potrditvi inventure. Šifre, ki jih v CMS ni, uredi ročno in klikni »✓ Urejeno«.</div>
+            <div style={{ color: "#5c4a00", fontSize: 12, marginTop: 6 }}>»➕ Ustvari velikost« doda novo velikost obstoječemu artiklu (zaloga 0) in vnos prenese v štetje — zaloga se nastavi ob potrditvi inventure. »✏️ Uredi« popravi šifro ali velikost. »✓ Urejeno« vnos samo skrije (vrneš ga spodaj).</div>
           </div>
+        )}
+        {tab?.ok && tab.hidden?.length > 0 && (
+          <details style={{ marginTop: 10 }}>
+            <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700 }}>🗂 Skriti ročni vnosi (»✓ Urejeno«) · {tab.hidden.length}</summary>
+            <table className="adm-tbl" style={{ marginTop: 8 }}>
+              <thead><tr><th>Šifra</th><th>Vel.</th><th className="r">Količina</th><th>Opomba</th><th>Skrito</th><th></th></tr></thead>
+              <tbody>
+                {tab.hidden.map((m) => (
+                  <tr key={m.cid}>
+                    <td className="strong">{m.sku}</td>
+                    <td>{m.size || "—"}</td>
+                    <td className="r num">{m.qty}</td>
+                    <td className="muted">{m.note || ""}</td>
+                    <td className="muted">{dt(m.closed_at)}</td>
+                    <td className="r"><button className="adm-btn" onClick={async () => { await invPost({ action: "unresolve", cid: m.cid }); loadTab(); }}>↩ Vrni</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
         )}
       </div>
 

@@ -26,13 +26,17 @@ export async function GET() {
     }
   }
   const [ps] = await sql`SELECT value FROM settings WHERE key = 'inventura_pin'`;
+  // ročni vnosi, ki so bili skriti z »✓ Urejeno« (zadnjih 60 dni) — da jih lahko vrneš
+  const hidden = await sql`SELECT cid, sku, size, qty, note, created_at AS at, closed_at FROM inv_counts
+    WHERE manual = true AND deleted = false AND closed_at IS NOT NULL AND closed_at > now() - interval '60 days'
+    ORDER BY closed_at DESC LIMIT 100`;
   return NextResponse.json({
     ok: true, pinSet: Boolean(await getPinHash()), pinSetAt: ps?.value?.set_at || null,
-    entries: rows.length, sums, manual, last,
+    entries: rows.length, sums, manual, hidden, last,
   });
 }
 
-/** { action: "pin", pin } | { action: "close", before } | { action: "resolve", cid } (zaključi štetje — vnosi se arhivirajo, tablica začne na novo) */
+/** { action: "pin", pin } | { action: "close", before } | { action: "resolve" | "unresolve", cid } | { action: "edit", cid, sku, size } (zaključi štetje — vnosi se arhivirajo, tablica začne na novo) */
 export async function POST(req) {
   if (!dbConfigured()) return NextResponse.json({ ok: false, message: "Baza ni povezana." }, { status: 503 });
   await ensureInvSchema();
@@ -69,6 +73,32 @@ export async function POST(req) {
       await sql`UPDATE inv_counts SET sku = ${sku}, code = ${code}, size = ${size}, manual = false, updated_at = now() WHERE cid = ${r.cid}`;
     }
     return NextResponse.json({ ok: true, made, moved: rows.length });
+  }
+  if (body.action === "unresolve") {
+    // vrni skrit ročni vnos nazaj na seznam za pregled
+    const sql = db();
+    await sql`UPDATE inv_counts SET closed_at = NULL, updated_at = now() WHERE cid = ${String(body.cid || "")} AND manual = true`;
+    return NextResponse.json({ ok: true });
+  }
+  if (body.action === "edit") {
+    // popravi šifro / velikost ročnega vnosa; če šifra obstaja v CMS, vnos poveže z artiklom
+    const sql = db();
+    const cid = String(body.cid || "");
+    let sku = String(body.sku || "").replace(/\s+/g, "").toUpperCase().slice(0, 64);
+    let size = String(body.size || "").replace(/\s+/g, "").toUpperCase().slice(0, 20) || null;
+    if (!cid || sku.length < 2) return NextResponse.json({ ok: false, message: "Vpiši šifro." }, { status: 400 });
+    const prods = new Set((await sql`SELECT code FROM products`).map((p) => p.code));
+    let code = null;
+    if (prods.has(sku)) { code = sku; if (size) sku = `${code}-${size}`; }
+    else {
+      const m = sku.match(/^(.+)-([^-]+)$/);
+      if (m && prods.has(m[1])) { code = m[1]; size = size || m[2]; sku = `${code}-${size}`; }
+    }
+    const [v] = await sql`SELECT sku, code, size FROM variants WHERE sku = ${sku}`;
+    if (v) { code = v.code; size = v.size; }
+    await sql`UPDATE inv_counts SET sku = ${sku}, code = ${code}, size = ${size}, manual = ${!v}, updated_at = now()
+      WHERE cid = ${cid} AND closed_at IS NULL`;
+    return NextResponse.json({ ok: true, linked: Boolean(v), product: Boolean(code) });
   }
   if (body.action === "resolve") {
     // ročni vnos pregledan → odstrani s seznama (in s tablice)
