@@ -1768,6 +1768,10 @@ function Inventory({ stock, reload }) {
   const [tab, setTab] = useState(null); // štetje s tablice (Katarina)
   const [tabLoadedAt, setTabLoadedAt] = useState(null);
   const [pin, setPin] = useState("");
+  const [prices, setPrices] = useState({}); // code → { cost, price }
+  useEffect(() => {
+    getJSON("/api/admin/costs").then((c) => setPrices(Object.fromEntries((c?.products || []).map((p) => [p.code, { cost: p.cost_cents, price: p.price_cents }]))));
+  }, []);
 
   const loadTab = useCallback(async () => {
     const d = await getJSON("/api/admin/inventura");
@@ -1827,6 +1831,20 @@ function Inventory({ stock, reload }) {
     .map(([sku, val]) => ({ ...bySku[sku], counted: parseInt(val, 10) }))
     .filter((r) => Number.isFinite(r.counted) && r.counted !== r.stock);
   const doneInScope = scoped.filter((r) => counts[r.sku] !== undefined && counts[r.sku] !== "").length;
+
+  // ---- izid inventure: viški / manjki v kosih in evrih (nabavna brez DDV, prodajna z DDV) ----
+  const result = useMemo(() => {
+    const r = { plusQ: 0, plusCost: 0, plusPrice: 0, minusQ: 0, minusCost: 0, minusPrice: 0, noCost: 0, plusN: 0, minusN: 0 };
+    for (const d of diffs) {
+      const delta = d.counted - d.stock;
+      const pr = prices[d.code] || {};
+      if (pr.cost == null) r.noCost++;
+      const c = (pr.cost || 0) * Math.abs(delta), s = (pr.price || 0) * Math.abs(delta);
+      if (delta > 0) { r.plusQ += delta; r.plusCost += c; r.plusPrice += s; r.plusN++; }
+      else { r.minusQ -= delta; r.minusCost += c; r.minusPrice += s; r.minusN++; }
+    }
+    return r;
+  }, [diffs, prices]);
 
   function setCount(sku, val) {
     const clean = val.replace(/\D/g, "").slice(0, 5);
@@ -2005,6 +2023,38 @@ function Inventory({ stock, reload }) {
           </div>
         )}
       </div>
+
+      {entered.length > 0 && (() => {
+        const netQ = result.plusQ - result.minusQ, netC = result.plusCost - result.minusCost, netP = result.plusPrice - result.minusPrice;
+        const col = (v) => (v > 0 ? "var(--a-green)" : v < 0 ? "var(--a-red)" : "inherit");
+        const sg = (v) => (v > 0 ? "+" : v < 0 ? "−" : "");
+        const box = (title, q, c, p, color) => (
+          <div style={{ flex: "1 1 200px", background: "#fff", border: "1px solid var(--a-line, #e4e8ee)", borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12.5, color: "var(--a-muted)", fontWeight: 700 }}>{title}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color }}>{q} kos</div>
+            <div style={{ fontSize: 13 }}>nabavna: <b style={{ color }}>{eur(c)}</b></div>
+            <div style={{ fontSize: 13, color: "var(--a-muted)" }}>prodajna: {eur(p)}</div>
+          </div>
+        );
+        return (
+          <div className="adm-card" style={{ padding: 16, marginBottom: 14 }}>
+            <b style={{ fontSize: 15 }}>📊 Izid inventure</b>
+            <span className="muted" style={{ fontSize: 12.5, marginLeft: 8 }}>
+              {entered.length} preštetih velikosti · {diffs.length} z razliko · neprešteto ostane nespremenjeno
+            </span>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
+              {box(`Viški (${result.plusN} velikosti)`, `+${result.plusQ}`, result.plusCost, result.plusPrice, "var(--a-green)")}
+              {box(`Manjki (${result.minusN} velikosti)`, `−${result.minusQ}`, result.minusCost, result.minusPrice, "var(--a-red)")}
+              {box("NETO", `${sg(netQ)}${Math.abs(netQ)}`, Math.abs(netC), Math.abs(netP), col(netC))}
+            </div>
+            <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: col(netC) }}>
+              {netC > 0 ? `✓ Inventura je v plusu: +${eur(netC)} po nabavni vrednosti.` : netC < 0 ? `Inventura je v minusu: −${eur(-netC)} po nabavni vrednosti.` : "Inventura je na ničli."}
+            </div>
+            {result.noCost > 0 && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>⚠️ {result.noCost} artiklov z razliko nima vpisane nabavne cene — v vrednosti niso upoštevani (Cenik & RVC).</div>}
+            <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Nabavna vrednost je brez DDV, prodajna z DDV (redna cena, brez popustov). Ročni vnosi (šifre, ki jih ni v CMS) niso vključeni.</div>
+          </div>
+        );
+      })()}
 
       <div className="adm-inv-steps">
         <div className="adm-card adm-step">
