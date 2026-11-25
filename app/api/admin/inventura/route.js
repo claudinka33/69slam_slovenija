@@ -21,13 +21,13 @@ export async function GET() {
     if (!r.manual && known.has(r.sku)) sums[r.sku] = (sums[r.sku] || 0) + r.qty;
     else {
       const code = r.code && prods[r.code] ? r.code : prods[r.sku] ? r.sku : null;
-      manual.push({ cid: r.cid, sku: r.sku, size: r.size, qty: r.qty, note: r.note, at: r.created_at, known: known.has(r.sku),
+      manual.push({ cid: r.cid, sku: r.sku, size: r.size, qty: r.qty, note: r.note, name: r.name, at: r.created_at, known: known.has(r.sku),
         code, product: code ? prods[code] : null, canCreate: Boolean(code && r.size) });
     }
   }
   const [ps] = await sql`SELECT value FROM settings WHERE key = 'inventura_pin'`;
   // ročni vnosi, ki so bili skriti z »✓ Urejeno« (zadnjih 60 dni) — da jih lahko vrneš
-  const hidden = await sql`SELECT cid, sku, size, qty, note, created_at AS at, closed_at FROM inv_counts
+  const hidden = await sql`SELECT cid, sku, size, qty, note, name, created_at AS at, closed_at FROM inv_counts
     WHERE manual = true AND deleted = false AND closed_at IS NOT NULL AND closed_at > now() - interval '60 days'
     ORDER BY closed_at DESC LIMIT 100`;
   return NextResponse.json({
@@ -96,6 +96,8 @@ export async function POST(req) {
     }
     const [v] = await sql`SELECT sku, code, size FROM variants WHERE sku = ${sku}`;
     if (v) { code = v.code; size = v.size; }
+    const nm = body.name !== undefined ? (String(body.name || "").trim().toUpperCase().slice(0, 120) || null) : undefined;
+    if (nm !== undefined) await sql`UPDATE inv_counts SET name = ${nm} WHERE cid = ${cid} AND closed_at IS NULL`;
     await sql`UPDATE inv_counts SET sku = ${sku}, code = ${code}, size = ${size}, manual = ${!v}, updated_at = now()
       WHERE cid = ${cid} AND closed_at IS NULL`;
     return NextResponse.json({ ok: true, linked: Boolean(v), product: Boolean(code) });

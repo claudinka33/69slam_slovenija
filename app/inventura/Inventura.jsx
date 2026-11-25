@@ -387,7 +387,7 @@ export default function Inventura() {
             <Log live={live} skuInfo={skuInfo}
               onEdit={(e) => {
                 const a = skuInfo[e.sku];
-                if (e.manual || !a) setManual({ cid: e.cid, sku: e.sku, size: e.size || "", qty: String(e.qty), note: e.note || "" });
+                if (e.manual || !a) setManual({ cid: e.cid, sku: e.sku, size: e.size || "", qty: String(e.qty), note: e.note || "", name: e.name || "" });
                 else setPad({ ...a, cid: e.cid, val: String(e.qty) });
               }}
               onDel={delEntry} />
@@ -408,14 +408,19 @@ export default function Inventura() {
         <Manual m={manual} onClose={() => setManual(null)}
           onDelete={manual.cid ? () => { if (delEntry(manual.cid)) setManual(null); } : null}
           onSave={(m) => {
-            const typed = m.sku.toUpperCase();
+            // šifra z etikete (»SLLSKY-PO S«) → osnovna šifra + velikost
+            let typed = m.sku.toUpperCase().replace(/\s+/g, " ").trim();
+            let size0 = m.size;
+            const lab = typed.match(/^([A-Z0-9]{4,10})-[A-Z]{2}(?:\s+(\S+))?$/);
+            if (lab) { typed = lab[1]; if (!size0 && lab[2]) size0 = lab[2]; }
+            typed = typed.replace(/\s+/g, "");
             const code = m.code || (codeInfo[typed] ? typed : null);
-            const sz = String(m.size || "").replace(/\s+/g, "").toUpperCase();
+            const sz = String(size0 || "").replace(/\s+/g, "").toUpperCase();
             const sku = code && sz ? `${code}-${sz}` : typed;
             const known = skuInfo[sku];
             putEntry({
-              cid: m.cid || uid(), sku, code: known?.code || code || null, size: m.size || known?.size || null,
-              qty: m.qty, manual: !known, note: m.note || null, deleted: false, at: new Date().toISOString(),
+              cid: m.cid || uid(), sku, code: known?.code || code || null, size: size0 || known?.size || null,
+              qty: m.qty, manual: !known, note: m.note || null, name: m.name || null, deleted: false, at: new Date().toISOString(),
             });
             flash(known ? `✓ Velikost obstaja — prišteto k ${known.sku}` : code ? `✓ Nova velikost ${sz} shranjena — Claudia jo potrdi` : "✓ Shranjeno za pregled");
             setManual(null);
@@ -559,6 +564,7 @@ function Manual({ m, onClose, onSave, onDelete }) {
   const [other, setOther] = useState(m.size && !SIZES.includes(m.size) ? m.size : "");
   const [qty, setQty] = useState(m.qty || "");
   const [note, setNote] = useState(m.note || "");
+  const [pname, setPname] = useState(m.name || "");
   const n = parseInt(qty, 10);
   const ok = sku.trim().length >= 2 && Number.isFinite(n) && n >= 0 && (!newSize || size.trim());
   return (
@@ -588,13 +594,18 @@ function Manual({ m, onClose, onSave, onDelete }) {
             {QUICK.map((d) => <button key={d} className={qty === String(d) ? "on" : ""} onClick={() => setQty(String(d))}>{d}</button>)}
           </div>
           <input value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, "").slice(0, 5))} inputMode="numeric" pattern="[0-9]*" placeholder="ali vpiši več kot 10" />
+          {!newSize && (
+            <label>Ime vzorca
+              <input value={pname} onChange={(e) => setPname(e.target.value.toUpperCase())} autoCapitalize="characters" placeholder="npr. SEX TOYS, PLAIN BLACK …" />
+            </label>
+          )}
           <label>Opomba (neobvezno)
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="npr. ime na etiketi, barva …" />
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="npr. barva, stanje …" />
           </label>
         </div>
         <div className="iv-mf">
           {onDelete ? <button className="iv-btn danger" onClick={onDelete}>Izbriši vnos</button> : <span />}
-          <button className="iv-btn pri lg" disabled={!ok} onClick={() => onSave({ cid: m.cid, sku: sku.trim(), size, qty: n, note: note.trim() })}>Shrani</button>
+          <button className="iv-btn pri lg" disabled={!ok} onClick={() => onSave({ cid: m.cid, sku: sku.trim(), size, qty: n, note: note.trim(), name: pname.trim() })}>Shrani</button>
         </div>
       </div>
     </div>
@@ -615,7 +626,7 @@ function Log({ live, skuInfo, onEdit, onDel }) {
             <tr key={e.cid} className={e.manual ? "man" : ""} onClick={() => onEdit(e)}>
               <td className="muted num">{hhmm(e.at)}</td>
               <td>
-                <div className="nm">{e.manual ? "Ročni vnos" : a ? a.name : "—"}</div>
+                <div className="nm">{e.manual ? (e.name ? `Ročni vnos · ${e.name}` : "Ročni vnos") : a ? a.name : "—"}</div>
                 <div className="mono">{e.sku}</div>
                 {e.note && <div className="ty">{e.note}</div>}
                 <div className="iv-st">

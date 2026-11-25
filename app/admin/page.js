@@ -2009,9 +2009,12 @@ function Inventory({ stock, reload }) {
                         <span className="muted" style={{ fontSize: 12 }}>Velikost:</span>
                         <input className="adm-input" style={{ width: 80 }} value={edit.size}
                           onChange={(e) => setEdit({ ...edit, size: e.target.value.toUpperCase() })} placeholder="M" />
+                        <span className="muted" style={{ fontSize: 12 }}>Ime vzorca:</span>
+                        <input className="adm-input" style={{ width: 170 }} value={edit.name}
+                          onChange={(e) => setEdit({ ...edit, name: e.target.value.toUpperCase() })} placeholder="npr. SEX TOYS" />
                         <span className="muted" style={{ fontSize: 12 }}>· {m.qty} kos{m.note ? ` · ${m.note}` : ""}</span>
                         <button className="adm-btn pri" onClick={async () => {
-                          const d = await invPost({ action: "edit", cid: m.cid, sku: edit.sku, size: edit.size });
+                          const d = await invPost({ action: "edit", cid: m.cid, sku: edit.sku, size: edit.size, name: edit.name });
                           setMsg({ ok: Boolean(d?.ok), t: d?.ok ? (d.linked ? "✓ Šifra popravljena — obstaja v CMS, vnos je prenesen v štetje." : d.product ? "✓ Šifra popravljena — artikel obstaja, zdaj lahko klikneš »Ustvari velikost«." : "✓ Šifra popravljena — tega artikla v CMS še ni.") : (d?.message || "Napaka pri shranjevanju.") });
                           setEdit(null); loadTab();
                         }}>Shrani</button>
@@ -2022,7 +2025,7 @@ function Inventory({ stock, reload }) {
                 ) : (
                   <tr key={m.cid}>
                     <td className="strong">{m.sku}</td>
-                    <td>{m.product ? <>{m.product} <span className="adm-tag">nova velikost</span></> : <span className="muted">ni v CMS</span>}</td>
+                    <td>{m.product ? <>{m.product} <span className="adm-tag">nova velikost</span></> : <>{m.name ? <b>{m.name} </b> : null}<span className="muted">ni v CMS</span></>}</td>
                     <td>{m.size || "—"}</td>
                     <td className="r num strong">{m.qty}</td>
                     <td className="muted">{m.note || ""}</td>
@@ -2032,7 +2035,7 @@ function Inventory({ stock, reload }) {
                         await getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create_size", cid: m.cid }) });
                         loadTab(); reload();
                       }}>➕ Ustvari velikost</button>}
-                      <button className="adm-btn" style={{ marginRight: 6 }} onClick={() => setEdit({ cid: m.cid, sku: m.sku, size: m.size || "" })}>✏️ Uredi</button>
+                      <button className="adm-btn" style={{ marginRight: 6 }} onClick={() => setEdit({ cid: m.cid, sku: m.sku, size: m.size || "", name: m.name || "" })}>✏️ Uredi</button>
                       <button className="adm-btn" onClick={async () => {
                         if (!window.confirm(`Skrijem vnos ${m.sku} s seznama? (Lahko ga kasneje vrneš spodaj.)`)) return;
                         await invPost({ action: "resolve", cid: m.cid });
@@ -2054,7 +2057,7 @@ function Inventory({ stock, reload }) {
               <tbody>
                 {tab.hidden.map((m) => (
                   <tr key={m.cid}>
-                    <td className="strong">{m.sku}</td>
+                    <td className="strong">{m.sku}{m.name ? <span className="muted"> · {m.name}</span> : null}</td>
                     <td>{m.size || "—"}</td>
                     <td className="r num">{m.qty}</td>
                     <td className="muted">{m.note || ""}</td>
