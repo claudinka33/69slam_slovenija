@@ -1769,6 +1769,7 @@ function Inventory({ stock, reload }) {
   const [tabLoadedAt, setTabLoadedAt] = useState(null);
   const [pin, setPin] = useState("");
   const [edit, setEdit] = useState(null); // { cid, sku, size } — urejanje ročnega vnosa
+  const [mk, setMk] = useState(null); // { cid, code, name, size, type, price } — nov artikel iz ročnega vnosa
   const invPost = (body) => getJSON("/api/admin/inventura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const [prices, setPrices] = useState({}); // code → { cost, price }
   useEffect(() => {
@@ -1999,7 +2000,27 @@ function Inventory({ stock, reload }) {
             <table className="adm-tbl" style={{ marginTop: 8 }}>
               <thead><tr><th>Vpisana šifra</th><th>Artikel</th><th>Vel.</th><th className="r">Količina</th><th>Opomba</th><th>Kdaj</th><th></th></tr></thead>
               <tbody>
-                {tab.manual.map((m) => edit?.cid === m.cid ? (
+                {tab.manual.map((m) => mk?.cid === m.cid ? (
+                  <tr key={m.cid}>
+                    <td colSpan={7} style={{ background: "#eef6ff" }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>➕ Nov artikel iz inventure · {m.qty} kos{m.note ? ` · ${m.note}` : ""} — skrit v trgovini, dokler ga ne objaviš</div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <label className="muted" style={{ fontSize: 12 }}>Šifra <input className="adm-input" style={{ width: 120 }} value={mk.code} onChange={(e) => setMk({ ...mk, code: e.target.value.toUpperCase() })} /></label>
+                        <label className="muted" style={{ fontSize: 12 }}>Ime vzorca <input className="adm-input" style={{ width: 180 }} value={mk.name} autoFocus onChange={(e) => setMk({ ...mk, name: e.target.value.toUpperCase() })} placeholder="npr. METRIC GREEN" /></label>
+                        <label className="muted" style={{ fontSize: 12 }}>Velikost <input className="adm-input" style={{ width: 70 }} value={mk.size} onChange={(e) => setMk({ ...mk, size: e.target.value.toUpperCase() })} /></label>
+                        <label className="muted" style={{ fontSize: 12 }}>Vrsta <input className="adm-input" style={{ width: 300 }} value={mk.type} onChange={(e) => setMk({ ...mk, type: e.target.value })} placeholder="npr. Moške kopalne hlače · LONG LENGTH" /></label>
+                        <label className="muted" style={{ fontSize: 12 }}>Prodajna cena € <input className="adm-input" style={{ width: 80 }} value={mk.price} onChange={(e) => setMk({ ...mk, price: e.target.value })} /></label>
+                        <button className="adm-btn pri" onClick={async () => {
+                          const d = await invPost({ action: "create_product", cid: m.cid, code: mk.code, name: mk.name, size: mk.size, type: mk.type, price: mk.price });
+                          setMsg({ ok: Boolean(d?.ok), t: d?.message || "Napaka pri ustvarjanju artikla." });
+                          if (d?.ok) { setMk(null); loadTab(); reload(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+                        }}>Ustvari artikel</button>
+                        <button className="adm-btn" onClick={() => setMk(null)}>Prekliči</button>
+                      </div>
+                      {m.suggest?.cost_cents != null && <div className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>Nabavna cena (iz Metakocke): {eur(m.suggest.cost_cents)} — vpiše se samodejno.</div>}
+                    </td>
+                  </tr>
+                ) : edit?.cid === m.cid ? (
                   <tr key={m.cid}>
                     <td colSpan={7}>
                       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -2038,6 +2059,10 @@ function Inventory({ stock, reload }) {
                         loadTab(); reload();
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}>➕ Ustvari velikost</button>}
+                      {!m.code && <button className="adm-btn pri" style={{ marginRight: 6 }} onClick={() => setMk({
+                        cid: m.cid, code: m.suggest?.code || m.sku, name: m.name || "", size: m.size || "",
+                        type: m.suggest?.type || "", price: m.suggest?.price_cents != null ? (m.suggest.price_cents / 100).toFixed(2).replace(".", ",") : "",
+                      })}>➕ Ustvari artikel</button>}
                       <button className="adm-btn" style={{ marginRight: 6 }} onClick={() => setEdit({ cid: m.cid, sku: m.sku, size: m.size || "", name: m.name || "" })}>✏️ Uredi</button>
                       <button className="adm-btn" onClick={async () => {
                         if (!window.confirm(`Skrijem vnos ${m.sku} s seznama? (Lahko ga kasneje vrneš spodaj.)`)) return;

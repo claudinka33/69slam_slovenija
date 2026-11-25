@@ -1,9 +1,35 @@
 import { NextResponse } from "next/server";
-import { db, dbConfigured } from "../../../../lib/db";
+import fs from "node:fs";
+import path from "node:path";
+import { db, dbConfigured, prefixMeta } from "../../../../lib/db";
 import { ensureInvSchema, getPinHash, setPin, openEntries } from "../../../../lib/inventura";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Šifra artikla iz ročnega vnosa (»SLLSY-PO S« → SLLSY, »MWSHB-M« z velikostjo M → MWSHB). */
+function baseCode(sku, size) {
+  let s = String(sku || "").toUpperCase().replace(/\s+/g, " ").trim();
+  const lab = s.match(/^([A-Z0-9]{4,10})-[A-Z]{2}(?:\s+\S+)?$/);
+  if (lab) return lab[1];
+  s = s.replace(/\s+/g, "");
+  const z = String(size || "").replace(/\s+/g, "").toUpperCase();
+  if (z && s.endsWith(`-${z}`)) s = s.slice(0, -z.length - 1);
+  return s.replace(/-/g, "");
+}
+let _mk = null;
+function mkCost(code) {
+  if (!_mk) { try { _mk = JSON.parse(fs.readFileSync(path.join(process.cwd(), "data/mk-costs.json"), "utf8")); } catch { _mk = { codes: {}, prefix: {} }; } }
+  const v = _mk.codes?.[code] ?? _mk.prefix?.[code.slice(0, 3)];
+  return Number.isFinite(Number(v)) && Number(v) > 0 ? Math.round(Number(v) * 100) : null;
+}
+/** Predlog za nov artikel: vrsta in cena po artiklih z istimi prvimi 3 črkami. */
+async function suggestFor(sql, code) {
+  const pre = code.slice(0, 3);
+  const sib = await sql`SELECT price_cents, COUNT(*)::int AS n FROM products WHERE code LIKE ${pre + "%"} GROUP BY price_cents ORDER BY n DESC LIMIT 1`;
+  const pm = prefixMeta(code);
+  return { code, type: pm?.type || "", price_cents: sib[0]?.price_cents ?? null, cost_cents: mkCost(code) };
+}
 
 /** Admin: pregled štetja s tablice (seštevki po SKU + ročni vnosi neznanih šifer). */
 export async function GET() {
@@ -22,7 +48,8 @@ export async function GET() {
     else {
       const code = r.code && prods[r.code] ? r.code : prods[r.sku] ? r.sku : null;
       manual.push({ cid: r.cid, sku: r.sku, size: r.size, qty: r.qty, note: r.note, name: r.name, at: r.created_at, known: known.has(r.sku),
-        code, product: code ? prods[code] : null, canCreate: Boolean(code && r.size) });
+        code, product: code ? prods[code] : null, canCreate: Boolean(code && r.size),
+        suggest: code ? null : await suggestFor(sql, baseCode(r.sku, r.size)) });
     }
   }
   const [ps] = await sql`SELECT value FROM settings WHERE key = 'inventura_pin'`;
@@ -73,6 +100,40 @@ export async function POST(req) {
       await sql`UPDATE inv_counts SET sku = ${sku}, code = ${code}, size = ${size}, manual = false, updated_at = now() WHERE cid = ${r.cid}`;
     }
     return NextResponse.json({ ok: true, made, moved: rows.length });
+  }
+  if (body.action === "create_product") {
+    // nov artikel iz ročnega vnosa: skrit v trgovini, zaloga 0, vnos gre v štetje (višek ob potrditvi inventure)
+    const sql = db();
+    const cid = String(body.cid || "");
+    const code = String(body.code || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
+    const name = String(body.name || "").trim().toUpperCase().slice(0, 120);
+    const size = String(body.size || "").replace(/\s+/g, "").toUpperCase().slice(0, 20);
+    const type = String(body.type || "").trim().slice(0, 160) || null;
+    const price = Math.round(parseFloat(String(body.price ?? "").replace(",", ".")) * 100);
+    if (code.length < 4) return NextResponse.json({ ok: false, message: "Šifra artikla mora imeti vsaj 4 znake." }, { status: 400 });
+    if (!name) return NextResponse.json({ ok: false, message: "Vpiši ime vzorca." }, { status: 400 });
+    if (!size) return NextResponse.json({ ok: false, message: "Vpiši velikost." }, { status: 400 });
+    if (!Number.isFinite(price) || price < 0) return NextResponse.json({ ok: false, message: "Vpiši prodajno ceno (lahko 0)." }, { status: 400 });
+    const slug = `${name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${code.toLowerCase()}`;
+    const cost = mkCost(code);
+    await sql`INSERT INTO products (code, name, slug, collection, price_cents, active, cost_cents)
+      VALUES (${code}, ${name}, ${slug}, 'core', ${price}, false, ${cost}) ON CONFLICT (code) DO NOTHING`;
+    await sql`INSERT INTO product_edits (code, name, type_sl, price_cents, published) VALUES (${code}, ${name}, ${type}, ${price}, false)
+      ON CONFLICT (code) DO UPDATE SET type_sl = COALESCE(product_edits.type_sl, EXCLUDED.type_sl)`;
+    const sku = `${code}-${size}`;
+    await sql`INSERT INTO variants (sku, code, size, stock) VALUES (${sku}, ${code}, ${size}, 0) ON CONFLICT (sku) DO NOTHING`;
+    // zaščita: »Uvozi katalog v bazo« tega artikla ne sme izbrisati
+    const [cu] = await sql`SELECT value FROM settings WHERE key = 'custom_products'`;
+    const list = new Set(cu?.value?.codes || []); list.add(code);
+    await sql`INSERT INTO settings (key, value) VALUES ('custom_products', ${JSON.stringify({ codes: [...list] })}::jsonb)
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
+    if (cid) await sql`UPDATE inv_counts SET sku = ${sku}, code = ${code}, size = ${size}, name = ${name}, manual = false, updated_at = now()
+      WHERE cid = ${cid} AND closed_at IS NULL`;
+    // drugi ročni vnosi z isto šifro → poveži z novim artiklom (ostanejo kot »nova velikost«, če velikost še ne obstaja)
+    await sql`UPDATE inv_counts SET code = ${code}, updated_at = now()
+      WHERE closed_at IS NULL AND manual = true AND deleted = false AND code IS NULL
+        AND (upper(replace(replace(sku, ' ', ''), '-', '')) = ${code} OR sku LIKE ${code + "-%"} OR sku LIKE ${code + " %"})`;
+    return NextResponse.json({ ok: true, sku, message: `✓ Ustvarjen artikel ${code} · ${name} (velikost ${size}) — skrit v trgovini, kos je v štetju.` });
   }
   if (body.action === "unresolve") {
     // vrni skrit ročni vnos nazaj na seznam za pregled
