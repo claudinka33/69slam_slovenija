@@ -1874,6 +1874,63 @@ function Inventory({ stock, reload }) {
     return () => { clearTimeout(id); window.removeEventListener("afterprint", done); };
   }, [printing]);
 
+  // ---- Excel za računovodstvo: povzetek + razlike + celoten popis (z nabavno vrednostjo) ----
+  async function exportAccounting() {
+    const XLSX = await import("xlsx");
+    const today = new Date().toLocaleDateString("sl-SI", { timeZone: "Europe/Ljubljana" });
+    const e2 = (c) => (c == null ? null : Math.round(c) / 100);
+    const rows = allRows.map((r) => {
+      const pr = prices[r.code] || {};
+      const has = counts[r.sku] !== undefined && counts[r.sku] !== "";
+      const cnt = has ? parseInt(counts[r.sku], 10) : null;
+      const diff = has ? cnt - r.stock : null;
+      return {
+        Skupina: groupName(r.gk), "Šifra (SKU)": r.sku, Artikel: r.name, Vrsta: r.type || "", Velikost: r.size,
+        "Stanje v sistemu": r.stock, "Prešteto": has ? cnt : "neprešteto", Razlika: diff,
+        "Nabavna cena / kos (€, brez DDV)": e2(pr.cost),
+        "Vrednost razlike (€, nabavna)": diff != null && pr.cost != null ? e2(diff * pr.cost) : null,
+        "Vrednost preštete zaloge (€, nabavna)": has && pr.cost != null ? e2(cnt * pr.cost) : null,
+        "Prodajna cena (€, z DDV)": e2(pr.price),
+      };
+    });
+    const diffs = rows.filter((r) => r.Razlika);
+    const sum = (arr, k) => Math.round(arr.reduce((a, r) => a + (Number(r[k]) || 0), 0) * 100) / 100;
+    const plus = diffs.filter((r) => r.Razlika > 0), minus = diffs.filter((r) => r.Razlika < 0);
+    const counted = rows.filter((r) => r["Prešteto"] !== "neprešteto");
+    const povzetek = [
+      ["POROČILO O POPISU ZALOGE (INVENTURA)"],
+      ["Podjetje", "Freestyle Freak d.o.o."],
+      ["Skladišče", "Glavno skladišče (brez konsignacije Samana)"],
+      ["Datum izvoza", today],
+      ["Popis izvedla", "Katarina Žuvić"],
+      ["Odgovorna oseba", "Claudia Seidl"],
+      [],
+      ["", "Velikosti (SKU)", "Kosov", "Nabavna vrednost (€, brez DDV)"],
+      ["Prešteto skupaj", counted.length, sum(counted, "Prešteto"), sum(counted, "Vrednost preštete zaloge (€, nabavna)")],
+      ["Viški (+)", plus.length, sum(plus, "Razlika"), sum(plus, "Vrednost razlike (€, nabavna)")],
+      ["Manjki (−)", minus.length, sum(minus, "Razlika"), sum(minus, "Vrednost razlike (€, nabavna)")],
+      ["NETO razlika", diffs.length, sum(diffs, "Razlika"), sum(diffs, "Vrednost razlike (€, nabavna)")],
+      [],
+      ["Neprešteto (stanje v sistemu ostane nespremenjeno)", rows.filter((r) => r["Prešteto"] === "neprešteto" && r["Stanje v sistemu"] > 0).length],
+      ["Artikli brez vpisane nabavne cene (z razliko)", diffs.filter((r) => r["Nabavna cena / kos (€, brez DDV)"] == null).length],
+      [],
+      ["Opomba", "Nabavne cene so iz Metakocke; pri artiklih brez cene je uporabljeno povprečje vrste (prve 3 črke šifre)."],
+      ["Opomba", "Razlike so večinoma posledica napak v evidenci ob prenosu podatkov (Shopify/Metakocka → nov sistem), ne izgube blaga."],
+      [],
+      ["Podpis (popis izvedla):", "", "Podpis (odgovorna oseba):"],
+    ];
+    const wb = XLSX.utils.book_new();
+    const ws0 = XLSX.utils.aoa_to_sheet(povzetek);
+    ws0["!cols"] = [{ wch: 48 }, { wch: 18 }, { wch: 26 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws0, "Povzetek");
+    const cols = [{ wch: 14 }, { wch: 16 }, { wch: 26 }, { wch: 40 }, { wch: 9 }, { wch: 10 }, { wch: 10 }, { wch: 9 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
+    const ws1 = XLSX.utils.json_to_sheet([...plus, ...minus]); ws1["!cols"] = cols;
+    XLSX.utils.book_append_sheet(wb, ws1, "Razlike");
+    const ws2 = XLSX.utils.json_to_sheet(rows); ws2["!cols"] = cols;
+    XLSX.utils.book_append_sheet(wb, ws2, "Celoten popis");
+    XLSX.writeFile(wb, `inventura-freestyle-freak-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
   // ---- Excel ----
   async function exportXlsx() {
     const XLSX = await import("xlsx");
@@ -2148,6 +2205,7 @@ function Inventory({ stock, reload }) {
             <span>Spodaj v tabelo — ali prenesi Excel, ga izpolni v stolpcu »Prešteto« in naloži nazaj.</span>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button className="adm-btn" onClick={exportXlsx} disabled={!scoped.length}>⬇ Prenesi Excel</button>
+              <button className="adm-btn pri" onClick={exportAccounting} disabled={!entered.length}>📊 Excel za računovodstvo</button>
               <label className="adm-btn" style={{ cursor: "pointer" }}>
                 ⬆ Naloži Excel
                 <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={(e) => { importXlsx(e.target.files?.[0]); e.target.value = ""; }} />
