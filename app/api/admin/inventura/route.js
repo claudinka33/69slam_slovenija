@@ -116,9 +116,10 @@ export async function POST(req) {
     // nov artikel iz ročnega vnosa: skrit v trgovini, zaloga 0, vnos gre v štetje (višek ob potrditvi inventure)
     const sql = db();
     const cid = String(body.cid || "");
-    const code = String(body.code || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
-    const name = String(body.name || "").trim().toUpperCase().slice(0, 120);
     const size = String(body.size || "").replace(/\s+/g, "").toUpperCase().slice(0, 20);
+    // šifra z etikete (»MWSHB-XX M«, »SLLSY-PO S«) → samo osnovna šifra artikla
+    const code = baseCode(body.code, size).replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
+    const name = String(body.name || "").trim().toUpperCase().slice(0, 120);
     const type = String(body.type || "").trim().slice(0, 160) || null;
     const price = Math.round(parseFloat(String(body.price ?? "").replace(",", ".")) * 100);
     if (code.length < 4) return NextResponse.json({ ok: false, message: "Šifra artikla mora imeti vsaj 4 znake." }, { status: 400 });
@@ -145,6 +146,45 @@ export async function POST(req) {
       WHERE closed_at IS NULL AND manual = true AND deleted = false AND code IS NULL
         AND (upper(replace(replace(sku, ' ', ''), '-', '')) = ${code} OR sku LIKE ${code + "-%"} OR sku LIKE ${code + " %"})`;
     return NextResponse.json({ ok: true, sku, message: `✓ Ustvarjen artikel ${code} · ${name} (velikost ${size}) — skrit v trgovini, kos je v štetju.` });
+  }
+  if (body.action === "merge_code") {
+    // preimenuj šifro artikla / združi dva artikla v enega (velikosti, zaloga, štetje, zgodovina se prenesejo)
+    const sql = db();
+    const from = String(body.from || "").trim().toUpperCase();
+    const to = String(body.to || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
+    if (!from || to.length < 4 || from === to) return NextResponse.json({ ok: false, message: "Neveljavna šifra." }, { status: 400 });
+    const [src] = await sql`SELECT * FROM products WHERE code = ${from}`;
+    if (!src) return NextResponse.json({ ok: false, message: `Artikla ${from} ni.` }, { status: 404 });
+    const [dst] = await sql`SELECT code FROM products WHERE code = ${to}`;
+    if (!dst) {
+      let slug = String(src.slug).replace(new RegExp(`${from.toLowerCase()}$`), to.toLowerCase());
+      if (slug === src.slug) slug = `${slug}-${to.toLowerCase()}`;
+      const [taken] = await sql`SELECT 1 FROM products WHERE slug = ${slug}`;
+      if (taken) slug = `${slug}-${Date.now().toString(36)}`;
+      await sql`INSERT INTO products (code, name, slug, collection, price_cents, active, cost_cents)
+        VALUES (${to}, ${src.name}, ${slug}, ${src.collection}, ${src.price_cents}, ${src.active}, ${src.cost_cents})`;
+      await sql`INSERT INTO product_edits (code, name, type_sl, description, price_cents, published)
+        SELECT ${to}, name, type_sl, description, price_cents, published FROM product_edits WHERE code = ${from}
+        ON CONFLICT (code) DO NOTHING`;
+    }
+    const vars = await sql`SELECT sku, size, stock FROM variants WHERE code = ${from}`;
+    for (const v of vars) {
+      const nsku = `${to}-${String(v.size).replace(/\s+/g, "").toUpperCase()}`;
+      await sql`INSERT INTO variants (sku, code, size, stock) VALUES (${nsku}, ${to}, ${v.size}, ${v.stock})
+        ON CONFLICT (sku) DO UPDATE SET stock = variants.stock + EXCLUDED.stock`;
+      await sql`UPDATE inv_counts SET sku = ${nsku}, code = ${to} WHERE sku = ${v.sku}`;
+      await sql`UPDATE stock_moves SET sku = ${nsku} WHERE sku = ${v.sku}`;
+      await sql`DELETE FROM variants WHERE sku = ${v.sku}`;
+    }
+    await sql`UPDATE inv_counts SET code = ${to} WHERE code = ${from}`;
+    await sql`UPDATE product_images SET code = ${to} WHERE code = ${from} AND NOT EXISTS (SELECT 1 FROM product_images x WHERE x.code = ${to})`;
+    await sql`DELETE FROM product_edits WHERE code = ${from}`;
+    await sql`DELETE FROM products WHERE code = ${from}`;
+    const [cu] = await sql`SELECT value FROM settings WHERE key = 'custom_products'`;
+    const list = new Set(cu?.value?.codes || []); list.delete(from); list.add(to);
+    await sql`INSERT INTO settings (key, value) VALUES ('custom_products', ${JSON.stringify({ codes: [...list] })}::jsonb)
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
+    return NextResponse.json({ ok: true, message: `✓ ${from} → ${to} (${vars.length} velikosti)` });
   }
   if (body.action === "unresolve") {
     // vrni skrit ročni vnos nazaj na seznam za pregled
